@@ -37,7 +37,7 @@
 **Interfaces:**
 - Produces: a buildable, empty two-target Xcode project that every later task adds real code to. No app logic yet.
 
-- [ ] **Step 1: Write `.gitignore`**
+- [x] **Step 1: Write `.gitignore`**
 
 ```gitignore
 .DS_Store
@@ -47,7 +47,7 @@
 xcuserdata/
 ```
 
-- [ ] **Step 2: Write `project.yml`**
+- [x] **Step 2: Write `project.yml`**
 
 ```yaml
 name: Pomodoro
@@ -104,7 +104,7 @@ schemes:
       config: Debug
 ```
 
-- [ ] **Step 3: Write `Pomodoro/Info.plist`**
+- [x] **Step 3: Write `Pomodoro/Info.plist`**
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -146,7 +146,7 @@ schemes:
 </plist>
 ```
 
-- [ ] **Step 4: Write `Pomodoro/Pomodoro.entitlements`**
+- [x] **Step 4: Write `Pomodoro/Pomodoro.entitlements`**
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -161,7 +161,7 @@ schemes:
 </plist>
 ```
 
-- [ ] **Step 5: Write `PomodoroWidget/Info.plist`**
+- [x] **Step 5: Write `PomodoroWidget/Info.plist`**
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -191,7 +191,7 @@ schemes:
 </plist>
 ```
 
-- [ ] **Step 6: Write `PomodoroWidget/PomodoroWidget.entitlements`**
+- [x] **Step 6: Write `PomodoroWidget/PomodoroWidget.entitlements`**
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -206,7 +206,7 @@ schemes:
 </plist>
 ```
 
-- [ ] **Step 7: Write placeholder app and widget entry points**
+- [x] **Step 7: Write placeholder app and widget entry points**
 
 `Pomodoro/PomodoroApp.swift`:
 ```swift
@@ -268,7 +268,7 @@ final class PlaceholderTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 8: Generate and build the project**
+- [x] **Step 8: Generate and build the project**
 
 Run (on macOS, with `brew install xcodegen` done first):
 ```bash
@@ -278,7 +278,7 @@ xcodebuild -project Pomodoro.xcodeproj -scheme Pomodoro -destination 'platform=i
 ```
 Expected: both commands succeed; the placeholder test passes.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add project.yml Pomodoro PomodoroWidget PomodoroTests .gitignore

@@ -1,0 +1,89 @@
+// Shared/TimerEngine.swift
+import Foundation
+
+final class TimerEngine {
+    private(set) var state: PomodoroState
+
+    init(state: PomodoroState = .idle) {
+        self.state = state
+    }
+
+    func reload(_ newState: PomodoroState) {
+        state = newState
+    }
+
+    func start() {
+        let now = Date()
+        state = PomodoroState(
+            phase: .work,
+            startDate: now,
+            endDate: now.addingTimeInterval(PomodoroPhase.work.duration),
+            pausedAt: nil,
+            completedWorkCycles: 0,
+            sessionActive: true
+        )
+    }
+
+    func pause() {
+        guard state.sessionActive, state.pausedAt == nil else { return }
+        state.pausedAt = Date()
+    }
+
+    func resume() {
+        guard let pausedAt = state.pausedAt else { return }
+        let pauseDuration = Date().timeIntervalSince(pausedAt)
+        state.endDate = state.endDate.addingTimeInterval(pauseDuration)
+        state.pausedAt = nil
+    }
+
+    func skip() {
+        guard state.sessionActive else { return }
+        advancePhase()
+    }
+
+    /// Call when the current phase's countdown naturally reaches zero.
+    /// Returns true if a work phase was just completed (caller records history for that).
+    @discardableResult
+    func completeCurrentPhase() -> Bool {
+        guard state.sessionActive else { return false }
+        let wasWork = state.phase == .work
+        advancePhase()
+        return wasWork
+    }
+
+    /// If the phase's end has passed while running (not paused), advances it.
+    /// Used to catch up state that changed while this process wasn't looking
+    /// (app backgrounded, or a different process — app vs. widget extension —
+    /// mutated shared state last).
+    @discardableResult
+    func catchUpIfExpired(now: Date = Date()) -> Bool {
+        guard state.sessionActive, state.pausedAt == nil, now >= state.endDate else { return false }
+        return completeCurrentPhase()
+    }
+
+    private func advancePhase() {
+        let now = Date()
+        var cycles = state.completedWorkCycles
+        let nextPhase: PomodoroPhase
+
+        switch state.phase {
+        case .work:
+            cycles += 1
+            nextPhase = cycles.isMultiple(of: 4) ? .longBreak : .shortBreak
+        case .shortBreak:
+            nextPhase = .work
+        case .longBreak:
+            cycles = 0
+            nextPhase = .work
+        }
+
+        state = PomodoroState(
+            phase: nextPhase,
+            startDate: now,
+            endDate: now.addingTimeInterval(nextPhase.duration),
+            pausedAt: nil,
+            completedWorkCycles: cycles,
+            sessionActive: true
+        )
+    }
+}

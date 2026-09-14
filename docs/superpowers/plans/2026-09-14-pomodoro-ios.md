@@ -464,7 +464,7 @@ git commit -m "Add shared Pomodoro models: phase, state, accent color"
 - Consumes: `PomodoroPhase`, `PomodoroState` (Task 2).
 - Produces: `TimerEngine` — `init(state:)`, `state: PomodoroState` (read-only outside), `start()`, `pause()`, `resume()`, `skip()`, `completeCurrentPhase() -> Bool`, `catchUpIfExpired(now:) -> Bool`, `reload(_:)`. Both the app (Task 7) and the widget extension's Live Activity intents (Task 12) construct a `TimerEngine` from persisted state and call these methods directly.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```swift
 // PomodoroTests/TimerEngineTests.swift
@@ -561,12 +561,12 @@ final class TimerEngineTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `xcodebuild -project Pomodoro.xcodeproj -scheme Pomodoro -destination 'platform=iOS Simulator,name=iPhone 15' test`
 Expected: FAIL — `TimerEngine` does not exist yet.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```swift
 // Shared/TimerEngine.swift
@@ -660,12 +660,12 @@ final class TimerEngine {
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `xcodebuild -project Pomodoro.xcodeproj -scheme Pomodoro -destination 'platform=iOS Simulator,name=iPhone 15' test`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Shared/TimerEngine.swift PomodoroTests/TimerEngineTests.swift

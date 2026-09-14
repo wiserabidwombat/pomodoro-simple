@@ -299,7 +299,7 @@ git commit -m "Scaffold Xcode project with XcodeGen"
 - Produces: `PomodoroPhase` (`.work`/`.shortBreak`/`.longBreak`, `.duration`, `.displayName`), `PomodoroState` (`phase`, `startDate`, `endDate`, `pausedAt: Date?`, `completedWorkCycles`, `sessionActive`, static `.idle`, `remainingSeconds(asOf:)`), `AccentColorOption` (7 cases, `.color: Color`, `Identifiable`).
 - Consumes: nothing (bottom of the dependency graph).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```swift
 // PomodoroTests/PomodoroModelsTests.swift
@@ -352,12 +352,12 @@ final class PomodoroModelsTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `xcodebuild -project Pomodoro.xcodeproj -scheme Pomodoro -destination 'platform=iOS Simulator,name=iPhone 15' test`
 Expected: FAIL — `PomodoroPhase`, `PomodoroState`, `AccentColorOption` do not exist yet.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```swift
 // Shared/PomodoroPhase.swift
@@ -440,12 +440,12 @@ enum AccentColorOption: String, CaseIterable, Codable, Hashable, Identifiable {
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `xcodebuild -project Pomodoro.xcodeproj -scheme Pomodoro -destination 'platform=iOS Simulator,name=iPhone 15' test`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Shared PomodoroTests/PomodoroModelsTests.swift

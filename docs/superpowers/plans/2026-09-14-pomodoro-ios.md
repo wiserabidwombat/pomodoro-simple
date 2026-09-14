@@ -803,7 +803,7 @@ git commit -m "Add App Group state store shared between app and widget extension
 - Consumes: `PomodoroPhase` (Task 2).
 - Produces: `NotificationScheduler` — `init(center:)`, `requestAuthorization(completion:)`, `schedulePhaseEnd(phase:endDate:)`, `cancelPhaseEnd()`, and the pure static `NotificationScheduler.body(for: PomodoroPhase) -> String` used by both the app (Task 7) and the widget extension's intents (Task 12) to schedule the backup local notification.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 The only pure, unit-testable piece of this wrapper is the notification body text mapping — the rest wraps `UNUserNotificationCenter`, whose actual delivery behavior is covered by the manual testing checklist in Task 13, not a unit test.
 
@@ -824,12 +824,12 @@ final class NotificationSchedulerTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `xcodebuild -project Pomodoro.xcodeproj -scheme Pomodoro -destination 'platform=iOS Simulator,name=iPhone 15' test`
 Expected: FAIL — `NotificationScheduler` does not exist yet.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```swift
 // Shared/NotificationScheduler.swift
@@ -872,12 +872,12 @@ final class NotificationScheduler {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `xcodebuild -project Pomodoro.xcodeproj -scheme Pomodoro -destination 'platform=iOS Simulator,name=iPhone 15' test`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Shared/NotificationScheduler.swift PomodoroTests/NotificationSchedulerTests.swift

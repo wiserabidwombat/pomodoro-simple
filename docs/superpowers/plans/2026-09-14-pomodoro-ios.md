@@ -685,7 +685,7 @@ git commit -m "Add TimerEngine with classic Pomodoro phase transitions"
 - Consumes: `PomodoroState`, `AccentColorOption` (Task 2).
 - Produces: `AppGroup.identifier`, `AppGroup.defaults`; `PomodoroStateStore` — `init(defaults:)`, `loadState() -> PomodoroState`, `save(_ state: PomodoroState)`, `loadAccentColor() -> AccentColorOption`, `save(_ color: AccentColorOption)`. This is the single read/write path both the app (Task 7) and the widget extension's Live Activity intents (Task 12) use to share state — there is no other channel between the two processes.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```swift
 // PomodoroTests/PomodoroStateStoreTests.swift
@@ -724,12 +724,12 @@ final class PomodoroStateStoreTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `xcodebuild -project Pomodoro.xcodeproj -scheme Pomodoro -destination 'platform=iOS Simulator,name=iPhone 15' test`
 Expected: FAIL — `AppGroup` and `PomodoroStateStore` do not exist yet.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```swift
 // Shared/AppGroup.swift
@@ -779,12 +779,12 @@ struct PomodoroStateStore {
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `xcodebuild -project Pomodoro.xcodeproj -scheme Pomodoro -destination 'platform=iOS Simulator,name=iPhone 15' test`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Shared/AppGroup.swift Shared/PomodoroStateStore.swift PomodoroTests/PomodoroStateStoreTests.swift

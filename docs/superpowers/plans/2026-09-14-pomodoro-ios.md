@@ -1039,7 +1039,7 @@ git commit -m "Add SwiftData-backed session history store"
 - Consumes: `TimerEngine` (Task 3), `PomodoroStateStore`, `AccentColorOption` (Task 4/2), `NotificationScheduler` (Task 5), `HistoryStore` (Task 6).
 - Produces: `PomodoroActivityAttributes` (with `ContentState`: `phase`, `startDate`, `endDate`, `pausedAt`, `accentColor`) — consumed by the widget extension in Tasks 11–12. `LiveActivityControlling` protocol (`start`, `update`, `end`) — the real ActivityKit-backed implementation is Task 8; this task only defines the protocol plus a `FakeLiveActivityController` test double, so `TimerViewModel` can be unit tested without touching ActivityKit at all (ActivityKit itself is exercised only by the manual testing checklist in Task 13). `PhaseChangeAlerting` protocol (`alertPhaseChange()`) with a `FakePhaseChangeAlert` test double, for the same reason — the real UIKit/AudioToolbox-backed implementation is Task 8. `TimerViewModel` — `@Published state`, `@Published accentColor`, `init(store:notifications:historyStore:liveActivity:alerting:)`, `start()`, `pause()`, `resume()`, `skip()`, `refreshFromSharedState()`. Used by the Timer/Settings/Stats views in Tasks 9–10.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```swift
 // PomodoroTests/TimerViewModelTests.swift
@@ -1127,12 +1127,12 @@ final class TimerViewModelTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `xcodebuild -project Pomodoro.xcodeproj -scheme Pomodoro -destination 'platform=iOS Simulator,name=iPhone 15' test`
 Expected: FAIL — `PomodoroActivityAttributes`, `LiveActivityControlling`, `FakeLiveActivityController`, `PhaseChangeAlerting`, `FakePhaseChangeAlert`, `TimerViewModel` do not exist yet.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```swift
 // Shared/PomodoroActivityAttributes.swift
@@ -1302,12 +1302,14 @@ final class TimerViewModel: ObservableObject {
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `xcodebuild -project Pomodoro.xcodeproj -scheme Pomodoro -destination 'platform=iOS Simulator,name=iPhone 15' test`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+> **KNOWN BLOCKER (same root cause as Task 6, not fixed, needs revisiting):** `TimerViewModelTests.testRefreshFromSharedStateCatchesUpExpiredPhaseAndRecordsHistory` cannot actually be run — it crashes with `EXC_BREAKPOINT`/`SIGTRAP` **inside Apple's own `SwiftData.framework`** the same way `HistoryStoreTests` does (see the note after Task 6's Step 4). This test is the only one of the six in this file whose path touches `HistoryStore` (`recordCompletedSession`/`totalCount`, via `TimerViewModel.refreshFromSharedState() -> catchUpIfNeeded()`); the other five (`testStartActivatesSessionAndStartsLiveActivity`, `testPauseAndResumeUpdateLiveActivityAndPersist`, `testSkipAdvancesPhaseAndPersists`, `testSkipDoesNotTriggerPhaseChangeAlert`, `testRefreshFromSharedStatePicksUpChangeMadeByAnotherProcess`) never call into SwiftData and pass cleanly. Confirmed via crash report symbolication (`~/Library/Logs/DiagnosticReports/Pomodoro-2026-09-14-195454.ips`): exception `EXC_BREAKPOINT`/`SIGTRAP`, faulting thread's top frame inside `SwiftData.framework` (`usedImages[29]`, `/Volumes/VOLUME/*/SwiftData.framework/SwiftData`), one frame below `HistoryStore.recordCompletedSession(duration:on:)` called from `TimerViewModel.catchUpIfNeeded()` called from `TimerViewModel.refreshFromSharedState()` called from the test itself — same signature as Task 6's documented bug, not a new defect in this task's implementation (which matches the spec verbatim). `xcodebuild build` (no tests) succeeds. Revisit once a fixed Xcode ships or `HistoryStore` is extracted into a separately-testable framework target.
+
+- [x] **Step 5: Commit**
 
 ```bash
 git add Shared/PomodoroActivityAttributes.swift Pomodoro/LiveActivity/LiveActivityControlling.swift Pomodoro/Alerts/PhaseChangeAlerting.swift Pomodoro/Timer/TimerViewModel.swift PomodoroTests/TimerViewModelTests.swift

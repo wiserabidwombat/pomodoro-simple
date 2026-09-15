@@ -1923,7 +1923,7 @@ git commit -m "Add Live Activity with interactive Pause/Resume/Skip for StandBy"
 **Interfaces:**
 - Consumes: nothing new — this task closes out the spec's remaining open items (app icon, bundle-id/App-Group substitution instructions, manual testing) rather than adding logic.
 
-- [ ] **Step 1: Write the asset catalog scaffolding**
+- [x] **Step 1: Write the asset catalog scaffolding**
 
 ```json
 // Pomodoro/Assets.xcassets/Contents.json
@@ -1953,7 +1953,7 @@ git commit -m "Add Live Activity with interactive Pause/Resume/Skip for StandBy"
 }
 ```
 
-- [ ] **Step 2: Generate a placeholder 1024×1024 icon**
+- [x] **Step 2: Generate a placeholder 1024×1024 icon**
 
 This is explicitly a placeholder — swap it for real artwork before submitting to the App Store. Requires ImageMagick (`brew install imagemagick`):
 
@@ -1961,7 +1961,7 @@ This is explicitly a placeholder — swap it for real artwork before submitting 
 magick -size 1024x1024 xc:black -gravity center -fill white -pointsize 640 -font Helvetica-Bold -annotate 0 "P" Pomodoro/Assets.xcassets/AppIcon.appiconset/icon-1024.png
 ```
 
-- [ ] **Step 3: Register the icon set in `project.yml`**
+- [x] **Step 3: Register the icon set in `project.yml`**
 
 In the `Pomodoro` target's `settings.base`, add:
 
@@ -1991,7 +1991,7 @@ so the `Pomodoro` target's settings block reads:
 
 Then regenerate: `xcodegen generate`
 
-- [ ] **Step 4: Write the setup README**
+- [x] **Step 4: Write the setup README**
 
 ```markdown
 # Pomodoro
@@ -2037,7 +2037,7 @@ but a physical device docked and charging in landscape is the real test):
       tapping either opens the app.
 ```
 
-- [ ] **Step 5: Full build and test run**
+- [x] **Step 5: Full build and test run**
 
 Run:
 ```bash
@@ -2047,7 +2047,7 @@ xcodebuild -project Pomodoro.xcodeproj -scheme Pomodoro -destination 'generic/pl
 ```
 Expected: all unit tests from Tasks 2–7 pass, and both the app and widget extension targets build. Then work through every item in the manual testing checklist above on the Mac/device before considering the app store-submission-ready.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add Pomodoro/Assets.xcassets project.yml README.md

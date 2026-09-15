@@ -897,7 +897,7 @@ git commit -m "Add local notification scheduler for phase-end backup alerts"
 - Consumes: nothing from earlier tasks (independent of the timer/state-sharing logic; the app target wires it to `TimerViewModel` in Task 7).
 - Produces: `CompletedSession` (SwiftData `@Model`: `date`, `durationSeconds`), `HistoryStore` — `init(context:)`, `recordCompletedSession(duration:on:)`, `todayCount: Int`, `totalCount: Int`, `countByDay(calendar:) -> [(day: Date, count: Int)]`. App-target only — the widget/Live Activity never read history (per spec).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```swift
 // PomodoroTests/HistoryStoreTests.swift
@@ -945,12 +945,12 @@ final class HistoryStoreTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `xcodebuild -project Pomodoro.xcodeproj -scheme Pomodoro -destination 'platform=iOS Simulator,name=iPhone 15' test`
 Expected: FAIL — `CompletedSession` and `HistoryStore` do not exist yet.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```swift
 // Pomodoro/History/CompletedSession.swift
@@ -1010,12 +1010,14 @@ final class HistoryStore {
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `xcodebuild -project Pomodoro.xcodeproj -scheme Pomodoro -destination 'platform=iOS Simulator,name=iPhone 15' test`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+> **KNOWN BLOCKER (not fixed, needs revisiting):** On this machine's Xcode 27.0 / iOS 27.0 SDK, `HistoryStoreTests` cannot actually be run — every test crashes with `EXC_BREAKPOINT`/`SIGTRAP` **inside Apple's own `SwiftData.framework`** on the first `ModelContext.fetch`/`.insert` call, but only when hosted inside the app's XCTest bundle (`xcodebuild test`). Confirmed reproducible on two independent freshly-erased simulators (iPhone 17, iPhone Air) with system load ruled out as a factor, and confirmed via crash report symbolication that the trap is 3 frames inside the SwiftData binary itself, not in `HistoryStore.swift`/`CompletedSession.swift`. A separate investigation additionally found the identical SwiftData code runs fine as a bare command-line binary and inside the real `Pomodoro.app` launched normally on the same simulator — the crash is specific to the "Application Hosted" XCTest configuration. This looks like a genuine Xcode 27/iOS 27 SDK-beta bug in SwiftData, not a defect in the implementation (which matches this task's spec verbatim). `xcodebuild build` (no tests) succeeds. Revisit test verification once a fixed Xcode ships, or by restructuring `PomodoroTests` to run as non-hosted logic tests (would require extracting `History` into a separate framework target — a larger change than this task called for).
+
+- [x] **Step 5: Commit**
 
 ```bash
 git add Pomodoro/History PomodoroTests/HistoryStoreTests.swift

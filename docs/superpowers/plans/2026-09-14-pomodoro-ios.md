@@ -1448,7 +1448,7 @@ git commit -m "Add real ActivityKit Live Activity controller, phase-change alert
 
 No unit test: this is a SwiftUI view whose correctness is what it looks like on screen. Verified by the manual checklist in Task 13.
 
-- [ ] **Step 1: Write the implementation**
+- [x] **Step 1: Write the implementation**
 
 ```swift
 // Pomodoro/Timer/TimerView.swift
@@ -1509,12 +1509,12 @@ struct TimerView: View {
 }
 ```
 
-- [ ] **Step 2: Build**
+- [x] **Step 2: Build**
 
 Run: `xcodebuild -project Pomodoro.xcodeproj -scheme Pomodoro -destination 'generic/platform=iOS Simulator' build`
 Expected: no longer fails on a missing `TimerView` symbol (still fails on `StatsView`/`SettingsView` until Task 10 lands — expected).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add Pomodoro/Timer/TimerView.swift

@@ -1329,7 +1329,7 @@ git commit -m "Add TimerViewModel orchestration with fakeable Live Activity and 
 - Consumes: `LiveActivityControlling` (Task 7), `PhaseChangeAlerting` (Task 7), `PomodoroActivityAttributes` (Task 7), `TimerViewModel` (Task 7), `HistoryStore`/`CompletedSession` (Task 6), `NotificationScheduler` (Task 5).
 - Produces: `LiveActivityController` and `SystemPhaseChangeAlert` — the production implementations used everywhere except tests. `PomodoroApp` — builds the `ModelContainer`, `HistoryStore`, and `TimerViewModel` once at launch. This is a build/smoke-test-only task; ActivityKit's `Activity` type and real haptics/sound cannot run meaningfully under XCTest, so there is no unit test here — correctness is checked by building and by the manual checklist in Task 13.
 
-- [ ] **Step 1: Write the implementation**
+- [x] **Step 1: Write the implementation**
 
 ```swift
 // Pomodoro/LiveActivity/LiveActivityController.swift
@@ -1423,12 +1423,12 @@ struct PomodoroApp: App {
 
 `TimerView`, `StatsView`, and `SettingsView` are created in Tasks 9–10; this task's build will not fully succeed until those exist — that's expected and is noted in Step 2 below rather than treated as a failure of this task.
 
-- [ ] **Step 2: Confirm this task's own files are correct**
+- [x] **Step 2: Confirm this task's own files are correct**
 
 Run: `xcodebuild -project Pomodoro.xcodeproj -scheme Pomodoro -destination 'generic/platform=iOS Simulator' build`
 Expected: fails only on missing `TimerView`/`StatsView`/`SettingsView` symbols (Tasks 9–10), not on anything in `LiveActivityController.swift` or `PomodoroApp.swift` itself. If the error is anything else (e.g. an `ActivityKit` API mismatch), fix `LiveActivityController.swift` to match the current SDK's actual signatures before moving on.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add Pomodoro/LiveActivity/LiveActivityController.swift Pomodoro/Alerts/SystemPhaseChangeAlert.swift Pomodoro/PomodoroApp.swift

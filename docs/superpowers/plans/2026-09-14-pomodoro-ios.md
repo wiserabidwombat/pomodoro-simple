@@ -1535,7 +1535,7 @@ git commit -m "Add Timer screen with live countdown and black/accent theming"
 
 No unit test: SwiftUI views, verified visually via the manual checklist in Task 13.
 
-- [ ] **Step 1: Write the implementation**
+- [x] **Step 1: Write the implementation**
 
 ```swift
 // Pomodoro/Settings/SettingsView.swift
@@ -1612,12 +1612,12 @@ struct StatsView: View {
 }
 ```
 
-- [ ] **Step 2: Build**
+- [x] **Step 2: Build**
 
 Run: `xcodebuild -project Pomodoro.xcodeproj -scheme Pomodoro -destination 'generic/platform=iOS Simulator' build`
 Expected: the `Pomodoro` app target now builds successfully end to end (the widget extension target still won't — that's Tasks 11–12).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add Pomodoro/Settings/SettingsView.swift Pomodoro/History/StatsView.swift

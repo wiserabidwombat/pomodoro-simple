@@ -6,5 +6,6 @@ import SwiftUI
 struct PomodoroWidgetBundle: WidgetBundle {
     var body: some Widget {
         PomodoroIdleWidget()
+        PomodoroLiveActivityWidget()
     }
 }

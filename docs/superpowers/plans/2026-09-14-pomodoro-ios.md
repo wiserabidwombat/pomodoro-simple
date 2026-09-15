@@ -1740,7 +1740,7 @@ This task is the highest platform-API risk in the plan: `LiveActivityIntent` and
 
 No unit test: ActivityKit/AppIntents runtime behavior can't run under XCTest. Verified by the manual checklist in Task 13.
 
-- [ ] **Step 1: Write the implementation**
+- [x] **Step 1: Write the implementation**
 
 ```swift
 // PomodoroWidget/PomodoroLiveActivityWidget.swift
@@ -1897,12 +1897,12 @@ struct PomodoroWidgetBundle: WidgetBundle {
 }
 ```
 
-- [ ] **Step 2: Build**
+- [x] **Step 2: Build**
 
 Run: `xcodebuild -project Pomodoro.xcodeproj -scheme Pomodoro -destination 'generic/platform=iOS Simulator' build`
 Expected: both the `Pomodoro` and `PomodoroWidgetExtension` targets build successfully. If `LiveActivityIntent` conformance or `Activity.update`/`Activity.request` calls fail to compile, consult current ActivityKit/AppIntents documentation in Xcode and adjust the signatures — do not work around it by moving this logic into the app process, since that would silently break "interactive from StandBy without opening the app."
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add PomodoroWidget/PomodoroLiveActivityWidget.swift PomodoroWidget/PomodoroLiveActivityIntents.swift PomodoroWidget/PomodoroWidgetBundle.swift

@@ -1638,7 +1638,7 @@ git commit -m "Add Settings color picker and Stats history screens"
 
 No unit test: WidgetKit `TimelineProvider` rendering is verified visually via the manual checklist in Task 13.
 
-- [ ] **Step 1: Write the implementation**
+- [x] **Step 1: Write the implementation**
 
 ```swift
 // PomodoroWidget/PomodoroIdleWidget.swift
@@ -1711,12 +1711,12 @@ struct PomodoroWidgetBundle: WidgetBundle {
 }
 ```
 
-- [ ] **Step 2: Build**
+- [x] **Step 2: Build**
 
 Run: `xcodebuild -project Pomodoro.xcodeproj -scheme Pomodoro -destination 'generic/platform=iOS Simulator' build`
 Expected: `PomodoroWidgetExtension` builds successfully with just the idle widget (the Live Activity is added next in Task 12, so it isn't in the bundle yet).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add PomodoroWidget/PomodoroIdleWidget.swift PomodoroWidget/PomodoroWidgetBundle.swift

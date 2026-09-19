@@ -22,12 +22,19 @@ struct TimerView: View {
                             .font(.system(size: 64, weight: .bold, design: .rounded))
                             .monospacedDigit()
                     } else {
+                        // Text(timerInterval:) reserves a wider bounding box
+                        // than it visually needs (to avoid jitter as the
+                        // digit count changes) and renders left-aligned
+                        // within it by default — multilineTextAlignment
+                        // forces the glyphs themselves to center within it.
                         Text(
                             timerInterval: viewModel.state.startDate...viewModel.state.endDate,
                             countsDown: true
                         )
                         .font(.system(size: 64, weight: .bold, design: .rounded))
                         .monospacedDigit()
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
                     }
                 } else {
                     Text("Ready")
@@ -54,11 +61,16 @@ struct TimerView: View {
             Button("Start") { viewModel.start() }
         } else {
             HStack(spacing: 20) {
-                if viewModel.state.pausedAt == nil {
-                    Button("Pause") { viewModel.pause() }
-                } else {
-                    Button("Resume") { viewModel.resume() }
+                // Fixed width so the Skip button doesn't shift when this
+                // label's text changes length between "Pause" and "Resume".
+                Group {
+                    if viewModel.state.pausedAt == nil {
+                        Button("Pause") { viewModel.pause() }
+                    } else {
+                        Button("Resume") { viewModel.resume() }
+                    }
                 }
+                .frame(width: 90)
                 Button("Skip") { viewModel.skip() }
             }
         }

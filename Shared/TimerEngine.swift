@@ -41,6 +41,12 @@ final class TimerEngine {
         advancePhase()
     }
 
+    /// Stops the current session entirely and returns to the initial idle
+    /// state — back to Work phase, cycle count reset to 0, not running.
+    func reset() {
+        state = .idle
+    }
+
     /// Call when the current phase's countdown naturally reaches zero.
     /// Returns true if a work phase was just completed (caller records history for that).
     @discardableResult

@@ -4,6 +4,7 @@ import SwiftUI
 struct TimerView: View {
     @ObservedObject var viewModel: TimerViewModel
     @Environment(\.scenePhase) private var scenePhase
+    @State private var showingRestartConfirmation = false
 
     var body: some View {
         ZStack {
@@ -53,6 +54,16 @@ struct TimerView: View {
                 viewModel.refreshFromSharedState()
             }
         }
+        .confirmationDialog(
+            "Restart Pomodoro?",
+            isPresented: $showingRestartConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Restart", role: .destructive) { viewModel.restart() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This stops the current session and resets back to the start of a fresh Work phase.")
+        }
     }
 
     @ViewBuilder
@@ -73,6 +84,14 @@ struct TimerView: View {
                 .frame(width: 90)
                 Button("Skip") { viewModel.skip() }
             }
+            // Plain (not .destructive) so it stays in the app's black/accent
+            // theme rather than the system's red destructive tint — the
+            // confirmation dialog below is where the real safeguard lives.
+            Button("Restart") {
+                showingRestartConfirmation = true
+            }
+            .font(.footnote)
+            .padding(.top, 4)
         }
     }
 }

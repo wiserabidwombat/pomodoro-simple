@@ -68,6 +68,19 @@ final class TimerViewModelTests: XCTestCase {
         XCTAssertNotNil(vm.state.pausedAt)
     }
 
+    func testRestartResetsToIdleAndEndsLiveActivity() {
+        let (vm, fakeActivity, _, store, _) = makeViewModel()
+        vm.start()
+        vm.skip()
+        vm.pause()
+
+        vm.restart()
+
+        XCTAssertEqual(vm.state, .idle)
+        XCTAssertEqual(store.loadState(), .idle)
+        XCTAssertEqual(fakeActivity.endCallCount, 1)
+    }
+
     func testRefreshFromSharedStateCatchesUpExpiredPhaseAndRecordsHistory() {
         let (vm, _, fakeAlert, store, history) = makeViewModel()
         vm.start()

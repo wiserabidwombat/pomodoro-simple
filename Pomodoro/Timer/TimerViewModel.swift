@@ -56,6 +56,19 @@ final class TimerViewModel: ObservableObject {
         persistAndPush()
     }
 
+    /// Stops the session entirely and returns to idle (Work phase, cycle
+    /// count reset to 0) — ends the Live Activity rather than updating it,
+    /// since there's no longer a session to show.
+    func restart() {
+        ticker?.invalidate()
+        ticker = nil
+        engine.reset()
+        state = engine.state
+        store.save(state)
+        notifications.cancelPhaseEnd()
+        liveActivity.end()
+    }
+
     /// Call when the app becomes active: the widget extension may have
     /// mutated the shared store while this process was backgrounded, so the
     /// in-memory engine must reload before it can safely catch up.

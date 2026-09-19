@@ -93,4 +93,14 @@ final class TimerEngineTests: XCTestCase {
         let farFuture = engine.state.endDate.addingTimeInterval(1000)
         XCTAssertFalse(engine.catchUpIfExpired(now: farFuture))
     }
+
+    func testResetReturnsToIdle() {
+        let engine = TimerEngine(state: .idle)
+        engine.start()
+        engine.skip()
+        engine.skip()
+        engine.pause()
+        engine.reset()
+        XCTAssertEqual(engine.state, .idle)
+    }
 }

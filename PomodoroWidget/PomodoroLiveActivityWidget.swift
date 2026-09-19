@@ -15,9 +15,15 @@ struct PomodoroLiveActivityWidget: Widget {
             } compactLeading: {
                 Image(systemName: "timer")
             } compactTrailing: {
-                Text(timerInterval: context.state.startDate...context.state.endDate, pauseTime: context.state.pausedAt, countsDown: true)
-                    .monospacedDigit()
-                    .frame(width: 40)
+                if context.state.pausedAt != nil {
+                    Text(context.state.formattedRemainingWhilePaused)
+                        .monospacedDigit()
+                        .frame(width: 40)
+                } else {
+                    Text(timerInterval: context.state.startDate...context.state.endDate, countsDown: true)
+                        .monospacedDigit()
+                        .frame(width: 40)
+                }
             } minimal: {
                 Image(systemName: "timer")
             }
@@ -32,9 +38,15 @@ struct PomodoroLiveActivityView: View {
         VStack(spacing: 8) {
             Text(state.phase.displayName)
                 .font(.headline)
-            Text(timerInterval: state.startDate...state.endDate, pauseTime: state.pausedAt, countsDown: true)
-                .font(.system(size: 40, weight: .bold, design: .rounded))
-                .monospacedDigit()
+            if state.pausedAt != nil {
+                Text(state.formattedRemainingWhilePaused)
+                    .font(.system(size: 40, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+            } else {
+                Text(timerInterval: state.startDate...state.endDate, countsDown: true)
+                    .font(.system(size: 40, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+            }
             HStack(spacing: 16) {
                 if state.pausedAt == nil {
                     Button(intent: PausePomodoroIntent()) {

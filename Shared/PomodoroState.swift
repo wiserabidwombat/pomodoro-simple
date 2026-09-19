@@ -25,4 +25,13 @@ struct PomodoroState: Codable, Equatable {
         let effectiveNow = pausedAt ?? referenceDate
         return max(0, endDate.timeIntervalSince(effectiveNow))
     }
+
+    /// "MM:SS" for the frozen remaining time while paused. Used instead of
+    /// `Text(timerInterval:pauseTime:)`'s own pause handling, which has
+    /// proven unreliable on this SDK — a manually formatted static string
+    /// is what actually stays frozen.
+    var formattedRemainingWhilePaused: String {
+        let total = Int(remainingSeconds(asOf: pausedAt ?? Date()).rounded())
+        return String(format: "%02d:%02d", total / 60, total % 60)
+    }
 }

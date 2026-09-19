@@ -12,13 +12,23 @@ struct TimerView: View {
                 Text(viewModel.state.phase.displayName)
                     .font(.title2.bold())
                 if viewModel.state.sessionActive {
-                    Text(
-                        timerInterval: viewModel.state.startDate...viewModel.state.endDate,
-                        pauseTime: viewModel.state.pausedAt,
-                        countsDown: true
-                    )
-                    .font(.system(size: 64, weight: .bold, design: .rounded))
-                    .monospacedDigit()
+                    // `Text(timerInterval:pauseTime:)`'s own pause handling has
+                    // proven unreliable on this SDK (the countdown keeps
+                    // ticking past the pause point). Instead: a plain static
+                    // string while paused, and the live self-updating Text
+                    // (with no pauseTime at all) only while actually running.
+                    if viewModel.state.pausedAt != nil {
+                        Text(viewModel.state.formattedRemainingWhilePaused)
+                            .font(.system(size: 64, weight: .bold, design: .rounded))
+                            .monospacedDigit()
+                    } else {
+                        Text(
+                            timerInterval: viewModel.state.startDate...viewModel.state.endDate,
+                            countsDown: true
+                        )
+                        .font(.system(size: 64, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                    }
                 } else {
                     Text("Ready")
                         .font(.system(size: 64, weight: .bold, design: .rounded))

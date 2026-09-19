@@ -61,18 +61,37 @@ final class TimerViewModel: ObservableObject {
     /// in-memory engine must reload before it can safely catch up.
     func refreshFromSharedState() {
         engine.reload(store.loadState())
-        catchUpIfNeeded()
+        // Unconditionally push here (not just when a phase auto-completed):
+        // this is also the app's one reliable path for correcting the Live
+        // Activity's visible content after an external pause/resume/skip
+        // (e.g. from the Lock Screen), since the widget extension's own
+        // update path is unreliable on this SDK — see
+        // PomodoroLiveActivityIntents.swift's diagnostic marker. Runs once
+        // per foreground transition, not every tick, so this is cheap.
+        catchUpIfNeeded(forcePush: true)
     }
 
-    private func catchUpIfNeeded() {
+    private func catchUpIfNeeded(forcePush: Bool = false) {
         let phaseBefore = engine.state.phase
-        if engine.catchUpIfExpired() {
+        let advanced = engine.catchUpIfExpired()
+        if advanced {
             historyStore.recordCompletedSession(duration: PomodoroPhase.work.duration)
         }
         if engine.state.phase != phaseBefore {
             alerting.alertPhaseChange()
         }
-        persistAndPush()
+        if advanced || forcePush {
+            persistAndPush()
+        } else {
+            // Still reflect the reloaded engine state in the UI, but skip
+            // the heavier save/notify/live-activity work. The ticker fires
+            // every second purely to detect a phase naturally expiring;
+            // doing the full push every tick even while paused/idle is
+            // wasteful (and previously fought Text(timerInterval:pauseTime:)'s
+            // own clock before that view was replaced with a manually
+            // formatted freeze).
+            state = engine.state
+        }
     }
 
     private func persistAndPush() {

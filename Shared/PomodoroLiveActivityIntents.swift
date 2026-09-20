@@ -2,6 +2,7 @@
 import AppIntents
 import ActivityKit
 import Foundation
+import WidgetKit
 import os
 
 private let intentLogger = Logger(subsystem: "com.aarontilley.pomodoro", category: "LiveActivityIntents")
@@ -28,6 +29,7 @@ private func applyAndPush(_ engine: TimerEngine, accentColor: AccentColorOption,
     } else {
         notifications.cancelPhaseEnd()
     }
+    WidgetCenter.shared.reloadTimelines(ofKind: "PomodoroIdleWidget")
     guard let activity = currentActivity() else {
         intentLogger.error("applyAndPush() aborted: no active Live Activity found")
         return

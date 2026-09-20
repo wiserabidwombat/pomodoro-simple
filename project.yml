@@ -10,6 +10,7 @@ settings:
     STRING_CATALOG_GENERATE_SYMBOLS: YES
     DEVELOPMENT_TEAM: WP28RC7K7L
     CODE_SIGN_STYLE: Automatic
+    TARGETED_DEVICE_FAMILY: "1"
 targets:
   Pomodoro:
     type: application
@@ -23,6 +24,7 @@ targets:
         INFOPLIST_FILE: Pomodoro/Info.plist
         CODE_SIGN_ENTITLEMENTS: Pomodoro/Pomodoro.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        TARGETED_DEVICE_FAMILY: "1"
     dependencies:
       - target: PomodoroWidgetExtension
         embed: true
@@ -37,6 +39,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.aarontilley.pomodoro.widget
         INFOPLIST_FILE: PomodoroWidget/Info.plist
         CODE_SIGN_ENTITLEMENTS: PomodoroWidget/PomodoroWidget.entitlements
+        TARGETED_DEVICE_FAMILY: "1"
   PomodoroTests:
     type: bundle.unit-test
     platform: iOS

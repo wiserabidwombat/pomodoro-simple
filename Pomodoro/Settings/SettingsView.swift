@@ -5,6 +5,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject var viewModel: TimerViewModel
+    @Environment(\.self) private var environment
 
     var body: some View {
         ZStack {
@@ -15,7 +16,7 @@ struct SettingsView: View {
                         .foregroundStyle(viewModel.accentColor.color)
                         .font(.headline)
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 16) {
-                        ForEach(AccentColorOption.allCases) { option in
+                        ForEach(AccentColorOption.presets, id: \.self) { option in
                             Circle()
                                 .fill(option.color)
                                 .frame(width: 44, height: 44)
@@ -24,6 +25,20 @@ struct SettingsView: View {
                                 )
                                 .onTapGesture { viewModel.accentColor = option }
                         }
+                        ColorPicker("Custom", selection: Binding(
+                            get: { viewModel.accentColor.color },
+                            set: { newColor in
+                                let resolved = newColor.resolve(in: environment)
+                                viewModel.accentColor = .custom(
+                                    red: Double(resolved.red),
+                                    green: Double(resolved.green),
+                                    blue: Double(resolved.blue)
+                                )
+                            }
+                        ), supportsOpacity: false)
+                        .labelsHidden()
+                        .scaleEffect(1.5)
+                        .frame(width: 44, height: 44)
                     }
                     .padding()
 

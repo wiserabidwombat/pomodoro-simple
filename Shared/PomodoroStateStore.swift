@@ -36,14 +36,23 @@ struct PomodoroStateStore {
     }
 
     func loadAccentColor() -> AccentColorOption {
-        guard let raw = defaults.string(forKey: colorKey),
-              let option = AccentColorOption(rawValue: raw)
-        else { return .white }
-        return option
+        if let data = defaults.data(forKey: colorKey),
+           let decoded = try? JSONDecoder().decode(AccentColorOption.self, from: data) {
+            return decoded
+        }
+        // Migrate a value saved by the old String-rawValue-backed enum,
+        // before AccentColorOption grew a custom-RGB case and switched to
+        // JSON storage.
+        if let raw = defaults.string(forKey: colorKey),
+           let preset = AccentColorOption.Preset(rawValue: raw) {
+            return .preset(preset)
+        }
+        return .white
     }
 
     func save(_ color: AccentColorOption) {
-        defaults.set(color.rawValue, forKey: colorKey)
+        guard let data = try? JSONEncoder().encode(color) else { return }
+        defaults.set(data, forKey: colorKey)
     }
 
     func loadDurations() -> PomodoroDurations {

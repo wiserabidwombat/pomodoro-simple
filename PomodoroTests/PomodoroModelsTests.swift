@@ -43,7 +43,14 @@ final class PomodoroModelsTests: XCTestCase {
     }
 
     func testAccentColorOptionHasSevenPresets() {
-        XCTAssertEqual(AccentColorOption.allCases.count, 7)
+        XCTAssertEqual(AccentColorOption.presets.count, 7)
+    }
+
+    func testCustomAccentColorRoundTripsThroughJSON() throws {
+        let custom = AccentColorOption.custom(red: 0.25, green: 0.5, blue: 0.75)
+        let data = try JSONEncoder().encode(custom)
+        let decoded = try JSONDecoder().decode(AccentColorOption.self, from: data)
+        XCTAssertEqual(decoded, custom)
     }
 
     func testDefaultDurationsMatchClassicPomodoro() {

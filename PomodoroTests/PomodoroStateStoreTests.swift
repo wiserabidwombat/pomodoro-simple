@@ -32,6 +32,24 @@ final class PomodoroStateStoreTests: XCTestCase {
         XCTAssertEqual(store.loadAccentColor(), .purple)
     }
 
+    func testSaveAndLoadCustomAccentColorRoundTrips() {
+        let store = makeIsolatedStore()
+        let custom = AccentColorOption.custom(red: 0.1, green: 0.2, blue: 0.3)
+        store.save(custom)
+        XCTAssertEqual(store.loadAccentColor(), custom)
+    }
+
+    func testLoadAccentColorMigratesOldRawStringFormat() {
+        // Before AccentColorOption grew a custom-RGB case, it was a plain
+        // String-rawValue enum saved directly (not as JSON) — confirms a
+        // value saved by that old code still loads correctly.
+        let suiteName = "test-suite-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.set("cyan", forKey: "pomodoro.accentColor")
+        let store = PomodoroStateStore(defaults: defaults)
+        XCTAssertEqual(store.loadAccentColor(), .cyan)
+    }
+
     func testLoadDurationsDefaultsToClassicPomodoro() {
         let store = makeIsolatedStore()
         XCTAssertEqual(store.loadDurations(), .default)

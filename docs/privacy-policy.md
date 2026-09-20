@@ -3,11 +3,11 @@ title: Privacy Policy
 permalink: /privacy-policy/
 ---
 
-# Privacy Policy for Pomodoro StandBy
+# Privacy Policy for Simple: StandBy Timer
 
 **Last updated:** September 20, 2026
 
-Pomodoro StandBy does not collect, store, transmit, or share any personal data.
+Simple: StandBy Timer does not collect, store, transmit, or share any personal data.
 
 ## What the app does
 

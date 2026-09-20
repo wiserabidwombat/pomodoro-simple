@@ -1,10 +1,10 @@
-# App Store Connect listing — Pomodoro StandBy
+# App Store Connect listing — Simple: StandBy Timer
 
 Paste these into the corresponding App Store Connect fields when you create
 the app record. Character limits are Apple's current hard limits.
 
 ## Name (30 char limit)
-Pomodoro StandBy
+Simple: StandBy Timer
 
 ## Subtitle (30 char limit)
 Focus timer for your Lock Screen
@@ -14,7 +14,7 @@ A Pomodoro timer built for the Lock Screen, StandBy, and the Dynamic Island —
 start a Focus session and control it without ever unlocking your phone.
 
 ## Description
-Pomodoro StandBy is a focus timer built around the classic Pomodoro Technique:
+Simple: StandBy Timer is a focus timer built around the classic Pomodoro Technique:
 25 minutes of focused work, then a short break, repeating in a cycle with a
 longer break every 4th round.
 

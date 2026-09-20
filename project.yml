@@ -8,6 +8,8 @@ settings:
     SWIFT_VERSION: "5.9"
     ENABLE_USER_SCRIPT_SANDBOXING: YES
     STRING_CATALOG_GENERATE_SYMBOLS: YES
+    DEVELOPMENT_TEAM: WP28RC7K7L
+    CODE_SIGN_STYLE: Automatic
 targets:
   Pomodoro:
     type: application

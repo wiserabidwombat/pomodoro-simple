@@ -41,6 +41,46 @@ private func applyAndPush(_ engine: TimerEngine, accentColor: AccentColorOption,
     await activity.update(content)
 }
 
+struct StartPomodoroIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "Start Focus Session"
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        let store = PomodoroStateStore()
+        let notifications = NotificationScheduler()
+        let engine = TimerEngine(state: store.loadState())
+        engine.start()
+        let newState = engine.state
+        let accentColor = store.loadAccentColor()
+        persistPomodoroState(newState, store: store, notifications: notifications)
+        reloadIdlePomodoroWidget()
+
+        // Unlike Pause/Resume/Skip, there may be no existing Live Activity to
+        // update (or a stale one orphaned from a previous process — see
+        // LiveActivityController's fix for the same issue), so this sweeps
+        // any existing activities before requesting a fresh one.
+        for activity in Activity<PomodoroActivityAttributes>.activities {
+            await activity.end(nil, dismissalPolicy: .immediate)
+        }
+        let content = ActivityContent(
+            state: PomodoroActivityAttributes.ContentState(
+                phase: newState.phase,
+                startDate: newState.startDate,
+                endDate: newState.endDate,
+                pausedAt: newState.pausedAt,
+                accentColor: accentColor
+            ),
+            staleDate: nil
+        )
+        do {
+            _ = try Activity.request(attributes: PomodoroActivityAttributes(), content: content)
+        } catch {
+            intentLogger.error("StartPomodoroIntent Activity.request threw: \(String(describing: error), privacy: .public)")
+        }
+        return .result()
+    }
+}
+
 struct PausePomodoroIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Pause"
 

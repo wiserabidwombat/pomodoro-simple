@@ -7,6 +7,12 @@ final class TimerViewModel: ObservableObject {
     @Published var accentColor: AccentColorOption {
         didSet { store.save(accentColor) }
     }
+    @Published var durations: PomodoroDurations {
+        didSet {
+            store.save(durations)
+            engine.updateDurations(durations)
+        }
+    }
 
     private let engine: TimerEngine
     private let store: PomodoroStateStore
@@ -29,9 +35,11 @@ final class TimerViewModel: ObservableObject {
         self.liveActivity = liveActivity
         self.alerting = alerting
         let loaded = store.loadState()
-        self.engine = TimerEngine(state: loaded)
+        let loadedDurations = store.loadDurations()
+        self.engine = TimerEngine(state: loaded, durations: loadedDurations)
         self.state = loaded
         self.accentColor = store.loadAccentColor()
+        self.durations = loadedDurations
     }
 
     func start() {

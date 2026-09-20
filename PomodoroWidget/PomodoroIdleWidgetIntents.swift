@@ -26,7 +26,7 @@ struct WidgetPausePomodoroIntent: AppIntent {
 
     func perform() async throws -> some IntentResult {
         let store = PomodoroStateStore()
-        let engine = TimerEngine(state: store.loadState())
+        let engine = TimerEngine(state: store.loadState(), durations: store.loadDurations())
         engine.catchUpIfExpired()
         engine.pause()
         applyAndReload(engine, store: store)
@@ -39,7 +39,7 @@ struct WidgetResumePomodoroIntent: AppIntent {
 
     func perform() async throws -> some IntentResult {
         let store = PomodoroStateStore()
-        let engine = TimerEngine(state: store.loadState())
+        let engine = TimerEngine(state: store.loadState(), durations: store.loadDurations())
         engine.catchUpIfExpired()
         engine.resume()
         applyAndReload(engine, store: store)
@@ -52,7 +52,7 @@ struct WidgetSkipPomodoroIntent: AppIntent {
 
     func perform() async throws -> some IntentResult {
         let store = PomodoroStateStore()
-        let engine = TimerEngine(state: store.loadState())
+        let engine = TimerEngine(state: store.loadState(), durations: store.loadDurations())
         engine.catchUpIfExpired()
         engine.skip()
         applyAndReload(engine, store: store)

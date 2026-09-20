@@ -48,7 +48,7 @@ struct StartPomodoroIntent: LiveActivityIntent {
     func perform() async throws -> some IntentResult {
         let store = PomodoroStateStore()
         let notifications = NotificationScheduler()
-        let engine = TimerEngine(state: store.loadState())
+        let engine = TimerEngine(state: store.loadState(), durations: store.loadDurations())
         engine.start()
         let newState = engine.state
         let accentColor = store.loadAccentColor()
@@ -87,7 +87,7 @@ struct PausePomodoroIntent: LiveActivityIntent {
     func perform() async throws -> some IntentResult {
         let store = PomodoroStateStore()
         let notifications = NotificationScheduler()
-        let engine = TimerEngine(state: store.loadState())
+        let engine = TimerEngine(state: store.loadState(), durations: store.loadDurations())
         engine.catchUpIfExpired()
         engine.pause()
         await applyAndPush(engine, accentColor: store.loadAccentColor(), store: store, notifications: notifications)
@@ -101,7 +101,7 @@ struct ResumePomodoroIntent: LiveActivityIntent {
     func perform() async throws -> some IntentResult {
         let store = PomodoroStateStore()
         let notifications = NotificationScheduler()
-        let engine = TimerEngine(state: store.loadState())
+        let engine = TimerEngine(state: store.loadState(), durations: store.loadDurations())
         engine.catchUpIfExpired()
         engine.resume()
         await applyAndPush(engine, accentColor: store.loadAccentColor(), store: store, notifications: notifications)
@@ -115,7 +115,7 @@ struct SkipPomodoroIntent: LiveActivityIntent {
     func perform() async throws -> some IntentResult {
         let store = PomodoroStateStore()
         let notifications = NotificationScheduler()
-        let engine = TimerEngine(state: store.loadState())
+        let engine = TimerEngine(state: store.loadState(), durations: store.loadDurations())
         engine.catchUpIfExpired()
         engine.skip()
         await applyAndPush(engine, accentColor: store.loadAccentColor(), store: store, notifications: notifications)

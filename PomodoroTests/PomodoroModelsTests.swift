@@ -45,4 +45,17 @@ final class PomodoroModelsTests: XCTestCase {
     func testAccentColorOptionHasSevenPresets() {
         XCTAssertEqual(AccentColorOption.allCases.count, 7)
     }
+
+    func testDefaultDurationsMatchClassicPomodoro() {
+        XCTAssertEqual(PomodoroDurations.default.duration(for: .work), 25 * 60)
+        XCTAssertEqual(PomodoroDurations.default.duration(for: .shortBreak), 5 * 60)
+        XCTAssertEqual(PomodoroDurations.default.duration(for: .longBreak), 15 * 60)
+    }
+
+    func testCustomDurationsOverrideDefaults() {
+        let custom = PomodoroDurations(workMinutes: 50, shortBreakMinutes: 10, longBreakMinutes: 30)
+        XCTAssertEqual(custom.duration(for: .work), 50 * 60)
+        XCTAssertEqual(custom.duration(for: .shortBreak), 10 * 60)
+        XCTAssertEqual(custom.duration(for: .longBreak), 30 * 60)
+    }
 }

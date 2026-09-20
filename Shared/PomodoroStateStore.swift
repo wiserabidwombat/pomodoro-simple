@@ -5,6 +5,7 @@ struct PomodoroStateStore {
     private let defaults: UserDefaults
     private let stateKey = "pomodoro.state"
     private let colorKey = "pomodoro.accentColor"
+    private let durationsKey = "pomodoro.durations"
 
     init(defaults: UserDefaults = AppGroup.defaults) {
         self.defaults = defaults
@@ -38,5 +39,19 @@ struct PomodoroStateStore {
 
     func save(_ color: AccentColorOption) {
         defaults.set(color.rawValue, forKey: colorKey)
+    }
+
+    func loadDurations() -> PomodoroDurations {
+        defaults.synchronize()
+        guard let data = defaults.data(forKey: durationsKey),
+              let decoded = try? JSONDecoder().decode(PomodoroDurations.self, from: data)
+        else { return .default }
+        return decoded
+    }
+
+    func save(_ durations: PomodoroDurations) {
+        guard let data = try? JSONEncoder().encode(durations) else { return }
+        defaults.set(data, forKey: durationsKey)
+        defaults.synchronize()
     }
 }

@@ -94,6 +94,25 @@ final class TimerEngineTests: XCTestCase {
         XCTAssertFalse(engine.catchUpIfExpired(now: farFuture))
     }
 
+    func testStartUsesCustomWorkDuration() {
+        let engine = TimerEngine(state: .idle, durations: PomodoroDurations(workMinutes: 50, shortBreakMinutes: 10, longBreakMinutes: 30))
+        engine.start()
+        XCTAssertEqual(engine.state.endDate.timeIntervalSince(engine.state.startDate), 50 * 60, accuracy: 0.01)
+    }
+
+    func testUpdateDurationsAffectsNextPhaseNotCurrentOne() {
+        let engine = TimerEngine(state: .idle)
+        engine.start()
+        let originalEndDate = engine.state.endDate
+        engine.updateDurations(PomodoroDurations(workMinutes: 50, shortBreakMinutes: 10, longBreakMinutes: 30))
+        // Currently running Work phase is untouched by the update.
+        XCTAssertEqual(engine.state.endDate, originalEndDate)
+        // But the next phase (Short Break) picks up the new duration.
+        engine.skip()
+        XCTAssertEqual(engine.state.phase, .shortBreak)
+        XCTAssertEqual(engine.state.endDate.timeIntervalSince(engine.state.startDate), 10 * 60, accuracy: 0.01)
+    }
+
     func testResetReturnsToIdle() {
         let engine = TimerEngine(state: .idle)
         engine.start()

@@ -3,13 +3,22 @@ import Foundation
 
 final class TimerEngine {
     private(set) var state: PomodoroState
+    private var durations: PomodoroDurations
 
-    init(state: PomodoroState = .idle) {
+    init(state: PomodoroState = .idle, durations: PomodoroDurations = .default) {
         self.state = state
+        self.durations = durations
     }
 
     func reload(_ newState: PomodoroState) {
         state = newState
+    }
+
+    /// Only affects the *next* phase transition — the currently running
+    /// phase's endDate was already fixed when it started, so changing this
+    /// mid-session doesn't yank the countdown to a new length underfoot.
+    func updateDurations(_ durations: PomodoroDurations) {
+        self.durations = durations
     }
 
     func start() {
@@ -17,7 +26,7 @@ final class TimerEngine {
         state = PomodoroState(
             phase: .work,
             startDate: now,
-            endDate: now.addingTimeInterval(PomodoroPhase.work.duration),
+            endDate: now.addingTimeInterval(durations.duration(for: .work)),
             pausedAt: nil,
             completedWorkCycles: 0,
             sessionActive: true
@@ -86,7 +95,7 @@ final class TimerEngine {
         state = PomodoroState(
             phase: nextPhase,
             startDate: now,
-            endDate: now.addingTimeInterval(nextPhase.duration),
+            endDate: now.addingTimeInterval(durations.duration(for: nextPhase)),
             pausedAt: nil,
             completedWorkCycles: cycles,
             sessionActive: true

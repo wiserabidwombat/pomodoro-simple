@@ -31,4 +31,16 @@ final class PomodoroStateStoreTests: XCTestCase {
         store.save(AccentColorOption.purple)
         XCTAssertEqual(store.loadAccentColor(), .purple)
     }
+
+    func testLoadDurationsDefaultsToClassicPomodoro() {
+        let store = makeIsolatedStore()
+        XCTAssertEqual(store.loadDurations(), .default)
+    }
+
+    func testSaveAndLoadDurationsRoundTrips() {
+        let store = makeIsolatedStore()
+        let durations = PomodoroDurations(workMinutes: 50, shortBreakMinutes: 10, longBreakMinutes: 30)
+        store.save(durations)
+        XCTAssertEqual(store.loadDurations(), durations)
+    }
 }

@@ -23,6 +23,49 @@ struct SettingsView: View {
                     }
                 }
                 .padding()
+
+                Text("Durations")
+                    .foregroundStyle(viewModel.accentColor.color)
+                    .font(.headline)
+                VStack(spacing: 12) {
+                    durationStepper(
+                        "Focus",
+                        minutes: Binding(
+                            get: { viewModel.durations.workMinutes },
+                            set: { viewModel.durations.workMinutes = $0 }
+                        ),
+                        range: 1...120
+                    )
+                    durationStepper(
+                        "Short Break",
+                        minutes: Binding(
+                            get: { viewModel.durations.shortBreakMinutes },
+                            set: { viewModel.durations.shortBreakMinutes = $0 }
+                        ),
+                        range: 1...60
+                    )
+                    durationStepper(
+                        "Long Break",
+                        minutes: Binding(
+                            get: { viewModel.durations.longBreakMinutes },
+                            set: { viewModel.durations.longBreakMinutes = $0 }
+                        ),
+                        range: 1...60
+                    )
+                }
+                .padding(.horizontal)
+            }
+        }
+    }
+
+    private func durationStepper(_ title: String, minutes: Binding<Int>, range: ClosedRange<Int>) -> some View {
+        Stepper(value: minutes, in: range) {
+            HStack {
+                Text(title)
+                    .foregroundStyle(.white)
+                Spacer()
+                Text("\(minutes.wrappedValue) min")
+                    .foregroundStyle(.secondary)
             }
         }
     }

@@ -98,7 +98,7 @@ struct TimerView: View {
             Text("This stops the current session and resets back to the start of a fresh Work phase.")
         }
         .sheet(isPresented: $showingHelp) {
-            HelpView(accentColor: viewModel.accentColor)
+            HelpView(accentColor: viewModel.accentColor, durations: viewModel.durations)
         }
     }
 

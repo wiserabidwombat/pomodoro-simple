@@ -109,6 +109,7 @@ final class TimerViewModel: ObservableObject {
         let advanced = engine.catchUpIfExpired()
         if advanced {
             historyStore.recordCompletedSession(duration: PomodoroPhase.work.duration)
+            store.incrementCachedTodayCount()
         }
         if engine.state.phase != phaseBefore {
             alerting.alertPhaseChange()

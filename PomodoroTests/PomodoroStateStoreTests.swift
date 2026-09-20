@@ -76,4 +76,27 @@ final class PomodoroStateStoreTests: XCTestCase {
         store.save(ChimeOption.chime6)
         XCTAssertEqual(store.loadChime(), .chime6)
     }
+
+    func testLoadCachedTodayCountDefaultsToZero() {
+        let store = makeIsolatedStore()
+        XCTAssertEqual(store.loadCachedTodayCount(), 0)
+    }
+
+    func testIncrementCachedTodayCountAccumulatesOnSameDay() {
+        let store = makeIsolatedStore()
+        let now = Date()
+        store.incrementCachedTodayCount(now: now)
+        store.incrementCachedTodayCount(now: now)
+        store.incrementCachedTodayCount(now: now)
+        XCTAssertEqual(store.loadCachedTodayCount(now: now), 3)
+    }
+
+    func testCachedTodayCountResetsOnNewDay() {
+        let store = makeIsolatedStore()
+        let calendar = Calendar.current
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: Date())!
+        store.incrementCachedTodayCount(now: yesterday)
+        store.incrementCachedTodayCount(now: yesterday)
+        XCTAssertEqual(store.loadCachedTodayCount(now: Date()), 0)
+    }
 }

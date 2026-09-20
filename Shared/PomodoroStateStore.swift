@@ -9,6 +9,8 @@ struct PomodoroStateStore {
     private let silenceDuringFocusKey = "pomodoro.silenceDuringFocus"
     private let soundEnabledKey = "pomodoro.soundEnabled"
     private let chimeKey = "pomodoro.chime"
+    private let todayCountKey = "pomodoro.todayCount"
+    private let todayCountDateKey = "pomodoro.todayCountDate"
 
     init(defaults: UserDefaults = AppGroup.defaults) {
         self.defaults = defaults
@@ -84,5 +86,25 @@ struct PomodoroStateStore {
 
     func save(_ chime: ChimeOption) {
         defaults.set(chime.rawValue, forKey: chimeKey)
+    }
+
+    /// A lightweight mirror of HistoryStore.todayCount, kept in sync by the
+    /// app each time a Focus session completes. The widget extension can't
+    /// read the app's SwiftData store directly (it isn't in the App Group
+    /// container), so this is the channel it reads "today's count" from
+    /// instead. Day-tagged so a stale cache from a previous day reads back
+    /// as 0 rather than showing yesterday's number after midnight.
+    func incrementCachedTodayCount(calendar: Calendar = .current, now: Date = Date()) {
+        let today = calendar.startOfDay(for: now)
+        let count = loadCachedTodayCount(calendar: calendar, now: now)
+        defaults.set(count + 1, forKey: todayCountKey)
+        defaults.set(today, forKey: todayCountDateKey)
+    }
+
+    func loadCachedTodayCount(calendar: Calendar = .current, now: Date = Date()) -> Int {
+        guard let cachedDay = defaults.object(forKey: todayCountDateKey) as? Date,
+              calendar.isDate(cachedDay, inSameDayAs: now)
+        else { return 0 }
+        return defaults.integer(forKey: todayCountKey)
     }
 }

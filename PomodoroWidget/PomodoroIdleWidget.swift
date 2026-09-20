@@ -6,11 +6,12 @@ struct PomodoroIdleEntry: TimelineEntry {
     let date: Date
     let state: PomodoroState
     let accentColor: AccentColorOption
+    let todayCount: Int
 }
 
 struct PomodoroIdleProvider: TimelineProvider {
     func placeholder(in context: Context) -> PomodoroIdleEntry {
-        PomodoroIdleEntry(date: Date(), state: .idle, accentColor: .white)
+        PomodoroIdleEntry(date: Date(), state: .idle, accentColor: .white, todayCount: 0)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (PomodoroIdleEntry) -> Void) {
@@ -29,17 +30,17 @@ struct PomodoroIdleProvider: TimelineProvider {
                 completedWorkCycles: 1,
                 sessionActive: true
             )
-            completion(PomodoroIdleEntry(date: now, state: example, accentColor: .white))
+            completion(PomodoroIdleEntry(date: now, state: example, accentColor: .white, todayCount: 3))
             return
         }
         let store = PomodoroStateStore()
-        completion(PomodoroIdleEntry(date: Date(), state: store.loadState(), accentColor: store.loadAccentColor()))
+        completion(PomodoroIdleEntry(date: Date(), state: store.loadState(), accentColor: store.loadAccentColor(), todayCount: store.loadCachedTodayCount()))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<PomodoroIdleEntry>) -> Void) {
         let store = PomodoroStateStore()
         let state = store.loadState()
-        let entry = PomodoroIdleEntry(date: Date(), state: state, accentColor: store.loadAccentColor())
+        let entry = PomodoroIdleEntry(date: Date(), state: state, accentColor: store.loadAccentColor(), todayCount: store.loadCachedTodayCount())
         // The real update path is the explicit WidgetCenter.reloadTimelines
         // calls in TimerViewModel and the Live Activity intents, fired on
         // every start/pause/resume/skip/restart. This reload-at-endDate (or
@@ -65,6 +66,8 @@ struct PomodoroIdleWidgetView: View {
                 circularContent
             case .accessoryRectangular:
                 rectangularContent
+            case .systemMedium:
+                mediumContent
             default:
                 homeScreenContent
             }
@@ -151,6 +154,64 @@ struct PomodoroIdleWidgetView: View {
         }
     }
 
+    // Wider canvas than homeScreenContent (systemSmall), so this also
+    // surfaces cycle progress and today's count — the two things that don't
+    // fit anywhere else on the Home Screen without opening the app.
+    private var mediumContent: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(entry.state.sessionActive ? entry.state.phase.displayName : "Pomodoro")
+                    .font(.headline)
+                if entry.state.sessionActive {
+                    countdownText
+                        .font(.system(size: 34, weight: .bold))
+                        .monospacedDigit()
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    HStack(spacing: 20) {
+                        if entry.state.pausedAt == nil {
+                            Button(intent: WidgetPausePomodoroIntent()) {
+                                Image(systemName: "pause.fill")
+                            }
+                        } else {
+                            Button(intent: WidgetResumePomodoroIntent()) {
+                                Image(systemName: "play.fill")
+                            }
+                        }
+                        Button(intent: WidgetSkipPomodoroIntent()) {
+                            Image(systemName: "forward.fill")
+                        }
+                    }
+                } else {
+                    Text("Tap to start")
+                        .font(.subheadline)
+                }
+            }
+            Spacer()
+            VStack(alignment: .trailing, spacing: 12) {
+                cycleDots
+                VStack(alignment: .trailing, spacing: 0) {
+                    Text("\(entry.todayCount)")
+                        .font(.title2.bold())
+                    Text("Today")
+                        .font(.caption2)
+                        .opacity(0.7)
+                }
+            }
+        }
+    }
+
+    private var cycleDots: some View {
+        HStack(spacing: 8) {
+            ForEach(0..<4, id: \.self) { index in
+                Circle()
+                    .fill(index < entry.state.completedWorkCycles ? entry.accentColor.color : Color.clear)
+                    .overlay(Circle().strokeBorder(entry.accentColor.color, lineWidth: 1.5))
+                    .frame(width: 10, height: 10)
+            }
+        }
+    }
+
     @ViewBuilder
     private var countdownText: some View {
         if entry.state.pausedAt != nil {
@@ -177,6 +238,6 @@ struct PomodoroIdleWidget: Widget {
         }
         .configurationDisplayName("Simple: StandBy Timer")
         .description("Shows your current Pomodoro phase and countdown.")
-        .supportedFamilies([.accessoryRectangular, .accessoryCircular, .systemSmall])
+        .supportedFamilies([.accessoryRectangular, .accessoryCircular, .systemSmall, .systemMedium])
     }
 }

@@ -175,7 +175,7 @@ struct PomodoroIdleWidget: Widget {
             PomodoroIdleWidgetView(entry: entry)
                 .widgetURL(URL(string: "pomodoro://open"))
         }
-        .configurationDisplayName("Pomodoro Simple")
+        .configurationDisplayName("Pomodoro StandBy")
         .description("Shows your current Pomodoro phase and countdown.")
         .supportedFamilies([.accessoryRectangular, .accessoryCircular, .systemSmall])
     }

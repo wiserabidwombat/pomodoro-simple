@@ -1,9 +1,9 @@
 ---
-title: Pomodoro Simple
+title: Pomodoro StandBy
 permalink: /
 ---
 
-# Pomodoro Simple
+# Pomodoro StandBy
 
 A Pomodoro focus timer for iOS with Lock Screen, StandBy, and Dynamic Island
 support.

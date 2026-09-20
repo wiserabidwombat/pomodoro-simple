@@ -3,11 +3,11 @@ title: Privacy Policy
 permalink: /privacy-policy/
 ---
 
-# Privacy Policy for Pomodoro Simple
+# Privacy Policy for Pomodoro StandBy
 
 **Last updated:** September 20, 2026
 
-Pomodoro Simple does not collect, store, transmit, or share any personal data.
+Pomodoro StandBy does not collect, store, transmit, or share any personal data.
 
 ## What the app does
 

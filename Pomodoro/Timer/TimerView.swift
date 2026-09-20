@@ -5,6 +5,8 @@ struct TimerView: View {
     @ObservedObject var viewModel: TimerViewModel
     @Environment(\.scenePhase) private var scenePhase
     @State private var showingRestartConfirmation = false
+    @State private var showingHelp = false
+    @AppStorage("hasSeenPomodoroHelp") private var hasSeenHelp = false
 
     var body: some View {
         ZStack {
@@ -46,10 +48,20 @@ struct TimerView: View {
             .foregroundStyle(viewModel.accentColor.color)
             .padding()
 
-            if viewModel.state.sessionActive {
-                VStack {
-                    HStack {
-                        Spacer()
+            VStack {
+                HStack {
+                    Button {
+                        showingHelp = true
+                    } label: {
+                        Image(systemName: "questionmark.circle")
+                            .font(.title3)
+                    }
+                    .foregroundStyle(viewModel.accentColor.color.opacity(0.7))
+                    .padding()
+
+                    Spacer()
+
+                    if viewModel.state.sessionActive {
                         Button {
                             showingRestartConfirmation = true
                         } label: {
@@ -59,12 +71,16 @@ struct TimerView: View {
                         .foregroundStyle(viewModel.accentColor.color.opacity(0.7))
                         .padding()
                     }
-                    Spacer()
                 }
+                Spacer()
             }
         }
         .onAppear {
             NotificationScheduler().requestAuthorization { _ in }
+            if !hasSeenHelp {
+                hasSeenHelp = true
+                showingHelp = true
+            }
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
@@ -79,6 +95,9 @@ struct TimerView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This stops the current session and resets back to the start of a fresh Work phase.")
+        }
+        .sheet(isPresented: $showingHelp) {
+            HelpView(accentColor: viewModel.accentColor)
         }
     }
 

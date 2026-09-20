@@ -45,6 +45,23 @@ struct TimerView: View {
             }
             .foregroundStyle(viewModel.accentColor.color)
             .padding()
+
+            if viewModel.state.sessionActive {
+                VStack {
+                    HStack {
+                        Spacer()
+                        Button {
+                            showingRestartConfirmation = true
+                        } label: {
+                            Image(systemName: "arrow.counterclockwise")
+                                .font(.title3)
+                        }
+                        .foregroundStyle(viewModel.accentColor.color.opacity(0.7))
+                        .padding()
+                    }
+                    Spacer()
+                }
+            }
         }
         .onAppear {
             NotificationScheduler().requestAuthorization { _ in }
@@ -54,10 +71,9 @@ struct TimerView: View {
                 viewModel.refreshFromSharedState()
             }
         }
-        .confirmationDialog(
+        .alert(
             "Restart Pomodoro?",
-            isPresented: $showingRestartConfirmation,
-            titleVisibility: .visible
+            isPresented: $showingRestartConfirmation
         ) {
             Button("Restart", role: .destructive) { viewModel.restart() }
             Button("Cancel", role: .cancel) {}
@@ -84,14 +100,6 @@ struct TimerView: View {
                 .frame(width: 90)
                 Button("Skip") { viewModel.skip() }
             }
-            // Plain (not .destructive) so it stays in the app's black/accent
-            // theme rather than the system's red destructive tint — the
-            // confirmation dialog below is where the real safeguard lives.
-            Button("Restart") {
-                showingRestartConfirmation = true
-            }
-            .font(.footnote)
-            .padding(.top, 4)
         }
     }
 }

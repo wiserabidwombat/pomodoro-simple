@@ -1,6 +1,5 @@
 // Pomodoro/Timer/TimerViewModel.swift
 import Foundation
-import WidgetKit
 
 @MainActor
 final class TimerViewModel: ObservableObject {
@@ -65,10 +64,9 @@ final class TimerViewModel: ObservableObject {
         ticker = nil
         engine.reset()
         state = engine.state
-        store.save(state)
-        notifications.cancelPhaseEnd()
+        persistPomodoroState(state, store: store, notifications: notifications)
         liveActivity.end()
-        reloadIdleWidget()
+        reloadIdlePomodoroWidget()
     }
 
     /// Call when the app becomes active: the widget extension may have
@@ -111,21 +109,9 @@ final class TimerViewModel: ObservableObject {
 
     private func persistAndPush() {
         state = engine.state
-        store.save(state)
-        if state.sessionActive, state.pausedAt == nil {
-            notifications.schedulePhaseEnd(phase: state.phase, endDate: state.endDate)
-        } else {
-            notifications.cancelPhaseEnd()
-        }
+        persistPomodoroState(state, store: store, notifications: notifications)
         liveActivity.update(state: state, accentColor: accentColor)
-        reloadIdleWidget()
-    }
-
-    /// The idle/Home Screen widget has no way to know the shared store
-    /// changed on its own — unlike the Live Activity, which we push to
-    /// directly, WidgetKit only re-renders when explicitly told to.
-    private func reloadIdleWidget() {
-        WidgetCenter.shared.reloadTimelines(ofKind: "PomodoroIdleWidget")
+        reloadIdlePomodoroWidget()
     }
 
     private func startTicker() {

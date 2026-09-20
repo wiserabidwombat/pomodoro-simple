@@ -14,6 +14,24 @@ struct PomodoroIdleProvider: TimelineProvider {
     }
 
     func getSnapshot(in context: Context, completion: @escaping (PomodoroIdleEntry) -> Void) {
+        // The widget gallery (context.isPreview) should show a representative
+        // example, not the user's real current state — Apple's own WidgetKit
+        // guidance calls this out explicitly, and it also means someone
+        // browsing the gallery with no session running sees what an active
+        // session looks like rather than a bare "Ready".
+        if context.isPreview {
+            let now = Date()
+            let example = PomodoroState(
+                phase: .work,
+                startDate: now,
+                endDate: now.addingTimeInterval(12 * 60 + 34),
+                pausedAt: nil,
+                completedWorkCycles: 1,
+                sessionActive: true
+            )
+            completion(PomodoroIdleEntry(date: now, state: example, accentColor: .white))
+            return
+        }
         let store = PomodoroStateStore()
         completion(PomodoroIdleEntry(date: Date(), state: store.loadState(), accentColor: store.loadAccentColor()))
     }
@@ -26,8 +44,12 @@ struct PomodoroIdleProvider: TimelineProvider {
         // calls in TimerViewModel and the Live Activity intents, fired on
         // every start/pause/resume/skip/restart. This reload-at-endDate (or
         // in an hour if idle) is just a fallback in case one of those is
-        // ever missed.
-        let nextReload = state.sessionActive ? state.endDate : Date().addingTimeInterval(3600)
+        // ever missed. Clamped to at least 30s out — if the phone went
+        // unreloaded long enough for endDate to already be in the past,
+        // asking WidgetKit to reload "after" a past date can trigger rapid
+        // repeated reload attempts instead of one clean one.
+        let fallback = state.sessionActive ? state.endDate : Date().addingTimeInterval(3600)
+        let nextReload = max(fallback, Date().addingTimeInterval(30))
         completion(Timeline(entries: [entry], policy: .after(nextReload)))
     }
 }

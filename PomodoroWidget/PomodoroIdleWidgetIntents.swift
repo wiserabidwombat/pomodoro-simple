@@ -1,6 +1,5 @@
 // PomodoroWidget/PomodoroIdleWidgetIntents.swift
 import AppIntents
-import WidgetKit
 import Foundation
 
 /// Plain AppIntents (not LiveActivityIntent) for the idle/Home Screen
@@ -18,15 +17,8 @@ import Foundation
 /// visible at the same time, TimerViewModel.refreshFromSharedState()
 /// corrects it the next time the app is foregrounded.
 private func applyAndReload(_ engine: TimerEngine, store: PomodoroStateStore) {
-    let newState = engine.state
-    store.save(newState)
-    let notifications = NotificationScheduler()
-    if newState.sessionActive, newState.pausedAt == nil {
-        notifications.schedulePhaseEnd(phase: newState.phase, endDate: newState.endDate)
-    } else {
-        notifications.cancelPhaseEnd()
-    }
-    WidgetCenter.shared.reloadTimelines(ofKind: "PomodoroIdleWidget")
+    persistPomodoroState(engine.state, store: store, notifications: NotificationScheduler())
+    reloadIdlePomodoroWidget()
 }
 
 struct WidgetPausePomodoroIntent: AppIntent {

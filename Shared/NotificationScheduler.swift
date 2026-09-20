@@ -22,6 +22,7 @@ final class NotificationScheduler {
         content.title = phase.displayName
         content.body = Self.body(for: phase)
         content.sound = .default
+        content.interruptionLevel = .timeSensitive
         let interval = max(1, endDate.timeIntervalSinceNow)
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)

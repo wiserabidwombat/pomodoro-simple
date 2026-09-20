@@ -2,7 +2,6 @@
 import AppIntents
 import ActivityKit
 import Foundation
-import WidgetKit
 import os
 
 private let intentLogger = Logger(subsystem: "com.aarontilley.pomodoro", category: "LiveActivityIntents")
@@ -23,13 +22,8 @@ private func currentActivity() -> Activity<PomodoroActivityAttributes>? {
 @MainActor
 private func applyAndPush(_ engine: TimerEngine, accentColor: AccentColorOption, store: PomodoroStateStore, notifications: NotificationScheduler) async {
     let newState = engine.state
-    store.save(newState)
-    if newState.sessionActive, newState.pausedAt == nil {
-        notifications.schedulePhaseEnd(phase: newState.phase, endDate: newState.endDate)
-    } else {
-        notifications.cancelPhaseEnd()
-    }
-    WidgetCenter.shared.reloadTimelines(ofKind: "PomodoroIdleWidget")
+    persistPomodoroState(newState, store: store, notifications: notifications)
+    reloadIdlePomodoroWidget()
     guard let activity = currentActivity() else {
         intentLogger.error("applyAndPush() aborted: no active Live Activity found")
         return

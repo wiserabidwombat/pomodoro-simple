@@ -27,6 +27,8 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>NSFocusStatusUsageDescription</key>
+	<string>Used to silence the phase-change sound and haptic while one of your Focus modes is on.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>UILaunchScreen</key>

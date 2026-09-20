@@ -6,6 +6,7 @@ struct PomodoroStateStore {
     private let stateKey = "pomodoro.state"
     private let colorKey = "pomodoro.accentColor"
     private let durationsKey = "pomodoro.durations"
+    private let silenceDuringFocusKey = "pomodoro.silenceDuringFocus"
 
     init(defaults: UserDefaults = AppGroup.defaults) {
         self.defaults = defaults
@@ -53,5 +54,13 @@ struct PomodoroStateStore {
         guard let data = try? JSONEncoder().encode(durations) else { return }
         defaults.set(data, forKey: durationsKey)
         defaults.synchronize()
+    }
+
+    func loadSilenceDuringFocus() -> Bool {
+        defaults.bool(forKey: silenceDuringFocusKey)
+    }
+
+    func save(silenceDuringFocus: Bool) {
+        defaults.set(silenceDuringFocus, forKey: silenceDuringFocusKey)
     }
 }

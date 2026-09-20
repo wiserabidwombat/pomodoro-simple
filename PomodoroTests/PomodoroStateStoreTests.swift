@@ -43,4 +43,15 @@ final class PomodoroStateStoreTests: XCTestCase {
         store.save(durations)
         XCTAssertEqual(store.loadDurations(), durations)
     }
+
+    func testLoadSilenceDuringFocusDefaultsToFalse() {
+        let store = makeIsolatedStore()
+        XCTAssertFalse(store.loadSilenceDuringFocus())
+    }
+
+    func testSaveAndLoadSilenceDuringFocusRoundTrips() {
+        let store = makeIsolatedStore()
+        store.save(silenceDuringFocus: true)
+        XCTAssertTrue(store.loadSilenceDuringFocus())
+    }
 }

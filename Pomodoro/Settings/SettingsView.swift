@@ -1,4 +1,5 @@
 // Pomodoro/Settings/SettingsView.swift
+import Intents
 import SwiftUI
 
 struct SettingsView: View {
@@ -53,6 +54,26 @@ struct SettingsView: View {
                         range: 1...60
                     )
                 }
+                .padding(.horizontal)
+
+                Toggle(isOn: Binding(
+                    get: { viewModel.silenceDuringFocus },
+                    set: { newValue in
+                        viewModel.silenceDuringFocus = newValue
+                        if newValue {
+                            INFocusStatusCenter.default.requestAuthorization { _ in }
+                        }
+                    }
+                )) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Silence Alerts During Focus")
+                            .foregroundStyle(.white)
+                        Text("Skips the phase-change sound and haptic while one of your Focus modes is on.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .tint(viewModel.accentColor.color)
                 .padding(.horizontal)
             }
         }

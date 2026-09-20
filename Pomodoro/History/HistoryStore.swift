@@ -35,4 +35,45 @@ final class HistoryStore {
     var todayCount: Int {
         sessions(on: Date()).count
     }
+
+    var totalFocusSeconds: TimeInterval {
+        let all = (try? context.fetch(FetchDescriptor<CompletedSession>())) ?? []
+        return all.reduce(0) { $0 + $1.durationSeconds }
+    }
+
+    /// Consecutive days with at least one completed session, counting
+    /// backward from today. A day that hasn't happened yet (no session
+    /// today) doesn't break a streak built on prior days — it only breaks
+    /// once a full day passes with nothing recorded.
+    func currentStreak(calendar: Calendar = .current, referenceDate: Date = Date()) -> Int {
+        let daysWithSessions = Set(countByDay(calendar: calendar).map { $0.day })
+        var day = calendar.startOfDay(for: referenceDate)
+        if !daysWithSessions.contains(day) {
+            day = calendar.date(byAdding: .day, value: -1, to: day)!
+        }
+        var streak = 0
+        while daysWithSessions.contains(day) {
+            streak += 1
+            day = calendar.date(byAdding: .day, value: -1, to: day)!
+        }
+        return streak
+    }
+
+    struct DailyCount: Identifiable, Hashable {
+        let day: Date
+        let count: Int
+        var id: Date { day }
+    }
+
+    /// The last 7 days including today, oldest first, with zero-filled gaps
+    /// — unlike countByDay(), which only returns days that have a session at
+    /// all (unsuitable for a fixed-width chart axis).
+    func lastSevenDaysCounts(calendar: Calendar = .current, referenceDate: Date = Date()) -> [DailyCount] {
+        let countsByDay = Dictionary(uniqueKeysWithValues: countByDay(calendar: calendar).map { ($0.day, $0.count) })
+        let today = calendar.startOfDay(for: referenceDate)
+        return (0..<7).reversed().map { offset in
+            let day = calendar.date(byAdding: .day, value: -offset, to: today)!
+            return DailyCount(day: day, count: countsByDay[day] ?? 0)
+        }
+    }
 }

@@ -54,4 +54,26 @@ final class PomodoroStateStoreTests: XCTestCase {
         store.save(silenceDuringFocus: true)
         XCTAssertTrue(store.loadSilenceDuringFocus())
     }
+
+    func testLoadSoundEnabledDefaultsToTrue() {
+        let store = makeIsolatedStore()
+        XCTAssertTrue(store.loadSoundEnabled())
+    }
+
+    func testSaveAndLoadSoundEnabledRoundTrips() {
+        let store = makeIsolatedStore()
+        store.save(soundEnabled: false)
+        XCTAssertFalse(store.loadSoundEnabled())
+    }
+
+    func testLoadChimeDefaultsToDefault() {
+        let store = makeIsolatedStore()
+        XCTAssertEqual(store.loadChime(), .default)
+    }
+
+    func testSaveAndLoadChimeRoundTrips() {
+        let store = makeIsolatedStore()
+        store.save(ChimeOption.chime6)
+        XCTAssertEqual(store.loadChime(), .chime6)
+    }
 }

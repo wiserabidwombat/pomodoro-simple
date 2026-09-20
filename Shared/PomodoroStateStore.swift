@@ -7,6 +7,8 @@ struct PomodoroStateStore {
     private let colorKey = "pomodoro.accentColor"
     private let durationsKey = "pomodoro.durations"
     private let silenceDuringFocusKey = "pomodoro.silenceDuringFocus"
+    private let soundEnabledKey = "pomodoro.soundEnabled"
+    private let chimeKey = "pomodoro.chime"
 
     init(defaults: UserDefaults = AppGroup.defaults) {
         self.defaults = defaults
@@ -62,5 +64,25 @@ struct PomodoroStateStore {
 
     func save(silenceDuringFocus: Bool) {
         defaults.set(silenceDuringFocus, forKey: silenceDuringFocusKey)
+    }
+
+    /// Defaults to true (sound on) — bool(forKey:) alone can't distinguish
+    /// "never set" from "explicitly set to false", both of which return false.
+    func loadSoundEnabled() -> Bool {
+        guard defaults.object(forKey: soundEnabledKey) != nil else { return true }
+        return defaults.bool(forKey: soundEnabledKey)
+    }
+
+    func save(soundEnabled: Bool) {
+        defaults.set(soundEnabled, forKey: soundEnabledKey)
+    }
+
+    func loadChime() -> ChimeOption {
+        let raw = defaults.object(forKey: chimeKey) as? UInt32
+        return raw.flatMap(ChimeOption.init(rawValue:)) ?? .default
+    }
+
+    func save(_ chime: ChimeOption) {
+        defaults.set(chime.rawValue, forKey: chimeKey)
     }
 }

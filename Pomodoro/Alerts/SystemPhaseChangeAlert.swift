@@ -15,6 +15,7 @@ final class SystemPhaseChangeAlert: PhaseChangeAlerting {
             return
         }
         UINotificationFeedbackGenerator().notificationOccurred(.success)
-        AudioServicesPlaySystemSound(1005)
+        guard store.loadSoundEnabled() else { return }
+        AudioServicesPlaySystemSound(store.loadChime().rawValue)
     }
 }

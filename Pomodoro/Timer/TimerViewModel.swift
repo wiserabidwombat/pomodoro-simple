@@ -16,6 +16,12 @@ final class TimerViewModel: ObservableObject {
     @Published var silenceDuringFocus: Bool {
         didSet { store.save(silenceDuringFocus: silenceDuringFocus) }
     }
+    @Published var soundEnabled: Bool {
+        didSet { store.save(soundEnabled: soundEnabled) }
+    }
+    @Published var chime: ChimeOption {
+        didSet { store.save(chime) }
+    }
 
     private let engine: TimerEngine
     private let store: PomodoroStateStore
@@ -44,6 +50,8 @@ final class TimerViewModel: ObservableObject {
         self.accentColor = store.loadAccentColor()
         self.durations = loadedDurations
         self.silenceDuringFocus = store.loadSilenceDuringFocus()
+        self.soundEnabled = store.loadSoundEnabled()
+        self.chime = store.loadChime()
     }
 
     func start() {

@@ -43,6 +43,7 @@ struct TimerView: View {
                     Text("Ready")
                         .font(.system(size: 64, weight: .bold, design: .rounded))
                 }
+                cycleProgress
                 controls
             }
             .foregroundStyle(viewModel.accentColor.color)
@@ -98,6 +99,21 @@ struct TimerView: View {
         }
         .sheet(isPresented: $showingHelp) {
             HelpView(accentColor: viewModel.accentColor)
+        }
+    }
+
+    /// 4 dots for the classic Pomodoro cycle: filled for each completed
+    /// Focus session since the last Long Break, resetting to empty once
+    /// that 4th one lands. Uses `completedWorkCycles` directly, no new
+    /// state needed.
+    private var cycleProgress: some View {
+        HStack(spacing: 12) {
+            ForEach(0..<4, id: \.self) { index in
+                Circle()
+                    .fill(index < viewModel.state.completedWorkCycles ? viewModel.accentColor.color : Color.clear)
+                    .overlay(Circle().strokeBorder(viewModel.accentColor.color, lineWidth: 1.5))
+                    .frame(width: 12, height: 12)
+            }
         }
     }
 

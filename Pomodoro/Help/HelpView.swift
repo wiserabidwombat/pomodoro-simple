@@ -17,7 +17,7 @@ struct HelpView: View {
 
                     helpSection(
                         title: "The cycle",
-                        body: "Work in a 25-minute Focus session, then take a 5-minute Short Break. Repeat. Every 4th Focus session is followed by a longer 15-minute Long Break, after which the cycle count resets and you start back at Focus #1."
+                        body: "Work in a 25-minute Focus session, then take a 5-minute Short Break. Repeat. Every 4th Focus session is followed by a longer 15-minute Long Break, after which the cycle count resets and you start back at Focus #1. The 4 dots below the countdown fill in one at a time as each Focus session in the current cycle completes."
                     )
                     helpSection(
                         title: "Controls",

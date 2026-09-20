@@ -1,3 +1,8 @@
+---
+title: Privacy Policy
+permalink: /privacy-policy/
+---
+
 # Privacy Policy for Pomodoro Simple
 
 **Last updated:** September 20, 2026

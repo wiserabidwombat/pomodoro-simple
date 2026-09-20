@@ -25,4 +25,4 @@ In App Store terms: **no data is collected from this app.**
 
 ## Contact
 
-Questions about this policy can be sent to: aaronltilley1@gmail.com
+Questions about this policy can be sent to: aaronltilley1+pomodoro@gmail.com

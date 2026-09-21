@@ -65,6 +65,8 @@ struct StartPomodoroIntent: LiveActivityIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
+        guard IntentActionGate.begin() else { return .result() }
+        defer { IntentActionGate.end() }
         let store = PomodoroStateStore()
         let notifications = NotificationScheduler()
         let engine = TimerEngine(state: store.loadState(), durations: store.loadDurations())
@@ -106,6 +108,8 @@ struct PausePomodoroIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Pause"
 
     func perform() async throws -> some IntentResult {
+        guard IntentActionGate.begin() else { return .result() }
+        defer { IntentActionGate.end() }
         let store = PomodoroStateStore()
         let notifications = NotificationScheduler()
         let beforeState = store.loadState()
@@ -122,6 +126,8 @@ struct ResumePomodoroIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Resume"
 
     func perform() async throws -> some IntentResult {
+        guard IntentActionGate.begin() else { return .result() }
+        defer { IntentActionGate.end() }
         let store = PomodoroStateStore()
         let notifications = NotificationScheduler()
         let beforeState = store.loadState()
@@ -138,6 +144,8 @@ struct SkipPomodoroIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Skip"
 
     func perform() async throws -> some IntentResult {
+        guard IntentActionGate.begin() else { return .result() }
+        defer { IntentActionGate.end() }
         let store = PomodoroStateStore()
         let notifications = NotificationScheduler()
         let beforeState = store.loadState()
@@ -162,6 +170,8 @@ struct AdvancePomodoroIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Continue"
 
     func perform() async throws -> some IntentResult {
+        guard IntentActionGate.begin() else { return .result() }
+        defer { IntentActionGate.end() }
         let store = PomodoroStateStore()
         let notifications = NotificationScheduler()
         let beforeState = store.loadState()

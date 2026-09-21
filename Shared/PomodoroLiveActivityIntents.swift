@@ -36,7 +36,7 @@ private func applyAndPush(_ engine: TimerEngine, accentColor: AccentColorOption,
             pausedAt: newState.pausedAt,
             accentColor: accentColor
         ),
-        staleDate: nil
+        staleDate: newState.endDate
     )
     await activity.update(content)
 }
@@ -70,7 +70,7 @@ struct StartPomodoroIntent: LiveActivityIntent {
                 pausedAt: newState.pausedAt,
                 accentColor: accentColor
             ),
-            staleDate: nil
+            staleDate: newState.endDate
         )
         do {
             _ = try Activity.request(attributes: PomodoroActivityAttributes(), content: content)

@@ -23,13 +23,28 @@ final class LiveActivityController: LiveActivityControlling {
             logger.error("start() aborted: Live Activities not enabled (areActivitiesEnabled == false)")
             return
         }
-        endAllActivities()
-        let content = ActivityContent(state: Self.contentState(state, accentColor), staleDate: nil)
-        do {
-            let activity = try Activity.request(attributes: PomodoroActivityAttributes(), content: content)
-            logger.log("start() requested activity id=\(activity.id, privacy: .public)")
-        } catch {
-            logger.error("start() Activity.request threw: \(String(describing: error), privacy: .public)")
+        // staleDate marks this content as only accurate up to the current
+        // phase's end — if something ever stops us from pushing the next
+        // phase's update in time (an OS-enforced Live Activity lifetime cap,
+        // a missed background wakeup, etc.), the Lock Screen at least shows
+        // a visible "stale" indicator instead of silently freezing on a
+        // countdown that looks perfectly normal but is no longer accurate.
+        let content = ActivityContent(state: Self.contentState(state, accentColor), staleDate: state.endDate)
+        Task {
+            // Awaited, not fire-and-forget: requesting a new Activity
+            // before an old one has actually finished ending was racy —
+            // restarting a session soon after the previous Activity died
+            // (e.g. the ~8-hour OS-enforced Live Activity lifetime cap,
+            // most likely after sitting locked overnight) could create the
+            // new one while the dead one was still lingering, leaving the
+            // Lock Screen stuck on the old frozen content.
+            await endAllActivities()
+            do {
+                let activity = try Activity.request(attributes: PomodoroActivityAttributes(), content: content)
+                logger.log("start() requested activity id=\(activity.id, privacy: .public)")
+            } catch {
+                logger.error("start() Activity.request threw: \(String(describing: error), privacy: .public)")
+            }
         }
     }
 
@@ -38,7 +53,7 @@ final class LiveActivityController: LiveActivityControlling {
             logger.error("update() aborted: no active Live Activity found")
             return
         }
-        let content = ActivityContent(state: Self.contentState(state, accentColor), staleDate: nil)
+        let content = ActivityContent(state: Self.contentState(state, accentColor), staleDate: state.endDate)
         logger.log("update() calling activity.update on id=\(activity.id, privacy: .public) pausedAt=\(state.pausedAt?.description ?? "nil", privacy: .public)")
         Task {
             await activity.update(content)
@@ -47,12 +62,14 @@ final class LiveActivityController: LiveActivityControlling {
     }
 
     func end() {
-        endAllActivities()
+        Task {
+            await endAllActivities()
+        }
     }
 
-    private func endAllActivities() {
+    private func endAllActivities() async {
         for activity in Activity<PomodoroActivityAttributes>.activities {
-            Task { await activity.end(nil, dismissalPolicy: .immediate) }
+            await activity.end(nil, dismissalPolicy: .immediate)
         }
     }
 

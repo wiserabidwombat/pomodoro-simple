@@ -45,11 +45,10 @@ struct PomodoroLiveActivityView: View {
                 // countdown should have ended — this fires whenever a phase
                 // completes while the app never got a chance to push the
                 // next phase's update (e.g. backgrounded past the OS's
-                // ~8-hour Live Activity cap). Without this, a frozen
-                // countdown here would look identical to a normal, accurate
-                // one. Pause/Resume/Skip still work while stale: the
-                // intents call catchUpIfExpired() before doing anything.
-                Text("Open the app to refresh")
+                // ~8-hour Live Activity cap, or just sitting locked in
+                // StandBy). Without this, a frozen countdown here would
+                // look identical to a normal, accurate one.
+                Text("Time's up")
                     .font(.system(size: 18, weight: .semibold, design: .rounded))
                     .foregroundStyle(.secondary)
             } else if state.pausedAt != nil {
@@ -68,26 +67,41 @@ struct PomodoroLiveActivityView: View {
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
             }
-            HStack(spacing: 16) {
-                // Fixed width so the Skip button doesn't shift when this
-                // label's text changes length between "Pause" and "Resume".
-                Group {
-                    if state.pausedAt == nil {
-                        Button(intent: PausePomodoroIntent()) {
-                            Label("Pause", systemImage: "pause.fill")
-                        }
-                    } else {
-                        Button(intent: ResumePomodoroIntent()) {
-                            Label("Resume", systemImage: "play.fill")
+            if isStale && state.pausedAt == nil {
+                // Replaces Pause/Skip entirely while expired: catching up
+                // is exactly what Skip already did first internally, but
+                // Skip additionally advances a second phase on top of that
+                // catch-up — confusing when the phase had already silently
+                // ended (it looks like Skip does nothing, then the app
+                // reveals it actually skipped an extra phase). This button
+                // performs only the catch-up.
+                Button(intent: AdvancePomodoroIntent()) {
+                    Label("Continue", systemImage: "arrow.right")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+            } else {
+                HStack(spacing: 16) {
+                    // Fixed width so the Skip button doesn't shift when this
+                    // label's text changes length between "Pause" and "Resume".
+                    Group {
+                        if state.pausedAt == nil {
+                            Button(intent: PausePomodoroIntent()) {
+                                Label("Pause", systemImage: "pause.fill")
+                            }
+                        } else {
+                            Button(intent: ResumePomodoroIntent()) {
+                                Label("Resume", systemImage: "play.fill")
+                            }
                         }
                     }
+                    .frame(width: 110)
+                    Button(intent: SkipPomodoroIntent()) {
+                        Label("Skip", systemImage: "forward.fill")
+                    }
                 }
-                .frame(width: 110)
-                Button(intent: SkipPomodoroIntent()) {
-                    Label("Skip", systemImage: "forward.fill")
-                }
+                .buttonStyle(.bordered)
             }
-            .buttonStyle(.bordered)
         }
         // Without this, the block shrinks to fit whichever countdown text is
         // narrower (the static paused string vs. the live timer text) and

@@ -1,5 +1,8 @@
 // Pomodoro/Timer/TimerViewModel.swift
 import Foundation
+import os
+
+private let viewModelLogger = Logger(subsystem: "com.aarontilley.pomodoro", category: "TimerViewModel")
 
 @MainActor
 final class TimerViewModel: ObservableObject {
@@ -120,9 +123,25 @@ final class TimerViewModel: ObservableObject {
         // advancing to Break, then reopening the app immediately reverting
         // to Focus because the ticker caught up a still-Focus in-memory
         // copy a beat before/after the real reload landed.
+        let beforeReload = engine.state
         engine.reload(store.loadState())
+        let reloaded = engine.state
+        if beforeReload.phase != reloaded.phase || beforeReload.completedWorkCycles != reloaded.completedWorkCycles {
+            viewModelLogger.log("""
+            catchUpIfNeeded(forcePush=\(forcePush, privacy: .public)) reload changed in-memory state: \
+            \(beforeReload.phase.rawValue, privacy: .public)(cycles=\(beforeReload.completedWorkCycles, privacy: .public)) -> \
+            \(reloaded.phase.rawValue, privacy: .public)(cycles=\(reloaded.completedWorkCycles, privacy: .public))
+            """)
+        }
         let phaseBefore = engine.state.phase
         let advanced = engine.catchUpIfExpired()
+        if advanced {
+            let afterCatchUp = engine.state
+            viewModelLogger.log("""
+            catchUpIfNeeded(forcePush=\(forcePush, privacy: .public)) catchUpIfExpired advanced to \
+            \(afterCatchUp.phase.rawValue, privacy: .public)(cycles=\(afterCatchUp.completedWorkCycles, privacy: .public))
+            """)
+        }
         if advanced {
             historyStore.recordCompletedSession(duration: PomodoroPhase.work.duration)
             store.incrementCachedTodayCount()

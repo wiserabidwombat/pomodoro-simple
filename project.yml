@@ -28,6 +28,8 @@ targets:
     dependencies:
       - target: PomodoroWidgetExtension
         embed: true
+      - target: PomodoroWatch
+        embed: true
   PomodoroWidgetExtension:
     type: app-extension
     platform: iOS
@@ -40,6 +42,26 @@ targets:
         INFOPLIST_FILE: PomodoroWidget/Info.plist
         CODE_SIGN_ENTITLEMENTS: PomodoroWidget/PomodoroWidget.entitlements
         TARGETED_DEVICE_FAMILY: "1"
+  PomodoroWatch:
+    type: application
+    platform: watchOS
+    deploymentTarget: "10.0"
+    sources:
+      - path: PomodoroWatch
+      - path: Shared/AppGroup.swift
+      - path: Shared/AccentColorOption.swift
+      - path: Shared/ChimeOption.swift
+      - path: Shared/PomodoroPhase.swift
+      - path: Shared/PomodoroState.swift
+      - path: Shared/PomodoroDurations.swift
+      - path: Shared/PomodoroStateStore.swift
+      - path: Shared/TimerEngine.swift
+      - path: Shared/WatchConnectivityRelay.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.aarontilley.pomodoro.watchkitapp
+        INFOPLIST_FILE: PomodoroWatch/Info.plist
+        TARGETED_DEVICE_FAMILY: "4"
   PomodoroTests:
     type: bundle.unit-test
     platform: iOS

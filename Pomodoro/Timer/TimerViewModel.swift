@@ -34,6 +34,7 @@ final class TimerViewModel: ObservableObject {
     private let historyStore: HistoryStore
     private let liveActivity: LiveActivityControlling
     private let alerting: PhaseChangeAlerting
+    private let watchSync: WatchSyncSending
     private var ticker: Timer?
 
     init(
@@ -41,13 +42,15 @@ final class TimerViewModel: ObservableObject {
         notifications: NotificationScheduler = NotificationScheduler(),
         historyStore: HistoryStore,
         liveActivity: LiveActivityControlling,
-        alerting: PhaseChangeAlerting
+        alerting: PhaseChangeAlerting,
+        watchSync: WatchSyncSending
     ) {
         self.store = store
         self.notifications = notifications
         self.historyStore = historyStore
         self.liveActivity = liveActivity
         self.alerting = alerting
+        self.watchSync = watchSync
         let loaded = store.loadState()
         let loadedDurations = store.loadDurations()
         self.engine = TimerEngine(state: loaded, durations: loadedDurations)
@@ -92,6 +95,7 @@ final class TimerViewModel: ObservableObject {
         persistPomodoroState(state, store: store, notifications: notifications)
         liveActivity.end()
         reloadIdlePomodoroWidget()
+        watchSync.send(state: state, accentColor: accentColor, durations: durations)
     }
 
     /// Call when the app becomes active: the widget extension may have
@@ -150,6 +154,7 @@ final class TimerViewModel: ObservableObject {
         persistPomodoroState(state, store: store, notifications: notifications)
         liveActivity.update(state: state, accentColor: accentColor)
         reloadIdlePomodoroWidget()
+        watchSync.send(state: state, accentColor: accentColor, durations: durations)
     }
 
     private func startTicker() {

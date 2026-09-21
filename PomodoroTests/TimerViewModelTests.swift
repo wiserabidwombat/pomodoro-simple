@@ -13,7 +13,7 @@ final class TimerViewModelTests: XCTestCase {
         let history = HistoryStore(context: container.mainContext)
         let fakeActivity = FakeLiveActivityController()
         let fakeAlert = FakePhaseChangeAlert()
-        let vm = TimerViewModel(store: store, notifications: NotificationScheduler(), historyStore: history, liveActivity: fakeActivity, alerting: fakeAlert)
+        let vm = TimerViewModel(store: store, notifications: NotificationScheduler(), historyStore: history, liveActivity: fakeActivity, alerting: fakeAlert, watchSync: FakeWatchSync())
         return (vm, fakeActivity, fakeAlert, store, history)
     }
 

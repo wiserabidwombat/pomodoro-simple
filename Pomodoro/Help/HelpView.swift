@@ -17,6 +17,10 @@ struct HelpView: View {
                         .padding(.top, 8)
 
                     helpSection(
+                        title: "Where the name comes from",
+                        body: "Pomodoro is Italian for \"tomato.\" University student Francesco Cirillo invented the technique in the late 1980s, using a tomato-shaped kitchen timer to break his study sessions into focused intervals — the name stuck."
+                    )
+                    helpSection(
                         title: "The cycle",
                         body: "Work in a \(durations.workMinutes)-minute Focus session, then take a \(durations.shortBreakMinutes)-minute Short Break. Repeat. Every 4th Focus session is followed by a longer \(durations.longBreakMinutes)-minute Long Break, after which the cycle count resets and you start back at Focus #1. The 4 dots below the countdown fill in one at a time as each Focus session in the current cycle completes. (Durations can be changed in Settings.)"
                     )

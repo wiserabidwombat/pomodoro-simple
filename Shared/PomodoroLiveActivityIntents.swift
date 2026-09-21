@@ -16,6 +16,20 @@ private func currentActivity() -> Activity<PomodoroActivityAttributes>? {
     Activity<PomodoroActivityAttributes>.activities.first
 }
 
+/// Diagnostic only — logs the phase/cycle count before and after an
+/// intent's mutation, and separately flags when catchUpIfExpired() did
+/// something, so a real-device Console capture can show exactly what each
+/// Lock Screen/StandBy tap actually computed (useful for diagnosing state
+/// drift that's hard to reproduce locally).
+private func logTransition(_ label: String, before: PomodoroState, after: PomodoroState, caughtUp: Bool) {
+    intentLogger.log("""
+    \(label, privacy: .public): caughtUpFirst=\(caughtUp, privacy: .public) \
+    \(before.phase.rawValue, privacy: .public)(cycles=\(before.completedWorkCycles, privacy: .public)) -> \
+    \(after.phase.rawValue, privacy: .public)(cycles=\(after.completedWorkCycles, privacy: .public)) \
+    endDate=\(after.endDate.description, privacy: .public)
+    """)
+}
+
 /// Shared by all three intents: persist the engine's new state, keep the
 /// backup notification in sync with the new endDate, and push the change to
 /// the running Live Activity directly from this process.
@@ -41,7 +55,9 @@ private func applyAndPush(_ engine: TimerEngine, accentColor: AccentColorOption,
         ),
         staleDate: staleDate
     )
+    intentLogger.log("applyAndPush() persisted \(newState.phase.rawValue, privacy: .public)(cycles=\(newState.completedWorkCycles, privacy: .public)) to store, pushing activity.update() id=\(activity.id, privacy: .public)")
     await activity.update(content)
+    intentLogger.log("applyAndPush() activity.update() completed id=\(activity.id, privacy: .public)")
 }
 
 struct StartPomodoroIntent: LiveActivityIntent {
@@ -49,6 +65,8 @@ struct StartPomodoroIntent: LiveActivityIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
+        guard IntentActionGate.begin() else { return .result() }
+        defer { IntentActionGate.end() }
         let store = PomodoroStateStore()
         let notifications = NotificationScheduler()
         let engine = TimerEngine(state: store.loadState(), durations: store.loadDurations())
@@ -90,11 +108,15 @@ struct PausePomodoroIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Pause"
 
     func perform() async throws -> some IntentResult {
+        guard IntentActionGate.begin() else { return .result() }
+        defer { IntentActionGate.end() }
         let store = PomodoroStateStore()
         let notifications = NotificationScheduler()
-        let engine = TimerEngine(state: store.loadState(), durations: store.loadDurations())
-        engine.catchUpIfExpired()
+        let beforeState = store.loadState()
+        let engine = TimerEngine(state: beforeState, durations: store.loadDurations())
+        let caughtUp = engine.catchUpIfExpired()
         engine.pause()
+        logTransition("Pause", before: beforeState, after: engine.state, caughtUp: caughtUp)
         await applyAndPush(engine, accentColor: store.loadAccentColor(), store: store, notifications: notifications)
         return .result()
     }
@@ -104,11 +126,15 @@ struct ResumePomodoroIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Resume"
 
     func perform() async throws -> some IntentResult {
+        guard IntentActionGate.begin() else { return .result() }
+        defer { IntentActionGate.end() }
         let store = PomodoroStateStore()
         let notifications = NotificationScheduler()
-        let engine = TimerEngine(state: store.loadState(), durations: store.loadDurations())
-        engine.catchUpIfExpired()
+        let beforeState = store.loadState()
+        let engine = TimerEngine(state: beforeState, durations: store.loadDurations())
+        let caughtUp = engine.catchUpIfExpired()
         engine.resume()
+        logTransition("Resume", before: beforeState, after: engine.state, caughtUp: caughtUp)
         await applyAndPush(engine, accentColor: store.loadAccentColor(), store: store, notifications: notifications)
         return .result()
     }
@@ -118,11 +144,15 @@ struct SkipPomodoroIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Skip"
 
     func perform() async throws -> some IntentResult {
+        guard IntentActionGate.begin() else { return .result() }
+        defer { IntentActionGate.end() }
         let store = PomodoroStateStore()
         let notifications = NotificationScheduler()
-        let engine = TimerEngine(state: store.loadState(), durations: store.loadDurations())
-        engine.catchUpIfExpired()
+        let beforeState = store.loadState()
+        let engine = TimerEngine(state: beforeState, durations: store.loadDurations())
+        let caughtUp = engine.catchUpIfExpired()
         engine.skip()
+        logTransition("Skip", before: beforeState, after: engine.state, caughtUp: caughtUp)
         await applyAndPush(engine, accentColor: store.loadAccentColor(), store: store, notifications: notifications)
         return .result()
     }
@@ -140,10 +170,14 @@ struct AdvancePomodoroIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Continue"
 
     func perform() async throws -> some IntentResult {
+        guard IntentActionGate.begin() else { return .result() }
+        defer { IntentActionGate.end() }
         let store = PomodoroStateStore()
         let notifications = NotificationScheduler()
-        let engine = TimerEngine(state: store.loadState(), durations: store.loadDurations())
-        engine.catchUpIfExpired()
+        let beforeState = store.loadState()
+        let engine = TimerEngine(state: beforeState, durations: store.loadDurations())
+        let caughtUp = engine.catchUpIfExpired()
+        logTransition("Advance", before: beforeState, after: engine.state, caughtUp: caughtUp)
         await applyAndPush(engine, accentColor: store.loadAccentColor(), store: store, notifications: notifications)
         return .result()
     }

@@ -127,23 +127,22 @@ struct PomodoroIdleWidgetView: View {
                 countdownText
                     .font(.title3.bold())
                     .monospacedDigit()
-                // Plain AppIntents (WidgetPause.../WidgetResume.../WidgetSkip...),
-                // not the LiveActivityIntent-conforming Pause/Resume/Skip used
-                // by the Live Activity — those wake the full app process to
-                // run, which is necessary for them to find the Live Activity
-                // but adds several seconds of latency that's pointless for a
-                // plain widget tap with nothing to look up.
+                // Same LiveActivityIntent-conforming Pause/Resume/Skip the
+                // Live Activity's own buttons use (Shared/PomodoroLiveActivityIntents.swift)
+                // — required so the app process actually wakes and can find
+                // the running Activity to push the update to; see that
+                // file's history for why a plain AppIntent here can't do this.
                 HStack(spacing: 20) {
                     if entry.state.pausedAt == nil {
-                        Button(intent: WidgetPausePomodoroIntent()) {
+                        Button(intent: PausePomodoroIntent()) {
                             Image(systemName: "pause.fill")
                         }
                     } else {
-                        Button(intent: WidgetResumePomodoroIntent()) {
+                        Button(intent: ResumePomodoroIntent()) {
                             Image(systemName: "play.fill")
                         }
                     }
-                    Button(intent: WidgetSkipPomodoroIntent()) {
+                    Button(intent: SkipPomodoroIntent()) {
                         Image(systemName: "forward.fill")
                     }
                 }
@@ -170,15 +169,15 @@ struct PomodoroIdleWidgetView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                     HStack(spacing: 20) {
                         if entry.state.pausedAt == nil {
-                            Button(intent: WidgetPausePomodoroIntent()) {
+                            Button(intent: PausePomodoroIntent()) {
                                 Image(systemName: "pause.fill")
                             }
                         } else {
-                            Button(intent: WidgetResumePomodoroIntent()) {
+                            Button(intent: ResumePomodoroIntent()) {
                                 Image(systemName: "play.fill")
                             }
                         }
-                        Button(intent: WidgetSkipPomodoroIntent()) {
+                        Button(intent: SkipPomodoroIntent()) {
                             Image(systemName: "forward.fill")
                         }
                     }

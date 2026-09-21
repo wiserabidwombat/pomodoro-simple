@@ -1,5 +1,8 @@
 // Pomodoro/Timer/TimerViewModel.swift
 import Foundation
+import os
+
+private let viewModelLogger = Logger(subsystem: "com.aarontilley.pomodoro", category: "TimerViewModel")
 
 @MainActor
 final class TimerViewModel: ObservableObject {
@@ -97,20 +100,48 @@ final class TimerViewModel: ObservableObject {
     /// mutated the shared store while this process was backgrounded, so the
     /// in-memory engine must reload before it can safely catch up.
     func refreshFromSharedState() {
-        engine.reload(store.loadState())
         // Unconditionally push here (not just when a phase auto-completed):
         // this is also the app's one reliable path for correcting the Live
         // Activity's visible content after an external pause/resume/skip
         // (e.g. from the Lock Screen), since the widget extension's own
         // update path is unreliable on this SDK — see
-        // PomodoroLiveActivityIntents.swift's diagnostic marker. Runs once
-        // per foreground transition, not every tick, so this is cheap.
+        // PomodoroLiveActivityIntents.swift's diagnostic marker.
         catchUpIfNeeded(forcePush: true)
     }
 
     private func catchUpIfNeeded(forcePush: Bool = false) {
+        // Reload before doing anything else, every tick — not just on
+        // foreground transitions. A Lock Screen/StandBy button tap runs in
+        // its own separate TimerEngine instance backed only by the shared
+        // store (see PomodoroLiveActivityIntents.swift); this process's own
+        // long-lived engine has no way to learn about that change except by
+        // re-reading the store. Without this, the ticker (which keeps
+        // firing in the background and resumes the instant the app comes
+        // back from being suspended) could race the scenePhase-triggered
+        // reload above and stomp an externally-applied change with its own
+        // stale, independently-computed catch-up — e.g. Skip on StandBy
+        // advancing to Break, then reopening the app immediately reverting
+        // to Focus because the ticker caught up a still-Focus in-memory
+        // copy a beat before/after the real reload landed.
+        let beforeReload = engine.state
+        engine.reload(store.loadState())
+        let reloaded = engine.state
+        if beforeReload.phase != reloaded.phase || beforeReload.completedWorkCycles != reloaded.completedWorkCycles {
+            viewModelLogger.log("""
+            catchUpIfNeeded(forcePush=\(forcePush, privacy: .public)) reload changed in-memory state: \
+            \(beforeReload.phase.rawValue, privacy: .public)(cycles=\(beforeReload.completedWorkCycles, privacy: .public)) -> \
+            \(reloaded.phase.rawValue, privacy: .public)(cycles=\(reloaded.completedWorkCycles, privacy: .public))
+            """)
+        }
         let phaseBefore = engine.state.phase
         let advanced = engine.catchUpIfExpired()
+        if advanced {
+            let afterCatchUp = engine.state
+            viewModelLogger.log("""
+            catchUpIfNeeded(forcePush=\(forcePush, privacy: .public)) catchUpIfExpired advanced to \
+            \(afterCatchUp.phase.rawValue, privacy: .public)(cycles=\(afterCatchUp.completedWorkCycles, privacy: .public))
+            """)
+        }
         if advanced {
             historyStore.recordCompletedSession(duration: PomodoroPhase.work.duration)
             store.incrementCachedTodayCount()

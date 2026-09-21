@@ -6,7 +6,9 @@ struct TimerView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var showingRestartConfirmation = false
     @State private var showingHelp = false
+    @State private var showingNotificationPrimer = false
     @AppStorage("hasSeenPomodoroHelp") private var hasSeenHelp = false
+    @AppStorage("hasSeenNotificationPrimer") private var hasSeenNotificationPrimer = false
 
     var body: some View {
         ZStack {
@@ -77,8 +79,9 @@ struct TimerView: View {
             }
         }
         .onAppear {
-            NotificationScheduler().requestAuthorization { _ in }
-            if !hasSeenHelp {
+            if !hasSeenNotificationPrimer {
+                showingNotificationPrimer = true
+            } else if !hasSeenHelp {
                 hasSeenHelp = true
                 showingHelp = true
             }
@@ -99,6 +102,21 @@ struct TimerView: View {
         }
         .sheet(isPresented: $showingHelp) {
             HelpView(accentColor: viewModel.accentColor, durations: viewModel.durations)
+        }
+        .sheet(isPresented: $showingNotificationPrimer, onDismiss: {
+            if !hasSeenHelp {
+                hasSeenHelp = true
+                showingHelp = true
+            }
+        }) {
+            NotificationPrimerView(accentColor: viewModel.accentColor) { enableNotifications in
+                hasSeenNotificationPrimer = true
+                showingNotificationPrimer = false
+                if enableNotifications {
+                    NotificationScheduler().requestAuthorization { _ in }
+                }
+            }
+            .interactiveDismissDisabled()
         }
     }
 

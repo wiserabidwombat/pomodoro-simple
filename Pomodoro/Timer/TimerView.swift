@@ -1,9 +1,11 @@
 // Pomodoro/Timer/TimerView.swift
+import StoreKit
 import SwiftUI
 
 struct TimerView: View {
     @ObservedObject var viewModel: TimerViewModel
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.requestReview) private var requestReview
     @State private var showingRestartConfirmation = false
     @State private var showingHelp = false
     @State private var showingNotificationPrimer = false
@@ -84,6 +86,12 @@ struct TimerView: View {
             } else if !hasSeenHelp {
                 hasSeenHelp = true
                 showingHelp = true
+            }
+        }
+        .onChange(of: viewModel.pendingReviewRequest) { _, isPending in
+            if isPending {
+                requestReview()
+                viewModel.pendingReviewRequest = false
             }
         }
         .onChange(of: scenePhase) { _, newPhase in

@@ -11,6 +11,7 @@ struct PomodoroStateStore {
     private let chimeKey = "pomodoro.chime"
     private let todayCountKey = "pomodoro.todayCount"
     private let todayCountDateKey = "pomodoro.todayCountDate"
+    private let hasRequestedReviewKey = "pomodoro.hasRequestedReview"
 
     init(defaults: UserDefaults = AppGroup.defaults) {
         self.defaults = defaults
@@ -115,5 +116,19 @@ struct PomodoroStateStore {
               calendar.isDate(cachedDay, inSameDayAs: now)
         else { return 0 }
         return defaults.integer(forKey: todayCountKey)
+    }
+
+    /// Guards against ever asking for a review more than once — SwiftUI's
+    /// requestReview action is a hint the system silently throttles on its
+    /// own (at most ~3 times per year, and never if already rated), but
+    /// calling it repeatedly at every milestone regardless is still poor
+    /// practice, so this makes it fire exactly once, the first time a
+    /// milestone is reached.
+    func loadHasRequestedReview() -> Bool {
+        defaults.bool(forKey: hasRequestedReviewKey)
+    }
+
+    func markReviewRequested() {
+        defaults.set(true, forKey: hasRequestedReviewKey)
     }
 }

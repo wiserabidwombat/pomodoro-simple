@@ -22,6 +22,11 @@ final class TimerViewModel: ObservableObject {
     @Published var chime: ChimeOption {
         didSet { store.save(chime) }
     }
+    /// One-shot signal the view observes to actually invoke SwiftUI's
+    /// requestReview environment action — the ViewModel has no access to
+    /// that itself. Set true right as a milestone is reached, and the view
+    /// resets it back to false after acting on it.
+    @Published var pendingReviewRequest = false
 
     private let engine: TimerEngine
     private let store: PomodoroStateStore
@@ -110,6 +115,7 @@ final class TimerViewModel: ObservableObject {
         if advanced {
             historyStore.recordCompletedSession(duration: PomodoroPhase.work.duration)
             store.incrementCachedTodayCount()
+            checkReviewMilestone()
         }
         if engine.state.phase != phaseBefore {
             alerting.alertPhaseChange()
@@ -126,6 +132,17 @@ final class TimerViewModel: ObservableObject {
             // formatted freeze).
             state = engine.state
         }
+    }
+
+    /// Fires at most once ever, right after a Focus session completes
+    /// naturally — a positive moment, per Apple's own guidance on when
+    /// asking for a review lands well rather than reading as an interruption.
+    private func checkReviewMilestone() {
+        guard !store.loadHasRequestedReview() else { return }
+        let reachedMilestone = historyStore.totalCount >= 10 || historyStore.currentStreak() >= 3
+        guard reachedMilestone else { return }
+        store.markReviewRequested()
+        pendingReviewRequest = true
     }
 
     private func persistAndPush() {

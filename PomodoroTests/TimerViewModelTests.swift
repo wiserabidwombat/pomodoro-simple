@@ -93,4 +93,35 @@ final class TimerViewModelTests: XCTestCase {
         XCTAssertEqual(history.totalCount, 1)
         XCTAssertEqual(fakeAlert.alertCount, 1)
     }
+
+    func testReviewMilestoneRequestedAfterTenTotalSessions() {
+        let (vm, _, _, store, history) = makeViewModel()
+        for _ in 0..<9 {
+            history.recordCompletedSession(duration: PomodoroPhase.work.duration)
+        }
+        vm.start()
+        var expired = store.loadState()
+        expired.endDate = Date().addingTimeInterval(-1)
+        store.save(expired)
+
+        vm.refreshFromSharedState()
+
+        XCTAssertEqual(history.totalCount, 10)
+        XCTAssertTrue(vm.pendingReviewRequest)
+        XCTAssertTrue(store.loadHasRequestedReview())
+    }
+
+    func testReviewMilestoneNotRequestedBeforeReachingTenSessionsOrAStreak() {
+        let (vm, _, _, store, history) = makeViewModel()
+        vm.start()
+        var expired = store.loadState()
+        expired.endDate = Date().addingTimeInterval(-1)
+        store.save(expired)
+
+        vm.refreshFromSharedState()
+
+        XCTAssertEqual(history.totalCount, 1)
+        XCTAssertFalse(vm.pendingReviewRequest)
+        XCTAssertFalse(store.loadHasRequestedReview())
+    }
 }

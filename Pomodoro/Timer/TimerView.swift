@@ -73,6 +73,7 @@ struct TimerView: View {
                             Image(systemName: "arrow.counterclockwise")
                                 .font(.title3)
                         }
+                        .keyboardShortcut("r", modifiers: .command)
                         .foregroundStyle(viewModel.accentColor.color.opacity(0.7))
                         .padding()
                     }
@@ -147,6 +148,7 @@ struct TimerView: View {
     private var controls: some View {
         if !viewModel.state.sessionActive {
             Button("Start") { viewModel.start() }
+                .keyboardShortcut(.space, modifiers: [])
         } else {
             HStack(spacing: 20) {
                 // Fixed width so the Skip button doesn't shift when this
@@ -154,12 +156,15 @@ struct TimerView: View {
                 Group {
                     if viewModel.state.pausedAt == nil {
                         Button("Pause") { viewModel.pause() }
+                            .keyboardShortcut(.space, modifiers: [])
                     } else {
                         Button("Resume") { viewModel.resume() }
+                            .keyboardShortcut(.space, modifiers: [])
                     }
                 }
                 .frame(width: 90)
                 Button("Skip") { viewModel.skip() }
+                    .keyboardShortcut("s", modifiers: [])
             }
         }
     }

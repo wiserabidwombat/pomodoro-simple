@@ -31,6 +31,7 @@ struct NotificationPrimerView: View {
                     .opacity(0.6)
                     .padding(.bottom, 24)
             }
+            .frame(maxWidth: 500)
         }
         .foregroundStyle(accentColor.color)
     }

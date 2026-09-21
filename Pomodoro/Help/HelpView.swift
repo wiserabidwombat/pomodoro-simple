@@ -42,6 +42,8 @@ struct HelpView: View {
                         .padding(.top, 12)
                 }
                 .padding()
+                .frame(maxWidth: 500)
+                .frame(maxWidth: .infinity)
             }
         }
         .foregroundStyle(accentColor.color)

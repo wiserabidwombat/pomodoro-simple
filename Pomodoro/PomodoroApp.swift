@@ -21,15 +21,7 @@ struct PomodoroApp: App {
 
     var body: some Scene {
         WindowGroup {
-            TabView {
-                TimerView(viewModel: viewModel)
-                    .tabItem { Label("Timer", systemImage: "timer") }
-                StatsView(viewModel: viewModel, historyStore: historyStore)
-                    .tabItem { Label("Stats", systemImage: "chart.bar") }
-                SettingsView(viewModel: viewModel)
-                    .tabItem { Label("Settings", systemImage: "gear") }
-            }
-            .preferredColorScheme(.dark)
+            ContentView(viewModel: viewModel, historyStore: historyStore)
         }
     }
 }

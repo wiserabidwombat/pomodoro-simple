@@ -24,7 +24,7 @@ targets:
         INFOPLIST_FILE: Pomodoro/Info.plist
         CODE_SIGN_ENTITLEMENTS: Pomodoro/Pomodoro.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        TARGETED_DEVICE_FAMILY: "1"
+        TARGETED_DEVICE_FAMILY: "1,2"
     dependencies:
       - target: PomodoroWidgetExtension
         embed: true
@@ -39,7 +39,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.aarontilley.pomodoro.widget
         INFOPLIST_FILE: PomodoroWidget/Info.plist
         CODE_SIGN_ENTITLEMENTS: PomodoroWidget/PomodoroWidget.entitlements
-        TARGETED_DEVICE_FAMILY: "1"
+        TARGETED_DEVICE_FAMILY: "1,2"
   PomodoroTests:
     type: bundle.unit-test
     platform: iOS

@@ -1,6 +1,9 @@
 // Shared/WatchConnectivityRelay.swift
 import Foundation
 import WatchConnectivity
+import os
+
+private let logger = Logger(subsystem: "com.aarontilley.pomodoro", category: "WatchConnectivity")
 
 /// Thin WCSessionDelegate wrapper shared by both the phone app and the
 /// watch app — WatchConnectivity is the only way for them to exchange
@@ -30,15 +33,28 @@ final class WatchConnectivityRelay: NSObject {
     }
 
     func send(state: PomodoroState, accentColor: AccentColorOption, durations: PomodoroDurations) {
-        guard let session, session.activationState == .activated else { return }
+        guard let session, session.activationState == .activated else {
+            logger.log("send() skipped: session unavailable or not yet activated")
+            return
+        }
         let payload = Payload(state: state, accentColor: accentColor, durations: durations)
         guard let data = try? JSONEncoder().encode(payload) else { return }
-        try? session.updateApplicationContext(["payload": data])
+        do {
+            try session.updateApplicationContext(["payload": data])
+        } catch {
+            logger.error("send() updateApplicationContext threw: \(String(describing: error), privacy: .public)")
+        }
     }
 }
 
 extension WatchConnectivityRelay: WCSessionDelegate {
-    func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {}
+    func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
+        if let error {
+            logger.error("activation failed: \(String(describing: error), privacy: .public)")
+        } else {
+            logger.log("activation completed, state=\(String(describing: activationState), privacy: .public)")
+        }
+    }
 
     func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
         guard let data = applicationContext["payload"] as? Data,

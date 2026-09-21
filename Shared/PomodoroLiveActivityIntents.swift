@@ -28,6 +28,9 @@ private func applyAndPush(_ engine: TimerEngine, accentColor: AccentColorOption,
         intentLogger.error("applyAndPush() aborted: no active Live Activity found")
         return
     }
+    // Only stale-mark while actually counting down — see the matching
+    // comment in LiveActivityController.update().
+    let staleDate = newState.pausedAt == nil ? newState.endDate : nil
     let content = ActivityContent(
         state: PomodoroActivityAttributes.ContentState(
             phase: newState.phase,
@@ -36,7 +39,7 @@ private func applyAndPush(_ engine: TimerEngine, accentColor: AccentColorOption,
             pausedAt: newState.pausedAt,
             accentColor: accentColor
         ),
-        staleDate: newState.endDate
+        staleDate: staleDate
     )
     await activity.update(content)
 }
@@ -62,6 +65,8 @@ struct StartPomodoroIntent: LiveActivityIntent {
         for activity in Activity<PomodoroActivityAttributes>.activities {
             await activity.end(nil, dismissalPolicy: .immediate)
         }
+        // staleDate omitted on the initial request — see the matching
+        // comment in LiveActivityController.start() for why.
         let content = ActivityContent(
             state: PomodoroActivityAttributes.ContentState(
                 phase: newState.phase,
@@ -70,7 +75,7 @@ struct StartPomodoroIntent: LiveActivityIntent {
                 pausedAt: newState.pausedAt,
                 accentColor: accentColor
             ),
-            staleDate: newState.endDate
+            staleDate: nil
         )
         do {
             _ = try Activity.request(attributes: PomodoroActivityAttributes(), content: content)

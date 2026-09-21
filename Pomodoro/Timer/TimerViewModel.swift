@@ -62,7 +62,6 @@ final class TimerViewModel: ObservableObject {
     func start() {
         engine.start()
         persistAndPush()
-        liveActivity.start(state: engine.state, accentColor: accentColor)
         startTicker()
     }
 
@@ -145,10 +144,21 @@ final class TimerViewModel: ObservableObject {
         pendingReviewRequest = true
     }
 
+    /// Prefers update() to avoid tearing down and recreating the Lock
+    /// Screen card on every tick, but self-heals by requesting a fresh
+    /// Activity whenever the current one has died (the OS-enforced ~8-hour
+    /// lifetime cap, or any other reason) — this is what lets the app
+    /// recover on its own the moment it gets any execution window (a
+    /// foreground, or a Lock Screen button tap), instead of leaving the
+    /// Lock Screen stuck until the person happens to hit Restart.
     private func persistAndPush() {
         state = engine.state
         persistPomodoroState(state, store: store, notifications: notifications)
-        liveActivity.update(state: state, accentColor: accentColor)
+        if state.sessionActive && liveActivity.needsRestart {
+            liveActivity.start(state: state, accentColor: accentColor)
+        } else {
+            liveActivity.update(state: state, accentColor: accentColor)
+        }
         reloadIdlePomodoroWidget()
     }
 

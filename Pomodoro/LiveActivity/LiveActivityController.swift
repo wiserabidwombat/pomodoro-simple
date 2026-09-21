@@ -18,18 +18,33 @@ final class LiveActivityController: LiveActivityControlling {
         Activity<PomodoroActivityAttributes>.activities.first
     }
 
+    // .ended/.dismissed (or no activity at all) means there's nothing left
+    // to push updates to; .stale is left out on purpose — that's just our
+    // own staleDate having passed, and a normal update() clears it.
+    var needsRestart: Bool {
+        guard let currentActivity else { return true }
+        switch currentActivity.activityState {
+        case .active, .stale:
+            return false
+        default:
+            return true
+        }
+    }
+
     func start(state: PomodoroState, accentColor: AccentColorOption) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
             logger.error("start() aborted: Live Activities not enabled (areActivitiesEnabled == false)")
             return
         }
-        // staleDate marks this content as only accurate up to the current
-        // phase's end — if something ever stops us from pushing the next
-        // phase's update in time (an OS-enforced Live Activity lifetime cap,
-        // a missed background wakeup, etc.), the Lock Screen at least shows
-        // a visible "stale" indicator instead of silently freezing on a
-        // countdown that looks perfectly normal but is no longer accurate.
-        let content = ActivityContent(state: Self.contentState(state, accentColor), staleDate: state.endDate)
+        // staleDate deliberately omitted (nil) here: several open Apple
+        // Developer Forums threads report that setting staleDate on the
+        // *initial* Activity.request() can leave the Activity permanently
+        // disabled with a loading spinner instead of cleanly transitioning
+        // to .stale — see https://developer.apple.com/forums/thread/740406
+        // (also https://developer.apple.com/forums/thread/724774). Revisit
+        // this once that's fixed; update() below is unaffected and still
+        // carries a staleDate.
+        let content = ActivityContent(state: Self.contentState(state, accentColor), staleDate: nil)
         Task {
             // Awaited, not fire-and-forget: requesting a new Activity
             // before an old one has actually finished ending was racy —
@@ -53,7 +68,13 @@ final class LiveActivityController: LiveActivityControlling {
             logger.error("update() aborted: no active Live Activity found")
             return
         }
-        let content = ActivityContent(state: Self.contentState(state, accentColor), staleDate: state.endDate)
+        // Only stale-mark relative to the current phase's end while actually
+        // counting down — a paused display is frozen but still accurate
+        // indefinitely, so it should never be treated as stale just because
+        // endDate (a "completion time if resumed right now" snapshot) has
+        // passed while sitting paused.
+        let staleDate = state.pausedAt == nil ? state.endDate : nil
+        let content = ActivityContent(state: Self.contentState(state, accentColor), staleDate: staleDate)
         logger.log("update() calling activity.update on id=\(activity.id, privacy: .public) pausedAt=\(state.pausedAt?.description ?? "nil", privacy: .public)")
         Task {
             await activity.update(content)

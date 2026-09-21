@@ -127,3 +127,24 @@ struct SkipPomodoroIntent: LiveActivityIntent {
         return .result()
     }
 }
+
+/// Shown in place of Pause/Skip once the current phase's countdown has
+/// actually reached zero (see PomodoroLiveActivityWidget's isStale
+/// handling) — nothing runs in the background when a phase naturally
+/// expires, so without this the Live Activity just sits frozen until the
+/// app is opened. Deliberately does NOT also call skip(): catchUpIfExpired()
+/// alone already advances to the next phase, and Skip additionally calling
+/// .skip() on top of that is what caused the "one tap silently advances
+/// twice" bug this intent replaces for the expired case.
+struct AdvancePomodoroIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "Continue"
+
+    func perform() async throws -> some IntentResult {
+        let store = PomodoroStateStore()
+        let notifications = NotificationScheduler()
+        let engine = TimerEngine(state: store.loadState(), durations: store.loadDurations())
+        engine.catchUpIfExpired()
+        await applyAndPush(engine, accentColor: store.loadAccentColor(), store: store, notifications: notifications)
+        return .result()
+    }
+}

@@ -1,10 +1,14 @@
 import SwiftUI
 import SwiftData
+import UserNotifications
 
 @main
 struct PomodoroApp: App {
     private let modelContainer: ModelContainer
     private let historyStore: HistoryStore
+    // Held strongly here since UNUserNotificationCenter's delegate
+    // property doesn't retain it — nothing else would keep it alive.
+    private let notificationDelegate = PhaseEndNotificationDelegate()
     @StateObject private var viewModel: TimerViewModel
 
     init() {
@@ -12,6 +16,7 @@ struct PomodoroApp: App {
         modelContainer = container
         let history = HistoryStore(context: container.mainContext)
         historyStore = history
+        UNUserNotificationCenter.current().delegate = notificationDelegate
         _viewModel = StateObject(wrappedValue: TimerViewModel(
             historyStore: history,
             liveActivity: LiveActivityController(),

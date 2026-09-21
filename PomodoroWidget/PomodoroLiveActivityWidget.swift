@@ -6,11 +6,11 @@ import ActivityKit
 struct PomodoroLiveActivityWidget: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: PomodoroActivityAttributes.self) { context in
-            PomodoroLiveActivityView(state: context.state)
+            PomodoroLiveActivityView(state: context.state, isStale: context.isStale)
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.center) {
-                    PomodoroLiveActivityView(state: context.state)
+                    PomodoroLiveActivityView(state: context.state, isStale: context.isStale)
                 }
             } compactLeading: {
                 Image(systemName: "timer")
@@ -34,12 +34,25 @@ struct PomodoroLiveActivityWidget: Widget {
 
 struct PomodoroLiveActivityView: View {
     let state: PomodoroActivityAttributes.ContentState
+    let isStale: Bool
 
     var body: some View {
         VStack(spacing: 8) {
             Text(state.phase.displayName)
                 .font(.headline)
-            if state.pausedAt != nil {
+            if isStale && state.pausedAt == nil {
+                // The system marks content stale once the current phase's
+                // countdown should have ended — this fires whenever a phase
+                // completes while the app never got a chance to push the
+                // next phase's update (e.g. backgrounded past the OS's
+                // ~8-hour Live Activity cap). Without this, a frozen
+                // countdown here would look identical to a normal, accurate
+                // one. Pause/Resume/Skip still work while stale: the
+                // intents call catchUpIfExpired() before doing anything.
+                Text("Open the app to refresh")
+                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.secondary)
+            } else if state.pausedAt != nil {
                 Text(state.formattedRemainingWhilePaused)
                     .font(.system(size: 40, weight: .bold, design: .rounded))
                     .monospacedDigit()

@@ -1,6 +1,10 @@
 // PomodoroWidget/PomodoroIdleWidgetIntents.swift
 import AppIntents
+import ActivityKit
 import Foundation
+import os
+
+private let widgetIntentLogger = Logger(subsystem: "com.aarontilley.pomodoro", category: "IdleWidgetIntents")
 
 /// Plain AppIntents (not LiveActivityIntent) for the idle/Home Screen
 /// widget's own Pause/Resume/Skip buttons. LiveActivityIntent's defining
@@ -11,14 +15,40 @@ import Foundation
 /// second delay and taps queueing up when tapped repeatedly. These run
 /// directly in the widget extension instead, with no app-wake cost.
 ///
-/// They deliberately don't attempt to touch a Live Activity: that lookup is
-/// only reliable from the app's own process (see
-/// PomodoroLiveActivityIntents.swift's history). If one happens to be
-/// visible at the same time, TimerViewModel.refreshFromSharedState()
-/// corrects it the next time the app is foregrounded.
-private func applyAndReload(_ engine: TimerEngine, store: PomodoroStateStore) {
+/// A Live Activity started by the app is a separate Activity<T> instance
+/// as far as this process is concerned, so pushToLiveActivityIfPresent()
+/// below is a best-effort attempt, not a guarantee — if
+/// Activity<T>.activities comes back empty from the widget extension's own
+/// process (this is the open question; see PomodoroLiveActivityIntents.swift's
+/// history for why LiveActivityIntent's app-wake was originally used
+/// instead), this silently does nothing extra, and the existing fallback
+/// (TimerViewModel.refreshFromSharedState() correcting it next time the
+/// app is foregrounded) still applies — no downside either way.
+private func applyAndReload(_ engine: TimerEngine, accentColor: AccentColorOption, store: PomodoroStateStore) async {
     persistPomodoroState(engine.state, store: store, notifications: NotificationScheduler())
     reloadIdlePomodoroWidget()
+    await pushToLiveActivityIfPresent(engine.state, accentColor: accentColor)
+}
+
+private func pushToLiveActivityIfPresent(_ state: PomodoroState, accentColor: AccentColorOption) async {
+    let activities = Activity<PomodoroActivityAttributes>.activities
+    widgetIntentLogger.log("pushToLiveActivityIfPresent() found \(activities.count, privacy: .public) activities")
+    guard let activity = activities.first else { return }
+    // Only stale-mark while actually counting down — see the matching
+    // comment in LiveActivityController.update().
+    let staleDate = state.pausedAt == nil ? state.endDate : nil
+    let content = ActivityContent(
+        state: PomodoroActivityAttributes.ContentState(
+            phase: state.phase,
+            startDate: state.startDate,
+            endDate: state.endDate,
+            pausedAt: state.pausedAt,
+            accentColor: accentColor
+        ),
+        staleDate: staleDate
+    )
+    await activity.update(content)
+    widgetIntentLogger.log("pushToLiveActivityIfPresent() activity.update completed id=\(activity.id, privacy: .public)")
 }
 
 struct WidgetPausePomodoroIntent: AppIntent {
@@ -29,7 +59,7 @@ struct WidgetPausePomodoroIntent: AppIntent {
         let engine = TimerEngine(state: store.loadState(), durations: store.loadDurations())
         engine.catchUpIfExpired()
         engine.pause()
-        applyAndReload(engine, store: store)
+        await applyAndReload(engine, accentColor: store.loadAccentColor(), store: store)
         return .result()
     }
 }
@@ -42,7 +72,7 @@ struct WidgetResumePomodoroIntent: AppIntent {
         let engine = TimerEngine(state: store.loadState(), durations: store.loadDurations())
         engine.catchUpIfExpired()
         engine.resume()
-        applyAndReload(engine, store: store)
+        await applyAndReload(engine, accentColor: store.loadAccentColor(), store: store)
         return .result()
     }
 }
@@ -55,7 +85,7 @@ struct WidgetSkipPomodoroIntent: AppIntent {
         let engine = TimerEngine(state: store.loadState(), durations: store.loadDurations())
         engine.catchUpIfExpired()
         engine.skip()
-        applyAndReload(engine, store: store)
+        await applyAndReload(engine, accentColor: store.loadAccentColor(), store: store)
         return .result()
     }
 }

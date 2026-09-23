@@ -1,7 +1,60 @@
 # pomodoro-simple
-My first iOS app and it's a pomodoro app.  The one I want to use.
 
-## One-time setup (before first build)
+A Pomodoro timer for iOS designed to sit on your desk or nightstand in
+StandBy mode, with the countdown and controls on your Lock Screen and in the
+Dynamic Island too. Built as **Simple: StandBy Timer**.
+
+I built this app because I wanted a Pomodoro app I could control from the
+StandBy screen, that didn't require a subscription and was simple to use.
+
+> **Availability:** Currently in debugging, with plans to get it into
+> TestFlight by September 27, 2026.
+
+## Features
+
+- **StandBy and Dynamic Island.** A running session shows in StandBy and the
+  Dynamic Island, so you can check and control the timer without opening the
+  app.
+- **Live Activities.** The Lock Screen shows a live countdown with
+  Pause/Resume/Skip buttons, in your accent color on black.
+- **Home Screen and Lock Screen widgets.** Widgets show the current phase and
+  countdown, and the Home Screen widgets have Pause/Resume and Skip buttons.
+- **Shared state via App Groups.** The app, widgets and Live Activity all
+  read and write the same timer state through a shared App Group.
+- **Notification permission primer.** On first launch, a screen explains what
+  notifications are for before iOS asks for permission.
+- **Focus / Short Break / Long Break cycle.** Defaults are 25/5/15 minutes,
+  with a Long Break after every 4th Focus session. All three durations can be
+  changed in Settings.
+- **Stats.** Today's session count, all-time total, current streak, total
+  focus time, a last-7-days chart and a per-day history.
+- **Accent colors.** Choose from 7 preset colors or pick a custom one with
+  the color picker.
+
+## Screenshots
+
+| Timer | Live Activity | StandBy |
+| --- | --- | --- |
+| <img src="docs/screenshots/timer.png" width="200" alt="Timer screen mid-session with cycle progress"> | <img src="docs/screenshots/live-activity.png" width="200" alt="Live Activity countdown in the Dynamic Island above a small Home Screen widget"> | <img src="docs/screenshots/standby.png" width="360" alt="StandBy mode showing the timer in landscape with Pause and Skip buttons"> |
+
+| Widget | Settings |
+| --- | --- |
+| <img src="docs/screenshots/widget.png" width="200" alt="Medium Home Screen widget with countdown, Pause and Skip buttons, cycle progress and today's count"> | <img src="docs/screenshots/settings.png" width="200" alt="Settings screen with accent colors, durations and sound options"> |
+
+## Tech stack
+
+Swift · SwiftUI · WidgetKit · ActivityKit · App Intents · SwiftData · Swift
+Charts · UserNotifications · XcodeGen (project generation) · XCTest
+
+## How I build
+
+Developed with [Claude Code](https://claude.com/claude-code). I gave Claude a
+fairly open prompt describing most of the functionality I wanted, then let it
+do its thing to see what would or could happen.
+
+## Building it yourself
+
+### One-time setup (before first build)
 
 This repo is already configured with the bundle id `com.aarontilley.pomodoro`
 and matching App Group `group.com.aarontilley.pomodoro` — if you're building
@@ -31,41 +84,8 @@ your own reverse-DNS bundle id (e.g. `com.yourname.pomodoro`) and replace
    device under your team (Xcode usually offers to do this automatically
    once you pick it as the run destination).
 
-## Manual testing checklist
+### Testing
 
-Widget/Live Activity/StandBy visuals cannot be unit tested — run through this
-on a real device (a simulator can approximate StandBy and the Dynamic Island,
-but a physical device docked and charging in landscape is the real test):
-
-- [ ] Start a session, background the app, confirm the Live Activity shows on
-      the Lock Screen with a live countdown and the chosen accent color on black.
-- [ ] Simulator: Features menu → StandBy, confirm landscape rendering.
-- [ ] Physical device: dock/charge in landscape, confirm StandBy matches.
-- [ ] Tap Pause, then Resume, then Skip from the Lock Screen/StandBy Live
-      Activity while the app is backgrounded; reopen the app and confirm its
-      UI reflects each change.
-- [ ] On a fresh install, confirm the notification primer screen appears
-      first, before the Help sheet and before the real system permission
-      dialog. Tap "Not Now"; confirm the system dialog never appears and the
-      app still runs a full session with foreground sound/haptic only.
-- [ ] Delete and reinstall fresh again; this time tap "Enable Notifications"
-      on the primer and confirm the real system dialog appears next, then
-      deny it there; confirm the app still doesn't crash and runs normally.
-- [ ] Toggle each of the 7 preset accent colors in Settings; confirm the Timer
-      screen, idle widget, and Live Activity all pick up the new color.
-- [ ] Let a work phase's countdown run out with the app foregrounded; confirm
-      it auto-advances to a short break and the Stats screen's "Today" count
-      increments by one.
-- [ ] Add the idle widget to the Home Screen and to the Lock Screen; confirm
-      tapping either opens the app.
-- [ ] From the Home Screen widget, tap Pause/Resume and Skip; confirm they
-      respond immediately (no multi-second delay) and the widget updates.
-- [ ] Tap Restart mid-session; confirm the confirmation alert appears
-      (centered, not a bottom sheet) and accepting it resets to a fresh
-      Focus session with the cycle dots back to empty.
-- [ ] Delete the app and reinstall fresh; confirm the Help sheet appears
-      automatically right after the notification primer is dismissed (either
-      choice), and that the "?" icon reopens it afterward without
-      auto-showing again.
-- [ ] Complete 4 Focus sessions in a row (Skip is fine for this); confirm
-      the 4th is followed by a Long Break and the cycle dots reset to empty.
+Unit tests live in `PomodoroTests/` and run from the `Pomodoro` scheme. The
+widget, Live Activity and StandBy visuals can't be unit tested; see the
+[manual testing checklist](TESTING.md) and run through it on a real device.

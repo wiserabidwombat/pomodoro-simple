@@ -36,12 +36,15 @@ struct PomodoroApp: App {
 /// again just re-reads the same already-open store. It also still isn't
 /// touched at all during a headless LiveActivityIntent wake, since nothing
 /// in that path ever reads `AppEnvironment.historyStore`.
+///
+/// The container is held in its own static rather than as a local inside
+/// the historyStore initializer: a ModelContext doesn't keep its
+/// ModelContainer alive, so the container must be owned for as long as its
+/// context is in use.
 @MainActor
 private enum AppEnvironment {
-    static let historyStore: HistoryStore = {
-        let container = try! ModelContainer(for: CompletedSession.self)
-        return HistoryStore(context: container.mainContext)
-    }()
+    static let container: ModelContainer = try! ModelContainer(for: CompletedSession.self)
+    static let historyStore = HistoryStore(context: container.mainContext)
 }
 
 private struct RootView: View {

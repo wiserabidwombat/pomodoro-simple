@@ -91,4 +91,76 @@ final class HistoryStoreTests: XCTestCase {
         XCTAssertEqual(series.last!.count, 1)
         XCTAssertEqual(series.first!.count, 0)
     }
+
+    // MARK: - Stats screen states
+
+    @MainActor
+    func testSnapshotWithNoSessionsIsAllZeroAndStillHasAFullWeek() {
+        let snapshot = makeInMemoryStore().snapshot()
+        XCTAssertEqual(snapshot.todayCount, 0)
+        XCTAssertEqual(snapshot.totalCount, 0)
+        XCTAssertEqual(snapshot.totalFocusSeconds, 0)
+        XCTAssertEqual(snapshot.currentStreak, 0)
+        XCTAssertEqual(snapshot.byDay, [])
+        XCTAssertEqual(snapshot.lastSevenDays.count, 7)
+        XCTAssertTrue(snapshot.lastSevenDays.allSatisfy { $0.count == 0 })
+        XCTAssertEqual(StatsView.formattedFocusTime(snapshot.totalFocusSeconds), "0m")
+    }
+
+    @MainActor
+    func testSnapshotWithSessionsOnlyToday() {
+        let store = makeInMemoryStore()
+        for _ in 0..<3 {
+            store.recordCompletedSession(duration: 1500)
+        }
+        let snapshot = store.snapshot()
+        XCTAssertEqual(snapshot.todayCount, 3)
+        XCTAssertEqual(snapshot.totalCount, 3)
+        XCTAssertEqual(snapshot.totalFocusSeconds, 4500)
+        XCTAssertEqual(snapshot.currentStreak, 1)
+        XCTAssertEqual(snapshot.byDay.count, 1)
+        XCTAssertEqual(snapshot.lastSevenDays.map(\.count), [0, 0, 0, 0, 0, 0, 3])
+    }
+
+    func testSnapshotWithALongHistory() {
+        let calendar = Calendar.current
+        let now = Date()
+        let sessions: [StatsSnapshot.Session] = (0..<400).flatMap { daysAgo -> [StatsSnapshot.Session] in
+            let day = calendar.date(byAdding: .day, value: -daysAgo, to: now)!
+            // Two sessions on even days, one on odd days.
+            return Array(repeating: StatsSnapshot.Session(date: day, durationSeconds: 1500), count: daysAgo.isMultiple(of: 2) ? 2 : 1)
+        }
+        let snapshot = StatsSnapshot(sessions: sessions, calendar: calendar, now: now)
+        XCTAssertEqual(snapshot.totalCount, 600)
+        XCTAssertEqual(snapshot.todayCount, 2)
+        XCTAssertEqual(snapshot.currentStreak, 400)
+        XCTAssertEqual(snapshot.byDay.count, 400)
+        XCTAssertEqual(snapshot.byDay, snapshot.byDay.sorted { $0.day > $1.day })
+        XCTAssertEqual(snapshot.lastSevenDays.count, 7)
+        XCTAssertEqual(snapshot.lastSevenDays.map(\.count), [2, 1, 2, 1, 2, 1, 2])
+        XCTAssertEqual(StatsView.formattedFocusTime(snapshot.totalFocusSeconds), "250h 0m")
+    }
+
+    func testStreakAndWeekSurviveAMidnightDSTChange() {
+        // Brazil's DST (while it still had one) started at midnight, so
+        // 2018-11-04 began at 01:00 local time — "start of day minus one
+        // day" math lands on a time that isn't any day's start.
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/Sao_Paulo")!
+        let sessions = (1...7).map { day -> StatsSnapshot.Session in
+            let date = calendar.date(from: DateComponents(year: 2018, month: 11, day: day, hour: 12))!
+            return StatsSnapshot.Session(date: date, durationSeconds: 1500)
+        }
+        let now = calendar.date(from: DateComponents(year: 2018, month: 11, day: 7, hour: 15))!
+        let snapshot = StatsSnapshot(sessions: sessions, calendar: calendar, now: now)
+        XCTAssertEqual(snapshot.currentStreak, 7)
+        XCTAssertEqual(snapshot.lastSevenDays.map(\.count), [1, 1, 1, 1, 1, 1, 1])
+    }
+
+    func testFormattedFocusTimeNeverTrapsOnBadInput() {
+        XCTAssertEqual(StatsView.formattedFocusTime(.nan), "0m")
+        XCTAssertEqual(StatsView.formattedFocusTime(.infinity), "0m")
+        XCTAssertEqual(StatsView.formattedFocusTime(-60), "0m")
+        XCTAssertEqual(StatsView.formattedFocusTime(3660), "1h 1m")
+    }
 }

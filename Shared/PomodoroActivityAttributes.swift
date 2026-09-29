@@ -21,9 +21,30 @@ struct PomodoroActivityAttributes: ActivityAttributes {
         /// what was just on screen, making resume look like it added a
         /// second back.
         var formattedRemainingWhilePaused: String {
-            let effectiveNow = pausedAt ?? Date()
-            let total = Int(max(0, endDate.timeIntervalSince(effectiveNow)).rounded(.up))
-            return String(format: "%02d:%02d", total / 60, total % 60)
+            PomodoroState.formattedRemaining(endDate: endDate, asOf: pausedAt ?? Date())
         }
+    }
+}
+
+extension PomodoroActivityAttributes.ContentState {
+    /// The one place app-side state becomes Live Activity content — used by
+    /// LiveActivityController and the Lock Screen intents alike. (Declared
+    /// in an extension so the memberwise initializer stays available.)
+    init(_ state: PomodoroState, accentColor: AccentColorOption) {
+        self.init(
+            phase: state.phase,
+            startDate: state.startDate,
+            endDate: state.endDate,
+            pausedAt: state.pausedAt,
+            accentColor: accentColor
+        )
+    }
+
+    /// Only stale-mark while actually counting down — a paused display is
+    /// frozen but still accurate indefinitely, so it should never be
+    /// treated as stale just because endDate (a "completion time if resumed
+    /// right now" snapshot) has passed while sitting paused.
+    var staleDate: Date? {
+        pausedAt == nil ? endDate : nil
     }
 }

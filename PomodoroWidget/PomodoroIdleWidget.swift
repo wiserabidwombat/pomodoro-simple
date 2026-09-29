@@ -40,24 +40,46 @@ struct PomodoroIdleProvider: TimelineProvider {
     func getTimeline(in context: Context, completion: @escaping (Timeline<PomodoroIdleEntry>) -> Void) {
         let store = PomodoroStateStore()
         let state = store.loadState()
-        let entry = PomodoroIdleEntry(date: Date(), state: state, accentColor: store.loadAccentColor(), todayCount: store.loadCachedTodayCount())
+        let accentColor = store.loadAccentColor()
+        let todayCount = store.loadCachedTodayCount()
+        let now = Date()
+        func entry(at date: Date) -> PomodoroIdleEntry {
+            PomodoroIdleEntry(date: date, state: state, accentColor: accentColor, todayCount: todayCount)
+        }
+
+        var entries = [entry(at: now)]
+        let nextReload: Date
+        if state.sessionActive, state.pausedAt == nil, state.endDate > now {
+            // A second entry dated at the phase's end flips the widget to
+            // its "Time's up" + Continue state exactly on time, with no
+            // reload needed (see PomodoroIdleWidgetView.isExpired).
+            entries.append(entry(at: state.endDate))
+            nextReload = state.endDate.addingTimeInterval(3600)
+        } else {
+            nextReload = now.addingTimeInterval(3600)
+        }
         // The real update path is the explicit WidgetCenter.reloadTimelines
-        // calls in TimerViewModel and the Live Activity intents, fired on
-        // every start/pause/resume/skip/restart. This reload-at-endDate (or
-        // in an hour if idle) is just a fallback in case one of those is
-        // ever missed. Clamped to at least 30s out — if the phone went
-        // unreloaded long enough for endDate to already be in the past,
-        // asking WidgetKit to reload "after" a past date can trigger rapid
-        // repeated reload attempts instead of one clean one.
-        let fallback = state.sessionActive ? state.endDate : Date().addingTimeInterval(3600)
-        let nextReload = max(fallback, Date().addingTimeInterval(30))
-        completion(Timeline(entries: [entry], policy: .after(nextReload)))
+        // calls in TimerViewModel and the intents, fired on every change.
+        // This is only a fallback in case one is ever missed. It used to be
+        // "at endDate, but at least 30s out" — which, once a phase had
+        // expired, meant asking WidgetKit to reload every 30 seconds for as
+        // long as it sat expired, spending the widget's daily reload budget.
+        completion(Timeline(entries: entries, policy: .after(nextReload)))
     }
 }
 
 struct PomodoroIdleWidgetView: View {
     let entry: PomodoroIdleEntry
     @Environment(\.widgetFamily) private var family
+
+    /// The phase ran out and nothing has advanced it yet — nothing runs in
+    /// the background when that happens. Shown as "Time's up" with a
+    /// Continue button (like the Live Activity) rather than a frozen 00:00
+    /// with Pause/Skip, where Skip would catch up *and* skip, advancing two
+    /// phases in one tap.
+    private var isExpired: Bool {
+        entry.state.sessionActive && entry.state.pausedAt == nil && entry.date >= entry.state.endDate
+    }
 
     var body: some View {
         Group {
@@ -127,25 +149,7 @@ struct PomodoroIdleWidgetView: View {
                 countdownText
                     .font(.title3.bold())
                     .monospacedDigit()
-                // Same LiveActivityIntent-conforming Pause/Resume/Skip the
-                // Live Activity's own buttons use (Shared/PomodoroLiveActivityIntents.swift)
-                // — required so the app process actually wakes and can find
-                // the running Activity to push the update to; see that
-                // file's history for why a plain AppIntent here can't do this.
-                HStack(spacing: 20) {
-                    if entry.state.pausedAt == nil {
-                        Button(intent: PausePomodoroIntent()) {
-                            Image(systemName: "pause.fill")
-                        }
-                    } else {
-                        Button(intent: ResumePomodoroIntent()) {
-                            Image(systemName: "play.fill")
-                        }
-                    }
-                    Button(intent: SkipPomodoroIntent()) {
-                        Image(systemName: "forward.fill")
-                    }
-                }
+                controls
             } else {
                 Image(systemName: "timer")
                     .font(.title2)
@@ -167,20 +171,7 @@ struct PomodoroIdleWidgetView: View {
                         .monospacedDigit()
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    HStack(spacing: 20) {
-                        if entry.state.pausedAt == nil {
-                            Button(intent: PausePomodoroIntent()) {
-                                Image(systemName: "pause.fill")
-                            }
-                        } else {
-                            Button(intent: ResumePomodoroIntent()) {
-                                Image(systemName: "play.fill")
-                            }
-                        }
-                        Button(intent: SkipPomodoroIntent()) {
-                            Image(systemName: "forward.fill")
-                        }
-                    }
+                    controls
                 } else {
                     Text("Tap to start")
                         .font(.subheadline)
@@ -211,9 +202,39 @@ struct PomodoroIdleWidgetView: View {
         }
     }
 
+    /// Same LiveActivityIntent-conforming intents the Live Activity's own
+    /// buttons use (Shared/PomodoroLiveActivityIntents.swift) — required so
+    /// the app process actually wakes and can find the running Activity to
+    /// push the update to; a plain AppIntent here can't do that.
+    @ViewBuilder
+    private var controls: some View {
+        if isExpired {
+            Button(intent: AdvancePomodoroIntent()) {
+                Label("Continue", systemImage: "arrow.right")
+            }
+        } else {
+            HStack(spacing: 20) {
+                if entry.state.pausedAt == nil {
+                    Button(intent: PausePomodoroIntent()) {
+                        Image(systemName: "pause.fill")
+                    }
+                } else {
+                    Button(intent: ResumePomodoroIntent()) {
+                        Image(systemName: "play.fill")
+                    }
+                }
+                Button(intent: SkipPomodoroIntent()) {
+                    Image(systemName: "forward.fill")
+                }
+            }
+        }
+    }
+
     @ViewBuilder
     private var countdownText: some View {
-        if entry.state.pausedAt != nil {
+        if isExpired {
+            Text("Time's up")
+        } else if entry.state.pausedAt != nil {
             Text(entry.state.formattedRemainingWhilePaused)
         } else {
             // Text(timerInterval:) reserves a wider bounding box than it

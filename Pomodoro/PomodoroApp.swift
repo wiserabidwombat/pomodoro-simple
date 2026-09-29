@@ -50,6 +50,7 @@ private struct RootView: View {
         liveActivity: LiveActivityController(),
         alerting: SystemPhaseChangeAlert()
     )
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         TabView {
@@ -61,5 +62,18 @@ private struct RootView: View {
                 .tabItem { Label("Settings", systemImage: "gear") }
         }
         .preferredColorScheme(.dark)
+        // Lives here rather than on TimerView so it keeps working whichever
+        // tab is showing. `initial: true` matters: without it this never
+        // fires for the scene's first .active on a cold launch.
+        .onChange(of: scenePhase, initial: true) { _, newPhase in
+            switch newPhase {
+            case .active:
+                viewModel.sceneDidBecomeActive()
+            case .background:
+                viewModel.sceneDidEnterBackground()
+            default:
+                break
+            }
+        }
     }
 }

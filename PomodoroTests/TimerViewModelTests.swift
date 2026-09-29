@@ -1,4 +1,5 @@
 // PomodoroTests/TimerViewModelTests.swift
+import Combine
 import XCTest
 import SwiftData
 @testable import Pomodoro
@@ -131,6 +132,19 @@ final class TimerViewModelTests: XCTestCase {
         XCTAssertEqual(history.totalFocusSeconds, 1500)
         XCTAssertEqual(vm.historyRevision, 1)
         XCTAssertEqual(store.drainPendingCompletedSessions(), [])
+    }
+
+    func testTickDoesNotPublishWhenNothingChanged() {
+        // Every observing screen re-renders on objectWillChange, so an idle
+        // or mid-countdown tick must not fire it.
+        let (vm, _, _, _, _) = makeViewModel()
+        vm.start()
+        var changeCount = 0
+        let subscription = vm.objectWillChange.sink { changeCount += 1 }
+        vm.tick()
+        vm.tick()
+        XCTAssertEqual(changeCount, 0)
+        subscription.cancel()
     }
 
     func testReviewMilestoneRequestedAfterTenTotalSessions() {

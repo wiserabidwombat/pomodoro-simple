@@ -68,7 +68,6 @@ final class TimerViewModel: ObservableObject {
     func start() {
         engine.start()
         persistAndPush()
-        startTicker()
     }
 
     func pause() {
@@ -90,8 +89,6 @@ final class TimerViewModel: ObservableObject {
     /// count reset to 0) — ends the Live Activity rather than updating it,
     /// since there's no longer a session to show.
     func restart() {
-        ticker?.invalidate()
-        ticker = nil
         engine.reset()
         state = engine.state
         persistPomodoroState(state, store: store, notifications: notifications)
@@ -99,9 +96,28 @@ final class TimerViewModel: ObservableObject {
         reloadIdlePomodoroWidget()
     }
 
-    /// Call when the app becomes active: the widget extension may have
-    /// mutated the shared store while this process was backgrounded, so the
-    /// in-memory engine must reload before it can safely catch up.
+    /// Call whenever the scene becomes active (including the very first
+    /// time, on a cold launch): reloads what other processes may have
+    /// changed and keeps the ticker running for as long as the app is in
+    /// the foreground. The ticker used to be started only by the Start
+    /// button, so a relaunch mid-session had no ticker at all — a phase
+    /// could run out on screen without ever advancing, and a Start from
+    /// Siri/Shortcuts while the app was open was never picked up.
+    func sceneDidBecomeActive() {
+        refreshFromSharedState()
+        startTicker()
+    }
+
+    /// No point waking every second while backgrounded; the next
+    /// sceneDidBecomeActive() reloads and catches up anything missed.
+    func sceneDidEnterBackground() {
+        ticker?.invalidate()
+        ticker = nil
+    }
+
+    /// The widget extension may have mutated the shared store while this
+    /// process was backgrounded, so the in-memory engine must reload
+    /// before it can safely catch up.
     func refreshFromSharedState() {
         // Unconditionally push here (not just when a phase auto-completed):
         // this is also the app's one reliable path for correcting the Live
@@ -160,7 +176,14 @@ final class TimerViewModel: ObservableObject {
             // wasteful (and previously fought Text(timerInterval:pauseTime:)'s
             // own clock before that view was replaced with a manually
             // formatted freeze).
-            state = engine.state
+            //
+            // Only publish an actual change: assigning an identical value
+            // to an @Published property still fires objectWillChange,
+            // which re-rendered every screen observing this view model
+            // (Stats included, with all its SwiftData queries) once a second.
+            if state != engine.state {
+                state = engine.state
+            }
         }
     }
 
@@ -210,9 +233,16 @@ final class TimerViewModel: ObservableObject {
     }
 
     private func startTicker() {
-        ticker?.invalidate()
-        ticker = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+        guard ticker == nil else { return }
+        let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.tick() }
         }
+        // Lets the system coalesce wakeups; a phase ending up to 0.1s late
+        // is invisible next to the 1s tick itself.
+        timer.tolerance = 0.1
+        // .common (not the default mode scheduledTimer uses) so the ticker
+        // keeps firing while a List/ScrollView is being dragged.
+        RunLoop.main.add(timer, forMode: .common)
+        ticker = timer
     }
 }

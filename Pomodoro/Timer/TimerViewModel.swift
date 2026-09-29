@@ -133,22 +133,20 @@ final class TimerViewModel: ObservableObject {
             \(reloaded.phase.rawValue, privacy: .public)(cycles=\(reloaded.completedWorkCycles, privacy: .public))
             """)
         }
-        let phaseBefore = engine.state.phase
-        let advanced = engine.catchUpIfExpired()
+        let completed = engine.catchUpIfExpired()
+        let advanced = completed != nil
         if advanced {
             let afterCatchUp = engine.state
             viewModelLogger.log("""
             catchUpIfNeeded(forcePush=\(forcePush, privacy: .public)) catchUpIfExpired advanced to \
             \(afterCatchUp.phase.rawValue, privacy: .public)(cycles=\(afterCatchUp.completedWorkCycles, privacy: .public))
             """)
+            alerting.alertPhaseChange()
         }
-        if advanced {
-            historyStore.recordCompletedSession(duration: PomodoroPhase.work.duration)
+        if let completed, completed.phase == .work {
+            historyStore.recordCompletedSession(duration: completed.duration, on: completed.endedAt)
             store.incrementCachedTodayCount()
             checkReviewMilestone()
-        }
-        if engine.state.phase != phaseBefore {
-            alerting.alertPhaseChange()
         }
         if advanced || forcePush {
             persistAndPush()
@@ -193,10 +191,16 @@ final class TimerViewModel: ObservableObject {
         reloadIdlePomodoroWidget()
     }
 
+    /// One ticker beat: pick up external changes and notice a phase
+    /// running out. Internal (not private) so tests can drive it directly.
+    func tick() {
+        catchUpIfNeeded()
+    }
+
     private func startTicker() {
         ticker?.invalidate()
         ticker = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.catchUpIfNeeded() }
+            Task { @MainActor in self?.tick() }
         }
     }
 }

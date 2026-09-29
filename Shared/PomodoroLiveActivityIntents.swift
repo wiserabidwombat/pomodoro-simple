@@ -114,7 +114,7 @@ struct PausePomodoroIntent: LiveActivityIntent {
         let notifications = NotificationScheduler()
         let beforeState = store.loadState()
         let engine = TimerEngine(state: beforeState, durations: store.loadDurations())
-        let caughtUp = engine.catchUpIfExpired()
+        let caughtUp = engine.catchUpIfExpired() != nil
         engine.pause()
         logTransition("Pause", before: beforeState, after: engine.state, caughtUp: caughtUp)
         await applyAndPush(engine, accentColor: store.loadAccentColor(), store: store, notifications: notifications)
@@ -132,7 +132,7 @@ struct ResumePomodoroIntent: LiveActivityIntent {
         let notifications = NotificationScheduler()
         let beforeState = store.loadState()
         let engine = TimerEngine(state: beforeState, durations: store.loadDurations())
-        let caughtUp = engine.catchUpIfExpired()
+        let caughtUp = engine.catchUpIfExpired() != nil
         engine.resume()
         logTransition("Resume", before: beforeState, after: engine.state, caughtUp: caughtUp)
         await applyAndPush(engine, accentColor: store.loadAccentColor(), store: store, notifications: notifications)
@@ -150,7 +150,7 @@ struct SkipPomodoroIntent: LiveActivityIntent {
         let notifications = NotificationScheduler()
         let beforeState = store.loadState()
         let engine = TimerEngine(state: beforeState, durations: store.loadDurations())
-        let caughtUp = engine.catchUpIfExpired()
+        let caughtUp = engine.catchUpIfExpired() != nil
         engine.skip()
         logTransition("Skip", before: beforeState, after: engine.state, caughtUp: caughtUp)
         await applyAndPush(engine, accentColor: store.loadAccentColor(), store: store, notifications: notifications)
@@ -176,7 +176,7 @@ struct AdvancePomodoroIntent: LiveActivityIntent {
         let notifications = NotificationScheduler()
         let beforeState = store.loadState()
         let engine = TimerEngine(state: beforeState, durations: store.loadDurations())
-        let caughtUp = engine.catchUpIfExpired()
+        let caughtUp = engine.catchUpIfExpired() != nil
         logTransition("Advance", before: beforeState, after: engine.state, caughtUp: caughtUp)
         await applyAndPush(engine, accentColor: store.loadAccentColor(), store: store, notifications: notifications)
         return .result()

@@ -94,6 +94,29 @@ final class TimerViewModelTests: XCTestCase {
         XCTAssertEqual(fakeAlert.alertCount, 1)
     }
 
+    func testExpiredBreakIsPersistedOnceAndAlertsOnce() {
+        // Regression: a break running out in the foreground used to be
+        // re-advanced (and re-alerted) on every tick, because the advance
+        // was never written back to the shared store.
+        let (vm, _, fakeAlert, store, history) = makeViewModel()
+        vm.start()
+        vm.skip() // -> shortBreak
+        var expired = store.loadState()
+        expired.endDate = Date().addingTimeInterval(-1)
+        store.save(expired)
+
+        vm.tick()
+        let afterFirstTick = store.loadState()
+        XCTAssertEqual(afterFirstTick.phase, .work)
+        XCTAssertEqual(vm.state, afterFirstTick)
+
+        vm.tick()
+        vm.tick()
+        XCTAssertEqual(store.loadState(), afterFirstTick)
+        XCTAssertEqual(fakeAlert.alertCount, 1)
+        XCTAssertEqual(history.totalCount, 0) // a break isn't a Focus session
+    }
+
     func testReviewMilestoneRequestedAfterTenTotalSessions() {
         let (vm, _, _, store, history) = makeViewModel()
         for _ in 0..<9 {

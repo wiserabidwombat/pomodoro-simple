@@ -24,6 +24,9 @@ your own reverse-DNS bundle id (e.g. `com.yourname.pomodoro`) and replace
 3. Enroll in the paid Apple Developer Program if you haven't already — App
    Groups require it; a free/personal-team account can't use them at all.
 4. Run `xcodegen generate`, then open `Pomodoro.xcodeproj` in Xcode.
+   `Pomodoro.xcodeproj` is generated and git-ignored, so re-run
+   `xcodegen generate` whenever you pull changes that add, remove, or move
+   Swift files.
 5. In Xcode, select your Team for both the `Pomodoro` and
    `PomodoroWidgetExtension` targets under Signing & Capabilities, and
    confirm the App Groups capability shows your group id on both targets.
@@ -69,3 +72,21 @@ but a physical device docked and charging in landscape is the real test):
       auto-showing again.
 - [ ] Complete 4 Focus sessions in a row (Skip is fine for this); confirm
       the 4th is followed by a Long Break and the cycle dots reset to empty.
+- [ ] On a fresh install with no sessions yet, open the Stats tab and confirm
+      it loads (zeros, an empty 7-day chart, and the "Completed Focus sessions
+      will show up here" message) without crashing.
+- [ ] With the app open, let a *break* run out; confirm it advances to Focus
+      once, the chime/haptic plays once (no system notification sound on top),
+      and the new Focus countdown actually counts down.
+- [ ] Let a Focus session run out with the phone locked, then tap Continue on
+      the Lock Screen Live Activity (or dismiss the notification); open the
+      app and confirm Stats and the medium widget's "Today" count include it.
+- [ ] Start a session, force-quit the app, reopen it mid-phase; confirm the
+      countdown is right and the phase still advances on its own at zero.
+- [ ] With the Home Screen widget visible, let a phase run out; confirm it
+      switches to "Time's up" with a Continue button, and that Continue
+      advances exactly one phase.
+- [ ] Mid-session, change the accent color (preset and custom picker);
+      confirm the Live Activity and widget pick it up within a second or two.
+- [ ] Turn Settings → Play Sound off mid-phase, lock the phone, and confirm
+      the phase-end notification arrives silently.

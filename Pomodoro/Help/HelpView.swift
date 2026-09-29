@@ -30,7 +30,7 @@ struct HelpView: View {
                     )
                     helpSection(
                         title: "Lock Screen & StandBy",
-                        body: "While a session is running, a Live Activity shows the countdown on your Lock Screen, in the Dynamic Island, and on StandBy — with the same Pause/Resume/Skip controls, so you don't need to open the app."
+                        body: "While a session is running, a Live Activity shows the countdown on your Lock Screen, in the Dynamic Island, and on StandBy — with the same Pause/Resume/Skip controls, so you don't need to open the app. When a phase ends while your phone is locked, tap Continue (or just dismiss the notification) to start the next one."
                     )
                     helpSection(
                         title: "Restart",

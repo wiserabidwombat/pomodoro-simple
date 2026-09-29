@@ -16,7 +16,7 @@ start a Focus session and control it without ever unlocking your phone.
 ## Description
 Simple: StandBy Timer is a focus timer built around the classic Pomodoro Technique:
 25 minutes of focused work, then a short break, repeating in a cycle with a
-longer break every 4th round.
+longer break every 4th round — or set your own Focus and break lengths.
 
 What makes it different is where it lives. Once you start a session, you
 never need to keep the app open:
@@ -29,9 +29,9 @@ never need to keep the app open:
 Simple, focused features:
 - A clean, distraction-free timer with a clear view of where you are in the
   4-session cycle
-- A Stats screen that tracks how many focus sessions you complete, today and
-  all-time
-- 7 accent colors to make it yours
+- A Stats screen that tracks how many focus sessions you complete — today,
+  all-time, your current streak, and the last 7 days at a glance
+- 7 accent colors, or pick any color you like
 - A Restart button for when you need to start the cycle over
 - A short in-app guide explaining how the cycle works
 

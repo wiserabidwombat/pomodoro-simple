@@ -1,7 +1,20 @@
 # Pomodoro iOS App — Design Spec
 
 Date: 2026-09-14
-Status: Approved by user, pending written-spec review
+Status: Historical — the original v1 design. The app has since moved on;
+where this spec and the code disagree, the code (and README) win. Notable
+differences:
+
+- Durations are user-configurable (Settings), and there's a custom color
+  picker alongside the presets.
+- Stats has a 7-day chart, streak, and total focus time.
+- Live Activity/widget buttons are `LiveActivityIntent`s that run in the
+  *app's* process (not the widget extension's), and the idle widget has
+  its own Pause/Resume/Skip and "Time's up → Continue" states.
+- Dismissing the phase-end notification advances the timer.
+- Focus sessions finished outside the app (Lock Screen Continue,
+  notification dismissal, widget buttons) are queued in the App Group and
+  imported into SwiftData by the app — history is no longer app-only.
 
 ## Purpose
 

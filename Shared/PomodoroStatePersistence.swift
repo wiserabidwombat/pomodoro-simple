@@ -22,3 +22,19 @@ func persistPomodoroState(_ state: PomodoroState, store: PomodoroStateStore, not
 func reloadIdlePomodoroWidget() {
     WidgetCenter.shared.reloadTimelines(ofKind: "PomodoroIdleWidget")
 }
+
+/// The one place a phase running out on its own gets its side effects,
+/// whichever process noticed it: the app's ticker, a Lock Screen/StandBy/
+/// widget button, or dismissing the phase-end notification. A completed
+/// Focus session is queued for history (the app imports the queue into
+/// SwiftData on its next catch-up) and bumps the widget's "Today" count.
+/// Before this existed, only the app's own ticker recorded history, so a
+/// Focus session finished via "Continue" on the Lock Screen — or by
+/// dismissing its notification — never showed up in Stats at all.
+func recordNaturalCompletion(_ completed: CompletedPhase, store: PomodoroStateStore, calendar: Calendar = .current) {
+    guard completed.phase == .work else { return }
+    store.enqueueCompletedSession(PendingCompletedSession(endedAt: completed.endedAt, duration: completed.duration))
+    if calendar.isDateInToday(completed.endedAt) {
+        store.incrementCachedTodayCount(calendar: calendar)
+    }
+}

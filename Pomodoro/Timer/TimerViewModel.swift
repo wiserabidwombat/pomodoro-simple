@@ -30,6 +30,9 @@ final class TimerViewModel: ObservableObject {
     /// that itself. Set true right as a milestone is reached, and the view
     /// resets it back to false after acting on it.
     @Published var pendingReviewRequest = false
+    /// Bumped whenever new sessions land in history, so the Stats screen
+    /// knows to recompute instead of re-querying on every render.
+    @Published private(set) var historyRevision = 0
 
     private let engine: TimerEngine
     private let store: PomodoroStateStore
@@ -143,11 +146,10 @@ final class TimerViewModel: ObservableObject {
             """)
             alerting.alertPhaseChange()
         }
-        if let completed, completed.phase == .work {
-            historyStore.recordCompletedSession(duration: completed.duration, on: completed.endedAt)
-            store.incrementCachedTodayCount()
-            checkReviewMilestone()
+        if let completed {
+            recordNaturalCompletion(completed, store: store)
         }
+        importPendingSessions()
         if advanced || forcePush {
             persistAndPush()
         } else {
@@ -160,6 +162,16 @@ final class TimerViewModel: ObservableObject {
             // formatted freeze).
             state = engine.state
         }
+    }
+
+    /// Moves Focus sessions queued in the App Group (by this ticker, or by
+    /// a Lock Screen/widget intent or notification dismissal) into SwiftData.
+    private func importPendingSessions() {
+        let pending = store.drainPendingCompletedSessions()
+        guard !pending.isEmpty else { return }
+        historyStore.recordCompletedSessions(pending)
+        historyRevision += 1
+        checkReviewMilestone()
     }
 
     /// Fires at most once ever, right after a Focus session completes

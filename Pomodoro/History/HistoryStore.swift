@@ -15,6 +15,16 @@ final class HistoryStore {
         try? context.save()
     }
 
+    /// Imports sessions queued in the App Group by other processes/paths
+    /// (see PendingCompletedSession) with a single save.
+    func recordCompletedSessions(_ pending: [PendingCompletedSession]) {
+        guard !pending.isEmpty else { return }
+        for session in pending {
+            context.insert(CompletedSession(date: session.endedAt, durationSeconds: session.duration))
+        }
+        try? context.save()
+    }
+
     func sessions(on day: Date, calendar: Calendar = .current) -> [CompletedSession] {
         let start = calendar.startOfDay(for: day)
         let end = calendar.date(byAdding: .day, value: 1, to: start)!

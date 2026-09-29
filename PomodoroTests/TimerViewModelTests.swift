@@ -117,6 +117,22 @@ final class TimerViewModelTests: XCTestCase {
         XCTAssertEqual(history.totalCount, 0) // a break isn't a Focus session
     }
 
+    func testTickImportsFocusSessionsCompletedOutsideTheApp() {
+        // E.g. "Continue" tapped on the Lock Screen, or the phase-end
+        // notification dismissed: those intents queue the session in the
+        // App Group; the app must pull it into history.
+        let (vm, _, _, store, history) = makeViewModel()
+        let endedAt = Date().addingTimeInterval(-60)
+        store.enqueueCompletedSession(PendingCompletedSession(endedAt: endedAt, duration: 1500))
+
+        vm.tick()
+
+        XCTAssertEqual(history.totalCount, 1)
+        XCTAssertEqual(history.totalFocusSeconds, 1500)
+        XCTAssertEqual(vm.historyRevision, 1)
+        XCTAssertEqual(store.drainPendingCompletedSessions(), [])
+    }
+
     func testReviewMilestoneRequestedAfterTenTotalSessions() {
         let (vm, _, _, store, history) = makeViewModel()
         for _ in 0..<9 {

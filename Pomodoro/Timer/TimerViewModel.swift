@@ -8,7 +8,10 @@ private let viewModelLogger = Logger(subsystem: "com.aarontilley.pomodoro", cate
 final class TimerViewModel: ObservableObject {
     @Published private(set) var state: PomodoroState
     @Published var accentColor: AccentColorOption {
-        didSet { store.save(accentColor) }
+        didSet {
+            store.save(accentColor)
+            scheduleAppearancePush()
+        }
     }
     @Published var durations: PomodoroDurations {
         didSet {
@@ -41,6 +44,7 @@ final class TimerViewModel: ObservableObject {
     private let liveActivity: LiveActivityControlling
     private let alerting: PhaseChangeAlerting
     private var ticker: Timer?
+    private var appearancePushTask: Task<Void, Never>?
 
     init(
         store: PomodoroStateStore = PomodoroStateStore(),
@@ -224,6 +228,22 @@ final class TimerViewModel: ObservableObject {
             liveActivity.update(state: state, accentColor: accentColor)
         }
         reloadIdlePomodoroWidget()
+    }
+
+    /// The Live Activity and idle widget only redraw when told to, so a new
+    /// accent color used to show up there only after the next
+    /// pause/resume/skip. Debounced because the custom ColorPicker fires on
+    /// every drag step, and Live Activity updates are budgeted by the system.
+    private func scheduleAppearancePush() {
+        appearancePushTask?.cancel()
+        appearancePushTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled, let self else { return }
+            if self.state.sessionActive {
+                self.liveActivity.update(state: self.state, accentColor: self.accentColor)
+            }
+            reloadIdlePomodoroWidget()
+        }
     }
 
     /// One ticker beat: pick up external changes and notice a phase

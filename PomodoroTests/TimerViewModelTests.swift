@@ -147,6 +147,19 @@ final class TimerViewModelTests: XCTestCase {
         subscription.cancel()
     }
 
+    func testAccentColorChangeIsPushedToLiveActivityOnceAfterDebounce() async throws {
+        let (vm, fakeActivity, _, store, _) = makeViewModel()
+        vm.start()
+        let updatesBefore = fakeActivity.updatedStates.count
+        // Rapid changes, like dragging in the custom ColorPicker.
+        vm.accentColor = .red
+        vm.accentColor = .orange
+        vm.accentColor = .purple
+        try await Task.sleep(for: .seconds(1))
+        XCTAssertEqual(fakeActivity.updatedStates.count, updatesBefore + 1)
+        XCTAssertEqual(store.loadAccentColor(), .purple)
+    }
+
     func testReviewMilestoneRequestedAfterTenTotalSessions() {
         let (vm, _, _, store, history) = makeViewModel()
         for _ in 0..<9 {

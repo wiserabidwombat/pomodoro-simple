@@ -16,9 +16,19 @@ final class PhaseEndNotificationDelegate: NSObject, UNUserNotificationCenterDele
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        guard response.notification.request.content.categoryIdentifier == NotificationScheduler.phaseEndCategory,
-              response.actionIdentifier == UNNotificationDismissActionIdentifier
-        else {
+        guard response.notification.request.content.categoryIdentifier == NotificationScheduler.phaseEndCategory else {
+            completionHandler()
+            return
+        }
+        // Tapping the notification opens the app — take it to the Timer.
+        if response.actionIdentifier == UNNotificationDefaultActionIdentifier {
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .openTimerTab, object: nil)
+            }
+            completionHandler()
+            return
+        }
+        guard response.actionIdentifier == UNNotificationDismissActionIdentifier else {
             completionHandler()
             return
         }
@@ -41,4 +51,10 @@ final class PhaseEndNotificationDelegate: NSObject, UNUserNotificationCenterDele
     ) {
         completionHandler([.banner, .list])
     }
+}
+
+extension Notification.Name {
+    /// Posted when the app is opened from the phase-end notification;
+    /// RootView switches to the Timer tab in response.
+    static let openTimerTab = Notification.Name("pomodoro.openTimerTab")
 }

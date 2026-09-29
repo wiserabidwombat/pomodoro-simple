@@ -211,7 +211,10 @@ struct PomodoroIdleWidgetView: View {
         if isExpired {
             Button(intent: AdvancePomodoroIntent()) {
                 Label("Continue", systemImage: "arrow.right")
+                    .foregroundStyle(entry.accentColor.contrastingTextColor)
             }
+            .buttonStyle(.borderedProminent)
+            .tint(entry.accentColor.color)
         } else {
             HStack(spacing: 20) {
                 if entry.state.pausedAt == nil {
@@ -254,7 +257,7 @@ struct PomodoroIdleWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: PomodoroIdleProvider()) { entry in
             PomodoroIdleWidgetView(entry: entry)
-                .widgetURL(URL(string: "pomodoro://open"))
+                .widgetURL(PomodoroDeepLink.timerURL)
         }
         .configurationDisplayName("Simple: StandBy Timer")
         .description("Shows your current Pomodoro phase and countdown.")

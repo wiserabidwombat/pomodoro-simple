@@ -54,17 +54,38 @@ private struct RootView: View {
         alerting: SystemPhaseChangeAlert()
     )
     @Environment(\.scenePhase) private var scenePhase
+    @State private var selectedTab = AppTab.timer
+
+    private enum AppTab: Hashable {
+        case timer, stats, settings
+    }
 
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             TimerView(viewModel: viewModel)
                 .tabItem { Label("Timer", systemImage: "timer") }
+                .tag(AppTab.timer)
             StatsView(viewModel: viewModel, historyStore: AppEnvironment.historyStore)
                 .tabItem { Label("Stats", systemImage: "chart.bar") }
+                .tag(AppTab.stats)
             SettingsView(viewModel: viewModel)
                 .tabItem { Label("Settings", systemImage: "gear") }
+                .tag(AppTab.settings)
         }
         .preferredColorScheme(.dark)
+        // Arriving from the Live Activity or a widget (both open a
+        // pomodoro:// URL) or from tapping the phase-end notification always
+        // lands on the Timer — otherwise the app reopened on whatever tab
+        // was last showing, e.g. Settings. Just switching back to the app
+        // normally still keeps your place.
+        .onOpenURL { url in
+            if url.scheme == PomodoroDeepLink.scheme {
+                selectedTab = .timer
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openTimerTab)) { _ in
+            selectedTab = .timer
+        }
         // Lives here rather than on TimerView so it keeps working whichever
         // tab is showing. `initial: true` matters: without it this never
         // fires for the scene's first .active on a cold launch.

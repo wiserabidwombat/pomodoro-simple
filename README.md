@@ -87,6 +87,14 @@ your own reverse-DNS bundle id (e.g. `com.yourname.pomodoro`) and replace
    device under your team (Xcode usually offers to do this automatically
    once you pick it as the run destination).
 
+## Xcode Cloud
+
+`Pomodoro.xcodeproj` isn't committed, so `ci_scripts/ci_post_clone.sh`
+installs XcodeGen and runs `xcodegen generate` right after Xcode Cloud clones
+the repo. Xcode Cloud also assigns its own build numbers when it archives, so
+the `CFBundleVersion` in the Info.plists only matters for manual uploads from
+Xcode's Organizer.
+
 ## Manual testing checklist
 
 Widget/Live Activity/StandBy visuals cannot be unit tested — run through this

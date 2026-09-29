@@ -26,7 +26,9 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>2</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSFocusStatusUsageDescription</key>
 	<string>Used to silence the phase-change sound and haptic while one of your Focus modes is on.</string>
 	<key>NSSupportsLiveActivities</key>

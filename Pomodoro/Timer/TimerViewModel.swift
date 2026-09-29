@@ -23,7 +23,16 @@ final class TimerViewModel: ObservableObject {
         didSet { store.save(silenceDuringFocus: silenceDuringFocus) }
     }
     @Published var soundEnabled: Bool {
-        didSet { store.save(soundEnabled: soundEnabled) }
+        didSet {
+            store.save(soundEnabled: soundEnabled)
+            // Re-schedule the already-pending phase-end notification so it
+            // picks up the new setting now, not only from the next phase.
+            // (Notification only — saving state from a settings toggle
+            // could clobber a change another process just made.)
+            if state.sessionActive, state.pausedAt == nil {
+                notifications.schedulePhaseEnd(phase: state.phase, endDate: state.endDate, playSound: soundEnabled)
+            }
+        }
     }
     @Published var chime: ChimeOption {
         didSet { store.save(chime) }

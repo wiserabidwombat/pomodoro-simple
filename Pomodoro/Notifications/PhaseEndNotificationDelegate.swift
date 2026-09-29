@@ -30,13 +30,15 @@ final class PhaseEndNotificationDelegate: NSObject, UNUserNotificationCenterDele
 
     /// Without implementing this, a notification that fires while the app
     /// is in the foreground is silently suppressed (the system's default
-    /// once any delegate is set) — opting in to showing it anyway, which
-    /// matches what happened before this delegate existed at all.
+    /// once any delegate is set) — opting in to showing the banner anyway.
+    /// No .sound: in the foreground the app's own ticker already plays the
+    /// chosen chime + haptic (and honors "Silence Alerts During Focus"),
+    /// so the notification's sound on top of it was a double alert.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        completionHandler([.banner, .sound])
+        completionHandler([.banner, .list])
     }
 }

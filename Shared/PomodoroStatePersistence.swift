@@ -9,7 +9,7 @@ import WidgetKit
 func persistPomodoroState(_ state: PomodoroState, store: PomodoroStateStore, notifications: NotificationScheduler) {
     store.save(state)
     if state.sessionActive, state.pausedAt == nil {
-        notifications.schedulePhaseEnd(phase: state.phase, endDate: state.endDate)
+        notifications.schedulePhaseEnd(phase: state.phase, endDate: state.endDate, playSound: store.loadSoundEnabled())
     } else {
         notifications.cancelPhaseEnd()
     }

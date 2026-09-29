@@ -31,12 +31,14 @@ final class NotificationScheduler {
         }
     }
 
-    func schedulePhaseEnd(phase: PomodoroPhase, endDate: Date) {
+    func schedulePhaseEnd(phase: PomodoroPhase, endDate: Date, playSound: Bool = true) {
         cancelPhaseEnd()
         let content = UNMutableNotificationContent()
         content.title = phase.displayName
         content.body = Self.body(for: phase)
-        content.sound = .default
+        // Honors Settings → Play Sound for the background alert too, not
+        // just the in-app chime.
+        content.sound = playSound ? .default : nil
         content.interruptionLevel = .timeSensitive
         content.categoryIdentifier = Self.phaseEndCategory
         let interval = max(1, endDate.timeIntervalSinceNow)

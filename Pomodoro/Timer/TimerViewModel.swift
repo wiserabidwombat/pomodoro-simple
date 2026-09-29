@@ -83,17 +83,25 @@ final class TimerViewModel: ObservableObject {
         persistAndPush()
     }
 
+    // Pause/Resume/Skip first sync with the shared store (and catch up a
+    // phase that already ran out), exactly like the Lock Screen intents do,
+    // so a tap in the app can never act on an in-memory state that's up to
+    // a tick stale — e.g. Skip on a phase that just expired would otherwise
+    // skip the phase *after* it too.
     func pause() {
+        catchUpIfNeeded()
         engine.pause()
         persistAndPush()
     }
 
     func resume() {
+        catchUpIfNeeded()
         engine.resume()
         persistAndPush()
     }
 
     func skip() {
+        catchUpIfNeeded()
         engine.skip()
         persistAndPush()
     }

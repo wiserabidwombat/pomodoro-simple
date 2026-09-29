@@ -134,6 +134,23 @@ final class TimerViewModelTests: XCTestCase {
         XCTAssertEqual(store.drainPendingCompletedSessions(), [])
     }
 
+    func testInAppSkipOnAnAlreadyExpiredPhaseAdvancesOnlyOnce() {
+        // The Focus phase ran out a moment ago but no tick has noticed yet.
+        // Skip must catch up first (Focus -> Short Break, recorded) and then
+        // skip that break, rather than treating the stale Focus as current.
+        let (vm, _, _, store, history) = makeViewModel()
+        vm.start()
+        var expired = store.loadState()
+        expired.endDate = Date().addingTimeInterval(-1)
+        store.save(expired)
+
+        vm.skip()
+
+        XCTAssertEqual(vm.state.phase, .work)
+        XCTAssertEqual(vm.state.completedWorkCycles, 1)
+        XCTAssertEqual(history.totalCount, 1)
+    }
+
     func testTickDoesNotPublishWhenNothingChanged() {
         // Every observing screen re-renders on objectWillChange, so an idle
         // or mid-countdown tick must not fire it.

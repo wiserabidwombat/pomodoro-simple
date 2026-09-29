@@ -74,16 +74,37 @@ final class TimerEngineTests: XCTestCase {
     func testCatchUpIfExpiredNoOpsWhenNotExpired() {
         let engine = TimerEngine(state: .idle)
         engine.start()
-        XCTAssertFalse(engine.catchUpIfExpired(now: engine.state.startDate))
+        XCTAssertNil(engine.catchUpIfExpired(now: engine.state.startDate))
         XCTAssertEqual(engine.state.phase, .work)
     }
 
     func testCatchUpIfExpiredAdvancesWhenPast() {
         let engine = TimerEngine(state: .idle)
         engine.start()
-        let pastEnd = engine.state.endDate.addingTimeInterval(1)
-        XCTAssertTrue(engine.catchUpIfExpired(now: pastEnd))
+        let workEnd = engine.state.endDate
+        let completed = engine.catchUpIfExpired(now: workEnd.addingTimeInterval(1))
+        XCTAssertEqual(completed?.phase, .work)
+        XCTAssertEqual(completed?.endedAt, workEnd)
+        XCTAssertEqual(completed?.duration, PomodoroDurations.default.duration(for: .work))
         XCTAssertEqual(engine.state.phase, .shortBreak)
+    }
+
+    func testCatchUpIfExpiredReportsAnExpiredBreakToo() {
+        // Regression: an expired break used to report "nothing happened",
+        // so the app never persisted the advance and redid it every tick.
+        let engine = TimerEngine(state: .idle)
+        engine.start()
+        engine.skip() // -> shortBreak
+        let completed = engine.catchUpIfExpired(now: engine.state.endDate.addingTimeInterval(1))
+        XCTAssertEqual(completed?.phase, .shortBreak)
+        XCTAssertEqual(engine.state.phase, .work)
+    }
+
+    func testCatchUpIfExpiredRecordsTheCustomFocusLength() {
+        let engine = TimerEngine(state: .idle, durations: PomodoroDurations(workMinutes: 50, shortBreakMinutes: 10, longBreakMinutes: 30))
+        engine.start()
+        let completed = engine.catchUpIfExpired(now: engine.state.endDate)
+        XCTAssertEqual(completed?.duration, 50 * 60)
     }
 
     func testCatchUpIfExpiredNoOpsWhilePaused() {
@@ -91,7 +112,7 @@ final class TimerEngineTests: XCTestCase {
         engine.start()
         engine.pause()
         let farFuture = engine.state.endDate.addingTimeInterval(1000)
-        XCTAssertFalse(engine.catchUpIfExpired(now: farFuture))
+        XCTAssertNil(engine.catchUpIfExpired(now: farFuture))
     }
 
     func testStartUsesCustomWorkDuration() {

@@ -7,6 +7,9 @@ struct PomodoroLiveActivityWidget: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: PomodoroActivityAttributes.self) { context in
             PomodoroLiveActivityView(state: context.state, isStale: context.isStale)
+                // Tapping the Lock Screen/StandBy banner (anywhere but a
+                // button) opens the app straight to the Timer tab.
+                .widgetURL(PomodoroDeepLink.timerURL)
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.center) {
@@ -28,6 +31,7 @@ struct PomodoroLiveActivityWidget: Widget {
             } minimal: {
                 Image(systemName: "timer")
             }
+            .widgetURL(PomodoroDeepLink.timerURL)
         }
     }
 }
@@ -75,11 +79,17 @@ struct PomodoroLiveActivityView: View {
                 // ended (it looks like Skip does nothing, then the app
                 // reveals it actually skipped an extra phase). This button
                 // performs only the catch-up.
+                // Filled with the accent (so it matches the theme instead
+                // of the system blue, which made same-hued accents
+                // unreadable), with a black or white label picked for
+                // contrast against that accent.
                 Button(intent: AdvancePomodoroIntent()) {
                     Label("Continue", systemImage: "arrow.right")
                         .frame(maxWidth: .infinity)
+                        .foregroundStyle(state.accentColor.contrastingTextColor)
                 }
                 .buttonStyle(.borderedProminent)
+                .tint(state.accentColor.color)
             } else {
                 HStack(spacing: 16) {
                     // Fixed width so the Skip button doesn't shift when this
@@ -101,6 +111,9 @@ struct PomodoroLiveActivityView: View {
                     }
                 }
                 .buttonStyle(.bordered)
+                // Tints the translucent button backgrounds with the accent
+                // too, instead of the system's default blue-gray.
+                .tint(state.accentColor.color)
             }
         }
         // Without this, the block shrinks to fit whichever countdown text is

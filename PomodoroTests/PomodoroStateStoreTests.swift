@@ -117,4 +117,34 @@ final class PomodoroStateStoreTests: XCTestCase {
         store.incrementCachedTodayCount(now: yesterday)
         XCTAssertEqual(store.loadCachedTodayCount(now: Date()), 0)
     }
+
+    func testPendingCompletedSessionsDrainInOrderAndEmptyTheQueue() {
+        let store = makeIsolatedStore()
+        let first = PendingCompletedSession(endedAt: Date(timeIntervalSince1970: 1_000), duration: 1500)
+        let second = PendingCompletedSession(endedAt: Date(timeIntervalSince1970: 2_000), duration: 3000)
+        store.enqueueCompletedSession(first)
+        store.enqueueCompletedSession(second)
+        XCTAssertEqual(store.drainPendingCompletedSessions(), [first, second])
+        XCTAssertEqual(store.drainPendingCompletedSessions(), [])
+    }
+
+    func testRecordNaturalCompletionQueuesFocusButNotBreaks() {
+        let store = makeIsolatedStore()
+        let now = Date()
+        recordNaturalCompletion(CompletedPhase(phase: .shortBreak, endedAt: now, duration: 300), store: store)
+        XCTAssertEqual(store.drainPendingCompletedSessions(), [])
+        XCTAssertEqual(store.loadCachedTodayCount(), 0)
+
+        recordNaturalCompletion(CompletedPhase(phase: .work, endedAt: now, duration: 1500), store: store)
+        XCTAssertEqual(store.drainPendingCompletedSessions(), [PendingCompletedSession(endedAt: now, duration: 1500)])
+        XCTAssertEqual(store.loadCachedTodayCount(), 1)
+    }
+
+    func testRecordNaturalCompletionFromYesterdayDoesNotBumpTodaysCount() {
+        let store = makeIsolatedStore()
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+        recordNaturalCompletion(CompletedPhase(phase: .work, endedAt: yesterday, duration: 1500), store: store)
+        XCTAssertEqual(store.loadCachedTodayCount(), 0)
+        XCTAssertEqual(store.drainPendingCompletedSessions().count, 1)
+    }
 }

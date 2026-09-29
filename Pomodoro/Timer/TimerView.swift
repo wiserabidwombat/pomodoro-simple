@@ -4,7 +4,6 @@ import SwiftUI
 
 struct TimerView: View {
     @ObservedObject var viewModel: TimerViewModel
-    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.requestReview) private var requestReview
     @State private var showingRestartConfirmation = false
     @State private var showingHelp = false
@@ -92,11 +91,6 @@ struct TimerView: View {
             if isPending {
                 requestReview()
                 viewModel.pendingReviewRequest = false
-            }
-        }
-        .onChange(of: scenePhase) { _, newPhase in
-            if newPhase == .active {
-                viewModel.refreshFromSharedState()
             }
         }
         .alert(

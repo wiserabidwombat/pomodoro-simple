@@ -65,4 +65,23 @@ final class PomodoroModelsTests: XCTestCase {
         XCTAssertEqual(custom.duration(for: .shortBreak), 10 * 60)
         XCTAssertEqual(custom.duration(for: .longBreak), 30 * 60)
     }
+
+    func testFilledButtonTextIsDarkOnEveryPreset() {
+        // All 7 presets were picked to read well on black, so they're all
+        // light enough that black text out-contrasts white on them.
+        for preset in AccentColorOption.presets {
+            XCTAssertTrue(preset.prefersDarkText, "\(preset)")
+        }
+    }
+
+    func testFilledButtonTextIsWhiteOnDarkCustomColors() {
+        XCTAssertFalse(AccentColorOption.custom(red: 0, green: 0, blue: 0.4).prefersDarkText) // navy
+        XCTAssertFalse(AccentColorOption.custom(red: 0.6, green: 0, blue: 0.1).prefersDarkText) // crimson
+        XCTAssertFalse(AccentColorOption.custom(red: 0, green: 0, blue: 0).prefersDarkText)
+    }
+
+    func testRelativeLuminanceEndpoints() {
+        XCTAssertEqual(AccentColorOption.white.relativeLuminance, 1, accuracy: 0.0001)
+        XCTAssertEqual(AccentColorOption.custom(red: 0, green: 0, blue: 0).relativeLuminance, 0, accuracy: 0.0001)
+    }
 }

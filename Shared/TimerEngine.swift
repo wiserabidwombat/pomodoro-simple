@@ -1,9 +1,23 @@
 // Shared/TimerEngine.swift
 import Foundation
 
+/// A phase that just ran out on its own (as opposed to being skipped).
+/// Returned by `TimerEngine.catchUpIfExpired()` so callers can tell *any*
+/// natural phase change (alert + persist) apart from a completed Focus
+/// session specifically (also record it in history).
+struct CompletedPhase: Equatable {
+    let phase: PomodoroPhase
+    /// When the phase actually ran out — not when this process noticed.
+    /// History is dated by this, so a Focus session that ended at 11:50pm
+    /// still counts toward that day even if the app isn't opened until
+    /// the next morning.
+    let endedAt: Date
+    let duration: TimeInterval
+}
+
 final class TimerEngine {
     private(set) var state: PomodoroState
-    private var durations: PomodoroDurations
+    private(set) var durations: PomodoroDurations
 
     init(state: PomodoroState = .idle, durations: PomodoroDurations = .default) {
         self.state = state
@@ -66,14 +80,28 @@ final class TimerEngine {
         return wasWork
     }
 
-    /// If the phase's end has passed while running (not paused), advances it.
+    /// If the phase's end has passed while running (not paused), advances it
+    /// and returns what just completed — for *every* phase, breaks included.
+    /// (This used to return completeCurrentPhase()'s "was it Focus?" Bool,
+    /// which made an expired break look like "nothing happened": the
+    /// in-app ticker then never persisted the advance, re-read the still-
+    /// expired break from the store a second later, advanced it again, and
+    /// so on — restarting the next Focus countdown and replaying the
+    /// phase-change chime every second.)
+    ///
     /// Used to catch up state that changed while this process wasn't looking
-    /// (app backgrounded, or a different process — app vs. widget extension —
-    /// mutated shared state last).
+    /// (app backgrounded, or a Lock Screen/widget intent mutated shared
+    /// state last).
     @discardableResult
-    func catchUpIfExpired(now: Date = Date()) -> Bool {
-        guard state.sessionActive, state.pausedAt == nil, now >= state.endDate else { return false }
-        return completeCurrentPhase()
+    func catchUpIfExpired(now: Date = Date()) -> CompletedPhase? {
+        guard state.sessionActive, state.pausedAt == nil, now >= state.endDate else { return nil }
+        let completed = CompletedPhase(
+            phase: state.phase,
+            endedAt: state.endDate,
+            duration: durations.duration(for: state.phase)
+        )
+        completeCurrentPhase()
+        return completed
     }
 
     private func advancePhase() {

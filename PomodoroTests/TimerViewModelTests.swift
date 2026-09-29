@@ -1,4 +1,5 @@
 // PomodoroTests/TimerViewModelTests.swift
+import Combine
 import XCTest
 import SwiftData
 @testable import Pomodoro
@@ -92,6 +93,88 @@ final class TimerViewModelTests: XCTestCase {
         XCTAssertEqual(vm.state.phase, .shortBreak)
         XCTAssertEqual(history.totalCount, 1)
         XCTAssertEqual(fakeAlert.alertCount, 1)
+    }
+
+    func testExpiredBreakIsPersistedOnceAndAlertsOnce() {
+        // Regression: a break running out in the foreground used to be
+        // re-advanced (and re-alerted) on every tick, because the advance
+        // was never written back to the shared store.
+        let (vm, _, fakeAlert, store, history) = makeViewModel()
+        vm.start()
+        vm.skip() // -> shortBreak
+        var expired = store.loadState()
+        expired.endDate = Date().addingTimeInterval(-1)
+        store.save(expired)
+
+        vm.tick()
+        let afterFirstTick = store.loadState()
+        XCTAssertEqual(afterFirstTick.phase, .work)
+        XCTAssertEqual(vm.state, afterFirstTick)
+
+        vm.tick()
+        vm.tick()
+        XCTAssertEqual(store.loadState(), afterFirstTick)
+        XCTAssertEqual(fakeAlert.alertCount, 1)
+        XCTAssertEqual(history.totalCount, 0) // a break isn't a Focus session
+    }
+
+    func testTickImportsFocusSessionsCompletedOutsideTheApp() {
+        // E.g. "Continue" tapped on the Lock Screen, or the phase-end
+        // notification dismissed: those intents queue the session in the
+        // App Group; the app must pull it into history.
+        let (vm, _, _, store, history) = makeViewModel()
+        let endedAt = Date().addingTimeInterval(-60)
+        store.enqueueCompletedSession(PendingCompletedSession(endedAt: endedAt, duration: 1500))
+
+        vm.tick()
+
+        XCTAssertEqual(history.totalCount, 1)
+        XCTAssertEqual(history.totalFocusSeconds, 1500)
+        XCTAssertEqual(vm.historyRevision, 1)
+        XCTAssertEqual(store.drainPendingCompletedSessions(), [])
+    }
+
+    func testInAppSkipOnAnAlreadyExpiredPhaseAdvancesOnlyOnce() {
+        // The Focus phase ran out a moment ago but no tick has noticed yet.
+        // Skip must catch up first (Focus -> Short Break, recorded) and then
+        // skip that break, rather than treating the stale Focus as current.
+        let (vm, _, _, store, history) = makeViewModel()
+        vm.start()
+        var expired = store.loadState()
+        expired.endDate = Date().addingTimeInterval(-1)
+        store.save(expired)
+
+        vm.skip()
+
+        XCTAssertEqual(vm.state.phase, .work)
+        XCTAssertEqual(vm.state.completedWorkCycles, 1)
+        XCTAssertEqual(history.totalCount, 1)
+    }
+
+    func testTickDoesNotPublishWhenNothingChanged() {
+        // Every observing screen re-renders on objectWillChange, so an idle
+        // or mid-countdown tick must not fire it.
+        let (vm, _, _, _, _) = makeViewModel()
+        vm.start()
+        var changeCount = 0
+        let subscription = vm.objectWillChange.sink { changeCount += 1 }
+        vm.tick()
+        vm.tick()
+        XCTAssertEqual(changeCount, 0)
+        subscription.cancel()
+    }
+
+    func testAccentColorChangeIsPushedToLiveActivityOnceAfterDebounce() async throws {
+        let (vm, fakeActivity, _, store, _) = makeViewModel()
+        vm.start()
+        let updatesBefore = fakeActivity.updatedStates.count
+        // Rapid changes, like dragging in the custom ColorPicker.
+        vm.accentColor = .red
+        vm.accentColor = .orange
+        vm.accentColor = .purple
+        try await Task.sleep(for: .seconds(1))
+        XCTAssertEqual(fakeActivity.updatedStates.count, updatesBefore + 1)
+        XCTAssertEqual(store.loadAccentColor(), .purple)
     }
 
     func testReviewMilestoneRequestedAfterTenTotalSessions() {

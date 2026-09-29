@@ -40,7 +40,14 @@ struct PomodoroState: Codable, Equatable {
     /// second back" once the live display resumed and re-applied the
     /// correct ceiling.
     var formattedRemainingWhilePaused: String {
-        let total = Int(remainingSeconds(asOf: pausedAt ?? Date()).rounded(.up))
+        Self.formattedRemaining(endDate: endDate, asOf: pausedAt ?? Date())
+    }
+
+    /// Shared with the Live Activity's ContentState so the two frozen
+    /// displays can never round differently.
+    static func formattedRemaining(endDate: Date, asOf referenceDate: Date) -> String {
+        let remaining = max(0, endDate.timeIntervalSince(referenceDate))
+        let total = Int(remaining.rounded(.up))
         return String(format: "%02d:%02d", total / 60, total % 60)
     }
 }

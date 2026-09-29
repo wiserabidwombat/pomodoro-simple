@@ -36,12 +36,15 @@ struct PomodoroApp: App {
 /// again just re-reads the same already-open store. It also still isn't
 /// touched at all during a headless LiveActivityIntent wake, since nothing
 /// in that path ever reads `AppEnvironment.historyStore`.
+///
+/// The container is held in its own static rather than as a local inside
+/// the historyStore initializer: a ModelContext doesn't keep its
+/// ModelContainer alive, so the container must be owned for as long as its
+/// context is in use.
 @MainActor
 private enum AppEnvironment {
-    static let historyStore: HistoryStore = {
-        let container = try! ModelContainer(for: CompletedSession.self)
-        return HistoryStore(context: container.mainContext)
-    }()
+    static let container: ModelContainer = try! ModelContainer(for: CompletedSession.self)
+    static let historyStore = HistoryStore(context: container.mainContext)
 }
 
 private struct RootView: View {
@@ -50,16 +53,55 @@ private struct RootView: View {
         liveActivity: LiveActivityController(),
         alerting: SystemPhaseChangeAlert()
     )
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var selectedTab = AppTab.timer
+
+    private enum AppTab: Hashable {
+        case timer, stats, settings
+    }
 
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             TimerView(viewModel: viewModel)
                 .tabItem { Label("Timer", systemImage: "timer") }
+                .tag(AppTab.timer)
             StatsView(viewModel: viewModel, historyStore: AppEnvironment.historyStore)
                 .tabItem { Label("Stats", systemImage: "chart.bar") }
+                .tag(AppTab.stats)
             SettingsView(viewModel: viewModel)
                 .tabItem { Label("Settings", systemImage: "gear") }
+                .tag(AppTab.settings)
         }
         .preferredColorScheme(.dark)
+        // The selected tab's icon (and any other control still using the
+        // system tint, like Settings' steppers) follows the accent color
+        // instead of the default blue.
+        .tint(viewModel.accentColor.color)
+        // Arriving from the Live Activity or a widget (both open a
+        // pomodoro:// URL) or from tapping the phase-end notification always
+        // lands on the Timer — otherwise the app reopened on whatever tab
+        // was last showing, e.g. Settings. Just switching back to the app
+        // normally still keeps your place.
+        .onOpenURL { url in
+            if url.scheme == PomodoroDeepLink.scheme {
+                selectedTab = .timer
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openTimerTab)) { _ in
+            selectedTab = .timer
+        }
+        // Lives here rather than on TimerView so it keeps working whichever
+        // tab is showing. `initial: true` matters: without it this never
+        // fires for the scene's first .active on a cold launch.
+        .onChange(of: scenePhase, initial: true) { _, newPhase in
+            switch newPhase {
+            case .active:
+                viewModel.sceneDidBecomeActive()
+            case .background:
+                viewModel.sceneDidEnterBackground()
+            default:
+                break
+            }
+        }
     }
 }

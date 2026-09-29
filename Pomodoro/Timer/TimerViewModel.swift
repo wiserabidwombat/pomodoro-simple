@@ -8,7 +8,10 @@ private let viewModelLogger = Logger(subsystem: "com.aarontilley.pomodoro", cate
 final class TimerViewModel: ObservableObject {
     @Published private(set) var state: PomodoroState
     @Published var accentColor: AccentColorOption {
-        didSet { store.save(accentColor) }
+        didSet {
+            store.save(accentColor)
+            scheduleAppearancePush()
+        }
     }
     @Published var durations: PomodoroDurations {
         didSet {
@@ -20,7 +23,16 @@ final class TimerViewModel: ObservableObject {
         didSet { store.save(silenceDuringFocus: silenceDuringFocus) }
     }
     @Published var soundEnabled: Bool {
-        didSet { store.save(soundEnabled: soundEnabled) }
+        didSet {
+            store.save(soundEnabled: soundEnabled)
+            // Re-schedule the already-pending phase-end notification so it
+            // picks up the new setting now, not only from the next phase.
+            // (Notification only — saving state from a settings toggle
+            // could clobber a change another process just made.)
+            if state.sessionActive, state.pausedAt == nil {
+                notifications.schedulePhaseEnd(phase: state.phase, endDate: state.endDate, playSound: soundEnabled)
+            }
+        }
     }
     @Published var chime: ChimeOption {
         didSet { store.save(chime) }
@@ -30,6 +42,9 @@ final class TimerViewModel: ObservableObject {
     /// that itself. Set true right as a milestone is reached, and the view
     /// resets it back to false after acting on it.
     @Published var pendingReviewRequest = false
+    /// Bumped whenever new sessions land in history, so the Stats screen
+    /// knows to recompute instead of re-querying on every render.
+    @Published private(set) var historyRevision = 0
 
     private let engine: TimerEngine
     private let store: PomodoroStateStore
@@ -38,6 +53,7 @@ final class TimerViewModel: ObservableObject {
     private let liveActivity: LiveActivityControlling
     private let alerting: PhaseChangeAlerting
     private var ticker: Timer?
+    private var appearancePushTask: Task<Void, Never>?
 
     init(
         store: PomodoroStateStore = PomodoroStateStore(),
@@ -65,20 +81,27 @@ final class TimerViewModel: ObservableObject {
     func start() {
         engine.start()
         persistAndPush()
-        startTicker()
     }
 
+    // Pause/Resume/Skip first sync with the shared store (and catch up a
+    // phase that already ran out), exactly like the Lock Screen intents do,
+    // so a tap in the app can never act on an in-memory state that's up to
+    // a tick stale — e.g. Skip on a phase that just expired would otherwise
+    // skip the phase *after* it too.
     func pause() {
+        catchUpIfNeeded()
         engine.pause()
         persistAndPush()
     }
 
     func resume() {
+        catchUpIfNeeded()
         engine.resume()
         persistAndPush()
     }
 
     func skip() {
+        catchUpIfNeeded()
         engine.skip()
         persistAndPush()
     }
@@ -87,8 +110,6 @@ final class TimerViewModel: ObservableObject {
     /// count reset to 0) — ends the Live Activity rather than updating it,
     /// since there's no longer a session to show.
     func restart() {
-        ticker?.invalidate()
-        ticker = nil
         engine.reset()
         state = engine.state
         persistPomodoroState(state, store: store, notifications: notifications)
@@ -96,9 +117,28 @@ final class TimerViewModel: ObservableObject {
         reloadIdlePomodoroWidget()
     }
 
-    /// Call when the app becomes active: the widget extension may have
-    /// mutated the shared store while this process was backgrounded, so the
-    /// in-memory engine must reload before it can safely catch up.
+    /// Call whenever the scene becomes active (including the very first
+    /// time, on a cold launch): reloads what other processes may have
+    /// changed and keeps the ticker running for as long as the app is in
+    /// the foreground. The ticker used to be started only by the Start
+    /// button, so a relaunch mid-session had no ticker at all — a phase
+    /// could run out on screen without ever advancing, and a Start from
+    /// Siri/Shortcuts while the app was open was never picked up.
+    func sceneDidBecomeActive() {
+        refreshFromSharedState()
+        startTicker()
+    }
+
+    /// No point waking every second while backgrounded; the next
+    /// sceneDidBecomeActive() reloads and catches up anything missed.
+    func sceneDidEnterBackground() {
+        ticker?.invalidate()
+        ticker = nil
+    }
+
+    /// The widget extension may have mutated the shared store while this
+    /// process was backgrounded, so the in-memory engine must reload
+    /// before it can safely catch up.
     func refreshFromSharedState() {
         // Unconditionally push here (not just when a phase auto-completed):
         // this is also the app's one reliable path for correcting the Live
@@ -133,23 +173,20 @@ final class TimerViewModel: ObservableObject {
             \(reloaded.phase.rawValue, privacy: .public)(cycles=\(reloaded.completedWorkCycles, privacy: .public))
             """)
         }
-        let phaseBefore = engine.state.phase
-        let advanced = engine.catchUpIfExpired()
+        let completed = engine.catchUpIfExpired()
+        let advanced = completed != nil
         if advanced {
             let afterCatchUp = engine.state
             viewModelLogger.log("""
             catchUpIfNeeded(forcePush=\(forcePush, privacy: .public)) catchUpIfExpired advanced to \
             \(afterCatchUp.phase.rawValue, privacy: .public)(cycles=\(afterCatchUp.completedWorkCycles, privacy: .public))
             """)
-        }
-        if advanced {
-            historyStore.recordCompletedSession(duration: PomodoroPhase.work.duration)
-            store.incrementCachedTodayCount()
-            checkReviewMilestone()
-        }
-        if engine.state.phase != phaseBefore {
             alerting.alertPhaseChange()
         }
+        if let completed {
+            recordNaturalCompletion(completed, store: store)
+        }
+        importPendingSessions()
         if advanced || forcePush {
             persistAndPush()
         } else {
@@ -160,8 +197,25 @@ final class TimerViewModel: ObservableObject {
             // wasteful (and previously fought Text(timerInterval:pauseTime:)'s
             // own clock before that view was replaced with a manually
             // formatted freeze).
-            state = engine.state
+            //
+            // Only publish an actual change: assigning an identical value
+            // to an @Published property still fires objectWillChange,
+            // which re-rendered every screen observing this view model
+            // (Stats included, with all its SwiftData queries) once a second.
+            if state != engine.state {
+                state = engine.state
+            }
         }
+    }
+
+    /// Moves Focus sessions queued in the App Group (by this ticker, or by
+    /// a Lock Screen/widget intent or notification dismissal) into SwiftData.
+    private func importPendingSessions() {
+        let pending = store.drainPendingCompletedSessions()
+        guard !pending.isEmpty else { return }
+        historyStore.recordCompletedSessions(pending)
+        historyRevision += 1
+        checkReviewMilestone()
     }
 
     /// Fires at most once ever, right after a Focus session completes
@@ -193,10 +247,39 @@ final class TimerViewModel: ObservableObject {
         reloadIdlePomodoroWidget()
     }
 
-    private func startTicker() {
-        ticker?.invalidate()
-        ticker = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.catchUpIfNeeded() }
+    /// The Live Activity and idle widget only redraw when told to, so a new
+    /// accent color used to show up there only after the next
+    /// pause/resume/skip. Debounced because the custom ColorPicker fires on
+    /// every drag step, and Live Activity updates are budgeted by the system.
+    private func scheduleAppearancePush() {
+        appearancePushTask?.cancel()
+        appearancePushTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled, let self else { return }
+            if self.state.sessionActive {
+                self.liveActivity.update(state: self.state, accentColor: self.accentColor)
+            }
+            reloadIdlePomodoroWidget()
         }
+    }
+
+    /// One ticker beat: pick up external changes and notice a phase
+    /// running out. Internal (not private) so tests can drive it directly.
+    func tick() {
+        catchUpIfNeeded()
+    }
+
+    private func startTicker() {
+        guard ticker == nil else { return }
+        let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.tick() }
+        }
+        // Lets the system coalesce wakeups; a phase ending up to 0.1s late
+        // is invisible next to the 1s tick itself.
+        timer.tolerance = 0.1
+        // .common (not the default mode scheduledTimer uses) so the ticker
+        // keeps firing while a List/ScrollView is being dragged.
+        RunLoop.main.add(timer, forMode: .common)
+        ticker = timer
     }
 }

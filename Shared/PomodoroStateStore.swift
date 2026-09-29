@@ -1,6 +1,16 @@
 // Shared/PomodoroStateStore.swift
 import Foundation
 
+/// A Focus session that ran out while something *other* than the app's
+/// view model noticed it (a Lock Screen/StandBy/widget button, or dismissing
+/// the phase-end notification). Those paths can't reach the app's SwiftData
+/// store, so they queue it here in the App Group and the app imports it into
+/// history the next time it catches up.
+struct PendingCompletedSession: Codable, Equatable {
+    let endedAt: Date
+    let duration: TimeInterval
+}
+
 struct PomodoroStateStore {
     private let defaults: UserDefaults
     private let stateKey = "pomodoro.state"
@@ -12,6 +22,11 @@ struct PomodoroStateStore {
     private let todayCountKey = "pomodoro.todayCount"
     private let todayCountDateKey = "pomodoro.todayCountDate"
     private let hasRequestedReviewKey = "pomodoro.hasRequestedReview"
+    private let pendingSessionsKey = "pomodoro.pendingCompletedSessions"
+    /// Intents run in the app's own process (LiveActivityIntent), possibly
+    /// off the main thread, while the app's ticker drains on main — so the
+    /// queue's read-modify-write needs to be serialized.
+    private static let pendingSessionsLock = NSLock()
 
     init(defaults: UserDefaults = AppGroup.defaults) {
         self.defaults = defaults
@@ -116,6 +131,32 @@ struct PomodoroStateStore {
               calendar.isDate(cachedDay, inSameDayAs: now)
         else { return 0 }
         return defaults.integer(forKey: todayCountKey)
+    }
+
+    func enqueueCompletedSession(_ session: PendingCompletedSession) {
+        Self.pendingSessionsLock.lock()
+        defer { Self.pendingSessionsLock.unlock() }
+        var queue = readPendingSessions()
+        queue.append(session)
+        if let data = try? JSONEncoder().encode(queue) {
+            defaults.set(data, forKey: pendingSessionsKey)
+        }
+    }
+
+    /// Returns everything queued so far and empties the queue.
+    func drainPendingCompletedSessions() -> [PendingCompletedSession] {
+        Self.pendingSessionsLock.lock()
+        defer { Self.pendingSessionsLock.unlock() }
+        let queue = readPendingSessions()
+        if !queue.isEmpty {
+            defaults.removeObject(forKey: pendingSessionsKey)
+        }
+        return queue
+    }
+
+    private func readPendingSessions() -> [PendingCompletedSession] {
+        guard let data = defaults.data(forKey: pendingSessionsKey) else { return [] }
+        return (try? JSONDecoder().decode([PendingCompletedSession].self, from: data)) ?? []
     }
 
     /// Guards against ever asking for a review more than once — SwiftUI's

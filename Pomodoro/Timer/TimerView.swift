@@ -209,7 +209,24 @@ struct TimerView: View {
                         }
                     } label: {
                         HStack(spacing: 4) {
-                            Text(viewModel.activeProfile.name)
+                            // Every profile name is laid out invisibly
+                            // underneath the visible one, so the chip is
+                            // always as wide as the longest name. Without
+                            // this it resized — and re-centered — each time
+                            // a different profile was picked. (Hidden views
+                            // are also skipped by VoiceOver.)
+                            ZStack {
+                                ForEach(viewModel.profiles) { profile in
+                                    Text(profile.name)
+                                        .lineLimit(1)
+                                        .hidden()
+                                }
+                                Text(viewModel.activeProfile.name)
+                                    .lineLimit(1)
+                            }
+                            // Keeps a very long name from stretching the
+                            // chip off-screen; it truncates instead.
+                            .frame(maxWidth: 220)
                             Image(systemName: "chevron.down")
                                 .font(.caption.bold())
                         }

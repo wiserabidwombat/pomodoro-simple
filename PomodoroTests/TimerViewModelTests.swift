@@ -260,4 +260,42 @@ final class TimerViewModelTests: XCTestCase {
         XCTAssertFalse(vm.pendingReviewRequest)
         XCTAssertFalse(store.loadHasRequestedReview())
     }
+
+    // MARK: - Finish early
+
+    func testFinishEarlyRecordsTheSessionAndMovesToTheBreak() {
+        let (vm, _, fakeAlert, store, history) = makeViewModel()
+        vm.start()
+        // Pretend 20 of the 25 minutes have gone by.
+        var running = store.loadState()
+        running.startDate = Date().addingTimeInterval(-20 * 60)
+        running.endDate = Date().addingTimeInterval(5 * 60)
+        store.save(running)
+
+        vm.finishEarly()
+
+        XCTAssertEqual(vm.state.phase, .shortBreak)
+        XCTAssertEqual(vm.state.completedWorkCycles, 1)
+        XCTAssertEqual(history.totalCount, 1)
+        XCTAssertEqual(history.totalFocusSeconds, 20 * 60, accuracy: 2)
+        XCTAssertEqual(history.sessions().first?.profileID, TimerProfile.classicID)
+        XCTAssertEqual(store.loadCachedTodayCount(), 1)
+        XCTAssertEqual(fakeAlert.alertCount, 0) // a deliberate tap, not a timer ending
+    }
+
+    func testFinishEarlyTooSoonChangesNothing() {
+        let (vm, _, _, store, history) = makeViewModel()
+        vm.start()
+        vm.finishEarly() // 0 minutes in
+        XCTAssertEqual(vm.state.phase, .work)
+        XCTAssertEqual(history.totalCount, 0)
+        XCTAssertEqual(store.loadState().phase, .work)
+    }
+
+    func testSkipStillDiscardsFocus() {
+        let (vm, _, _, _, history) = makeViewModel()
+        vm.start()
+        vm.skip()
+        XCTAssertEqual(history.totalCount, 0)
+    }
 }

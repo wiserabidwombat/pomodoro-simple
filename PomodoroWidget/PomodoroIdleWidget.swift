@@ -7,6 +7,9 @@ struct PomodoroIdleEntry: TimelineEntry {
     let state: PomodoroState
     let accentColor: AccentColorOption
     let todayCount: Int
+    /// The active profile's name, or nil when there's only one profile.
+    var profileLabel: String? = nil
+    var sessionsPerCycle: Int = 4
 }
 
 struct PomodoroIdleProvider: TimelineProvider {
@@ -30,11 +33,18 @@ struct PomodoroIdleProvider: TimelineProvider {
                 completedWorkCycles: 1,
                 sessionActive: true
             )
-            completion(PomodoroIdleEntry(date: now, state: example, accentColor: .white, todayCount: 3))
+            completion(PomodoroIdleEntry(date: now, state: example, accentColor: .white, todayCount: 3, sessionsPerCycle: 4))
             return
         }
         let store = PomodoroStateStore()
-        completion(PomodoroIdleEntry(date: Date(), state: store.loadState(), accentColor: store.loadAccentColor(), todayCount: store.loadCachedTodayCount()))
+        completion(PomodoroIdleEntry(
+            date: Date(),
+            state: store.loadState(),
+            accentColor: store.loadAccentColor(),
+            todayCount: store.loadCachedTodayCount(),
+            profileLabel: store.loadActiveProfileLabel(),
+            sessionsPerCycle: store.loadActiveProfile().sessionsBeforeLongBreak
+        ))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<PomodoroIdleEntry>) -> Void) {
@@ -42,9 +52,18 @@ struct PomodoroIdleProvider: TimelineProvider {
         let state = store.loadState()
         let accentColor = store.loadAccentColor()
         let todayCount = store.loadCachedTodayCount()
+        let profileLabel = store.loadActiveProfileLabel()
+        let sessionsPerCycle = store.loadActiveProfile().sessionsBeforeLongBreak
         let now = Date()
         func entry(at date: Date) -> PomodoroIdleEntry {
-            PomodoroIdleEntry(date: date, state: state, accentColor: accentColor, todayCount: todayCount)
+            PomodoroIdleEntry(
+                date: date,
+                state: state,
+                accentColor: accentColor,
+                todayCount: todayCount,
+                profileLabel: profileLabel,
+                sessionsPerCycle: sessionsPerCycle
+            )
         }
 
         var entries = [entry(at: now)]
@@ -77,6 +96,15 @@ struct PomodoroIdleWidgetView: View {
     /// Continue button (like the Live Activity) rather than a frozen 00:00
     /// with Pause/Skip, where Skip would catch up *and* skip, advancing two
     /// phases in one tap.
+    /// "Deep Work · Focus" (or just "Focus") during a session; with no
+    /// session, the profile that Start would use, or "Pomodoro".
+    private var title: String {
+        if entry.state.sessionActive {
+            return entry.state.phase.title(profileLabel: entry.profileLabel)
+        }
+        return entry.profileLabel ?? "Pomodoro"
+    }
+
     private var isExpired: Bool {
         entry.state.sessionActive && entry.state.pausedAt == nil && entry.date >= entry.state.endDate
     }
@@ -107,6 +135,7 @@ struct PomodoroIdleWidgetView: View {
             VStack(spacing: 1) {
                 Image(systemName: "timer")
                     .font(.caption2)
+                    .accessibilityHidden(true) // decorative
                 countdownText
                     .font(.caption2)
                     .minimumScaleFactor(0.6)
@@ -115,6 +144,7 @@ struct PomodoroIdleWidgetView: View {
         } else {
             Image(systemName: "timer")
                 .font(.title2)
+                .accessibilityLabel("Pomodoro timer, not running")
         }
     }
 
@@ -127,7 +157,9 @@ struct PomodoroIdleWidgetView: View {
     @ViewBuilder
     private var rectangularContent: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(entry.state.sessionActive ? entry.state.phase.displayName : "Pomodoro")
+            Text(title)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
                 .font(.caption.bold())
             if entry.state.sessionActive {
                 countdownText
@@ -143,7 +175,9 @@ struct PomodoroIdleWidgetView: View {
     @ViewBuilder
     private var homeScreenContent: some View {
         VStack(spacing: 4) {
-            Text(entry.state.sessionActive ? entry.state.phase.displayName : "Pomodoro")
+            Text(title)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
                 .font(.caption)
             if entry.state.sessionActive {
                 countdownText
@@ -151,8 +185,7 @@ struct PomodoroIdleWidgetView: View {
                     .monospacedDigit()
                 controls
             } else {
-                Image(systemName: "timer")
-                    .font(.title2)
+                startButton
             }
         }
     }
@@ -163,7 +196,9 @@ struct PomodoroIdleWidgetView: View {
     private var mediumContent: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(entry.state.sessionActive ? entry.state.phase.displayName : "Pomodoro")
+                Text(title)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                     .font(.headline)
                 if entry.state.sessionActive {
                     countdownText
@@ -173,8 +208,7 @@ struct PomodoroIdleWidgetView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                     controls
                 } else {
-                    Text("Tap to start")
-                        .font(.subheadline)
+                    startButton
                 }
             }
             Spacer()
@@ -193,13 +227,32 @@ struct PomodoroIdleWidgetView: View {
 
     private var cycleDots: some View {
         HStack(spacing: 8) {
-            ForEach(0..<4, id: \.self) { index in
+            ForEach(0..<entry.sessionsPerCycle, id: \.self) { index in
                 Circle()
                     .fill(index < entry.state.completedWorkCycles ? entry.accentColor.color : Color.clear)
                     .overlay(Circle().strokeBorder(entry.accentColor.color, lineWidth: 1.5))
                     .frame(width: 10, height: 10)
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Cycle progress")
+        .accessibilityValue("\(min(entry.state.completedWorkCycles, entry.sessionsPerCycle)) of \(entry.sessionsPerCycle) Focus sessions done")
+    }
+
+    /// Starts a session with the active profile right from the Home Screen
+    /// (the title above it names the profile when there's more than one).
+    /// Same LiveActivityIntent as Siri/Shortcuts' "Start", so the app wakes
+    /// in the background and the Live Activity appears as usual. Only on
+    /// the Home Screen sizes: Lock Screen accessory widgets are too small
+    /// for buttons (see rectangularContent).
+    private var startButton: some View {
+        Button(intent: StartPomodoroIntent()) {
+            Label("Start", systemImage: "play.fill")
+                .foregroundStyle(entry.accentColor.contrastingTextColor)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(entry.accentColor.color)
+        .accessibilityHint("Starts a Focus session.")
     }
 
     /// Same LiveActivityIntent-conforming intents the Live Activity's own
@@ -221,14 +274,17 @@ struct PomodoroIdleWidgetView: View {
                     Button(intent: PausePomodoroIntent()) {
                         Image(systemName: "pause.fill")
                     }
+                    .accessibilityLabel("Pause")
                 } else {
                     Button(intent: ResumePomodoroIntent()) {
                         Image(systemName: "play.fill")
                     }
+                    .accessibilityLabel("Resume")
                 }
                 Button(intent: SkipPomodoroIntent()) {
                     Image(systemName: "forward.fill")
                 }
+                .accessibilityLabel("Skip")
             }
         }
     }
@@ -239,6 +295,7 @@ struct PomodoroIdleWidgetView: View {
             Text("Time's up")
         } else if entry.state.pausedAt != nil {
             Text(entry.state.formattedRemainingWhilePaused)
+                .accessibilityLabel(SpokenDuration.pausedLabel(endDate: entry.state.endDate, pausedAt: entry.state.pausedAt))
         } else {
             // Text(timerInterval:) reserves a wider bounding box than it
             // visually needs and renders left-aligned within it by default —

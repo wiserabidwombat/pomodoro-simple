@@ -41,7 +41,7 @@ private func applyAndPush(_ newState: PomodoroState, accentColor: AccentColorOpt
         intentLogger.error("applyAndPush() aborted: no active Live Activity found")
         return
     }
-    let contentState = PomodoroActivityAttributes.ContentState(newState, accentColor: accentColor)
+    let contentState = PomodoroActivityAttributes.ContentState(newState, accentColor: accentColor, profileName: store.loadActiveProfileLabel())
     let content = ActivityContent(state: contentState, staleDate: contentState.staleDate)
     intentLogger.log("applyAndPush() persisted \(newState.phase.rawValue, privacy: .public)(cycles=\(newState.completedWorkCycles, privacy: .public)) to store, pushing activity.update() id=\(activity.id, privacy: .public)")
     await activity.update(content)
@@ -58,7 +58,7 @@ private func performPomodoroAction(_ label: String, _ action: (TimerEngine) -> V
     defer { IntentActionGate.end() }
     let store = PomodoroStateStore()
     let beforeState = store.loadState()
-    let engine = TimerEngine(state: beforeState, durations: store.loadDurations())
+    let engine = TimerEngine(state: beforeState, profile: store.loadActiveProfile())
     let completed = engine.catchUpIfExpired()
     if let completed {
         recordNaturalCompletion(completed, store: store)
@@ -76,7 +76,16 @@ struct StartPomodoroIntent: LiveActivityIntent {
         guard IntentActionGate.begin() else { return .result() }
         defer { IntentActionGate.end() }
         let store = PomodoroStateStore()
-        let engine = TimerEngine(state: store.loadState(), durations: store.loadDurations())
+        let current = store.loadState()
+        // The Home Screen widget can still be showing Start for a moment
+        // after a session began somewhere else (its refresh lags), and Siri
+        // can be asked to start while one is running. Neither should wipe
+        // out the session in progress — just refresh the widget.
+        guard !current.sessionActive else {
+            reloadIdlePomodoroWidget()
+            return .result()
+        }
+        let engine = TimerEngine(state: current, profile: store.loadActiveProfile())
         engine.start()
         let newState = engine.state
         persistPomodoroState(newState, store: store, notifications: NotificationScheduler())
@@ -93,7 +102,7 @@ struct StartPomodoroIntent: LiveActivityIntent {
         // staleDate omitted on the initial request — see the matching
         // comment in LiveActivityController.start() for why.
         let content = ActivityContent(
-            state: PomodoroActivityAttributes.ContentState(newState, accentColor: store.loadAccentColor()),
+            state: PomodoroActivityAttributes.ContentState(newState, accentColor: store.loadAccentColor(), profileName: store.loadActiveProfileLabel()),
             staleDate: nil
         )
         do {

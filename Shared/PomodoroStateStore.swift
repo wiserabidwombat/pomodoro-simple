@@ -9,13 +9,19 @@ import Foundation
 struct PendingCompletedSession: Codable, Equatable {
     let endedAt: Date
     let duration: TimeInterval
+    var profileID: UUID? = nil
+    var profileName: String? = nil
 }
 
 struct PomodoroStateStore {
     private let defaults: UserDefaults
     private let stateKey = "pomodoro.state"
     private let colorKey = "pomodoro.accentColor"
-    private let durationsKey = "pomodoro.durations"
+    /// Pre-profiles single set of durations; only read now, to seed the
+    /// Classic profile for people updating from an older build.
+    private let legacyDurationsKey = "pomodoro.durations"
+    private let profilesKey = "pomodoro.profiles"
+    private let activeProfileIDKey = "pomodoro.activeProfileID"
     private let silenceDuringFocusKey = "pomodoro.silenceDuringFocus"
     private let soundEnabledKey = "pomodoro.soundEnabled"
     private let chimeKey = "pomodoro.chime"
@@ -71,18 +77,57 @@ struct PomodoroStateStore {
         defaults.set(data, forKey: colorKey)
     }
 
-    func loadDurations() -> PomodoroDurations {
+    // MARK: - Timer profiles
+
+    /// Never empty. Until a list has been saved (a fresh install, or an
+    /// update from before profiles existed) this returns Classic — carrying
+    /// over whatever durations were set in Settings back then — plus a
+    /// Deep Work example.
+    func loadProfiles() -> [TimerProfile] {
         defaults.synchronize()
-        guard let data = defaults.data(forKey: durationsKey),
-              let decoded = try? JSONDecoder().decode(PomodoroDurations.self, from: data)
-        else { return .default }
-        return decoded
+        if let data = defaults.data(forKey: profilesKey),
+           let decoded = try? JSONDecoder().decode([TimerProfile].self, from: data),
+           !decoded.isEmpty {
+            return decoded
+        }
+        var classic = TimerProfile.classic
+        classic.durations = loadLegacyDurations() ?? .default
+        return [classic, .deepWork]
     }
 
-    func save(_ durations: PomodoroDurations) {
-        guard let data = try? JSONEncoder().encode(durations) else { return }
-        defaults.set(data, forKey: durationsKey)
+    func save(profiles: [TimerProfile]) {
+        guard !profiles.isEmpty, let data = try? JSONEncoder().encode(profiles) else { return }
+        defaults.set(data, forKey: profilesKey)
         defaults.synchronize()
+    }
+
+    /// Falls back to the first profile if the saved id no longer exists
+    /// (e.g. that profile was deleted).
+    func loadActiveProfile() -> TimerProfile {
+        let profiles = loadProfiles()
+        let activeID = defaults.string(forKey: activeProfileIDKey).flatMap(UUID.init(uuidString:))
+        return profiles.first(where: { $0.id == activeID }) ?? profiles[0]
+    }
+
+    func saveActiveProfileID(_ id: UUID) {
+        defaults.set(id.uuidString, forKey: activeProfileIDKey)
+        defaults.synchronize()
+    }
+
+    /// The active profile's name, for showing next to the phase on the Lock
+    /// Screen and widgets — but only once there's more than one profile to
+    /// tell apart; "Classic · Focus" alone would just be noise.
+    func loadActiveProfileLabel() -> String? {
+        loadProfiles().count > 1 ? loadActiveProfile().name : nil
+    }
+
+    func loadDurations() -> PomodoroDurations {
+        loadActiveProfile().durations
+    }
+
+    private func loadLegacyDurations() -> PomodoroDurations? {
+        guard let data = defaults.data(forKey: legacyDurationsKey) else { return nil }
+        return try? JSONDecoder().decode(PomodoroDurations.self, from: data)
     }
 
     func loadSilenceDuringFocus() -> Bool {

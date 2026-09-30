@@ -116,6 +116,10 @@ but a physical device docked and charging in landscape is the real test):
       tapping either opens the app.
 - [ ] From the Home Screen widget, tap Pause/Resume and Skip; confirm they
       respond immediately (no multi-second delay) and the widget updates.
+- [ ] With no session running, tap Start on the small and medium Home Screen
+      widgets (app closed); confirm a session starts with the active profile,
+      the Live Activity appears on the Lock Screen, and opening the app shows
+      it running. Tapping Start again right away must not restart it.
 - [ ] Tap Restart mid-session; confirm the confirmation alert appears
       (centered, not a bottom sheet) and accepting it resets to a fresh
       Focus session with the cycle dots back to empty.
@@ -143,6 +147,31 @@ but a physical device docked and charging in landscape is the real test):
       confirm the Live Activity and widget pick it up within a second or two.
 - [ ] Turn Settings → Play Sound off mid-phase, lock the phone, and confirm
       the phase-end notification arrives silently.
+- [ ] Updating from a build without profiles: confirm Settings → Timer
+      Profiles shows "Classic" with the durations you had set before, plus
+      "Deep Work", and that existing Stats history appears under Classic.
+- [ ] Add a profile with 2 sessions per cycle; select it on the Timer screen;
+      confirm 2 cycle dots and a Long Break after the 2nd Focus session.
+- [ ] Start a session and confirm the profile menu can't be changed until
+      it's stopped, and that the profile you're using can't be deleted.
+- [ ] With 2+ profiles, confirm the Live Activity, widget, and phase-end
+      notification read "<Profile> · Focus".
+- [ ] Finish sessions under two profiles; confirm Stats → All Profiles shows
+      the combined totals plus a By Profile breakdown, and tapping a profile
+      (or picking it in "Showing") filters the whole screen to it.
+- [ ] Delete a profile that has history; confirm its sessions still count in
+      the overall stats and it's still selectable under "Showing".
+- [ ] VoiceOver pass (Settings → Accessibility → VoiceOver, or triple-click
+      the side button if set up): swipe through Timer, Stats, and Settings.
+      Every control should say what it is ("How it works", "Restart session",
+      "Cycle progress, 2 of 4 Focus sessions done", color names), the paused
+      time should read as "Paused, 12 minutes, 34 seconds remaining", and
+      Stats rows should read as one item each ("Today, 3 sessions").
+- [ ] Largest text size (Settings → Accessibility → Display & Text Size →
+      Larger Text, max): Timer, Stats, Settings, and the profile editor stay
+      usable, and "Resume" isn't cut off.
+- [ ] Pick a very dark custom color; confirm Settings shows the
+      hard-to-read warning.
 ### Testing
 
 Unit tests live in `PomodoroTests/` and run from the `Pomodoro` scheme. The

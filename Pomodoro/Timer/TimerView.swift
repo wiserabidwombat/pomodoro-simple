@@ -17,6 +17,8 @@ struct TimerView: View {
             VStack(spacing: 24) {
                 Text(viewModel.state.phase.displayName)
                     .font(.title2.bold())
+                    .accessibilityAddTraits(.isHeader)
+                profilePicker
                 if viewModel.state.sessionActive {
                     // `Text(timerInterval:pauseTime:)`'s own pause handling has
                     // proven unreliable on this SDK (the countdown keeps
@@ -27,6 +29,8 @@ struct TimerView: View {
                         Text(viewModel.state.formattedRemainingWhilePaused)
                             .font(.system(size: 64, weight: .bold, design: .rounded))
                             .monospacedDigit()
+                            // "12:34" alone is read as a clock time.
+                            .accessibilityLabel(SpokenDuration.pausedLabel(endDate: viewModel.state.endDate, pausedAt: viewModel.state.pausedAt))
                     } else {
                         // Text(timerInterval:) reserves a wider bounding box
                         // than it visually needs (to avoid jitter as the
@@ -41,6 +45,10 @@ struct TimerView: View {
                         .monospacedDigit()
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)
+                        // No accessibility override here on purpose: the
+                        // live timer text already reads its current value to
+                        // VoiceOver, while a label computed at render time
+                        // would go stale (this view isn't redrawn every second).
                     }
                 } else {
                     Text("Ready")
@@ -60,6 +68,7 @@ struct TimerView: View {
                         Image(systemName: "questionmark.circle")
                             .font(.title3)
                     }
+                    .accessibilityLabel("How it works")
                     .foregroundStyle(viewModel.accentColor.color.opacity(0.7))
                     .padding()
 
@@ -72,6 +81,7 @@ struct TimerView: View {
                             Image(systemName: "arrow.counterclockwise")
                                 .font(.title3)
                         }
+                        .accessibilityLabel("Restart session")
                         .foregroundStyle(viewModel.accentColor.color.opacity(0.7))
                         .padding()
                     }
@@ -103,7 +113,7 @@ struct TimerView: View {
             Text("This stops the current session and resets back to the start of a fresh Work phase.")
         }
         .sheet(isPresented: $showingHelp) {
-            HelpView(accentColor: viewModel.accentColor, durations: viewModel.durations)
+            HelpView(accentColor: viewModel.accentColor, profile: viewModel.activeProfile)
         }
         .sheet(isPresented: $showingNotificationPrimer, onDismiss: {
             if !hasSeenHelp {
@@ -122,19 +132,68 @@ struct TimerView: View {
         }
     }
 
-    /// 4 dots for the classic Pomodoro cycle: filled for each completed
-    /// Focus session since the last Long Break, resetting to empty once
-    /// that 4th one lands. Uses `completedWorkCycles` directly, no new
-    /// state needed.
+    /// Which timer profile this session uses. Tappable (a menu) only while
+    /// idle; a running session shows the name without letting it change.
+    /// Hidden entirely when there's only one profile.
+    @ViewBuilder
+    private var profilePicker: some View {
+        if viewModel.profiles.count > 1 {
+            if viewModel.state.sessionActive {
+                Text(viewModel.activeProfile.name)
+                    .font(.subheadline)
+                    .opacity(0.7)
+                    .accessibilityLabel("Timer profile: \(viewModel.activeProfile.name)")
+            } else {
+                VStack(spacing: 4) {
+                    Menu {
+                        Picker("Timer Profile", selection: Binding(
+                            get: { viewModel.activeProfile.id },
+                            set: { viewModel.selectProfile(id: $0) }
+                        )) {
+                            ForEach(viewModel.profiles) { profile in
+                                Text(profile.name).tag(profile.id)
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(viewModel.activeProfile.name)
+                            Image(systemName: "chevron.down")
+                                .font(.caption.bold())
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 6)
+                        .overlay(Capsule().strokeBorder(viewModel.accentColor.color.opacity(0.6), lineWidth: 1))
+                    }
+                    .accessibilityLabel("Timer profile")
+                    .accessibilityValue(viewModel.activeProfile.name)
+                    .accessibilityHint("Choose which profile the next session uses.")
+                    Text(viewModel.activeProfile.summary)
+                        .font(.caption)
+                        .opacity(0.6)
+                        .accessibilityLabel(viewModel.activeProfile.spokenSummary)
+                }
+            }
+        }
+    }
+
+    /// One dot per Focus session in the active profile's cycle: filled for
+    /// each completed Focus session since the last Long Break, resetting to
+    /// empty once the cycle's last one lands. Uses `completedWorkCycles`
+    /// directly, no new state needed.
     private var cycleProgress: some View {
         HStack(spacing: 12) {
-            ForEach(0..<4, id: \.self) { index in
+            ForEach(0..<viewModel.activeProfile.sessionsBeforeLongBreak, id: \.self) { index in
                 Circle()
                     .fill(index < viewModel.state.completedWorkCycles ? viewModel.accentColor.color : Color.clear)
                     .overlay(Circle().strokeBorder(viewModel.accentColor.color, lineWidth: 1.5))
                     .frame(width: 12, height: 12)
             }
         }
+        // One element instead of N unlabeled circles.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Cycle progress")
+        .accessibilityValue("\(min(viewModel.state.completedWorkCycles, viewModel.activeProfile.sessionsBeforeLongBreak)) of \(viewModel.activeProfile.sessionsBeforeLongBreak) Focus sessions done")
     }
 
     @ViewBuilder
@@ -143,8 +202,10 @@ struct TimerView: View {
             Button("Start") { viewModel.start() }
         } else {
             HStack(spacing: 20) {
-                // Fixed width so the Skip button doesn't shift when this
-                // label's text changes length between "Pause" and "Resume".
+                // Minimum width so the Skip button doesn't shift when this
+                // label's text changes length between "Pause" and "Resume" —
+                // a minimum rather than a fixed 90pt, so larger Dynamic Type
+                // sizes can grow the button instead of truncating "Resume".
                 Group {
                     if viewModel.state.pausedAt == nil {
                         Button("Pause") { viewModel.pause() }
@@ -152,8 +213,9 @@ struct TimerView: View {
                         Button("Resume") { viewModel.resume() }
                     }
                 }
-                .frame(width: 90)
+                .frame(minWidth: 90)
                 Button("Skip") { viewModel.skip() }
+                    .accessibilityHint("Ends this phase now and starts the next one.")
             }
         }
     }

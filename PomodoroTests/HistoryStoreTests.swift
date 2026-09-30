@@ -163,4 +163,68 @@ final class HistoryStoreTests: XCTestCase {
         XCTAssertEqual(StatsView.formattedFocusTime(-60), "0m")
         XCTAssertEqual(StatsView.formattedFocusTime(3660), "1h 1m")
     }
+
+    // MARK: - Stats by profile
+
+    @MainActor
+    func testSessionsFromBeforeProfilesCountAsClassic() {
+        let store = makeInMemoryStore()
+        store.recordCompletedSession(duration: 1500) // no profile, like old data
+        let sessions = store.sessions()
+        XCTAssertEqual(sessions.first?.profileID, TimerProfile.classicID)
+        XCTAssertEqual(sessions.first?.profileName, "Classic")
+    }
+
+    @MainActor
+    func testSnapshotCanBeFilteredToOneProfile() {
+        let store = makeInMemoryStore()
+        store.recordCompletedSession(duration: 1500, profile: .classic)
+        store.recordCompletedSession(duration: 3000, profile: .deepWork)
+        store.recordCompletedSession(duration: 3000, profile: .deepWork)
+
+        XCTAssertEqual(store.snapshot().totalCount, 3)
+        let deepWork = store.snapshot(profileID: TimerProfile.deepWorkID)
+        XCTAssertEqual(deepWork.totalCount, 2)
+        XCTAssertEqual(deepWork.totalFocusSeconds, 6000)
+        XCTAssertEqual(deepWork.todayCount, 2)
+    }
+
+    @MainActor
+    func testImportedPendingSessionsKeepTheirProfile() {
+        let store = makeInMemoryStore()
+        store.recordCompletedSessions([PendingCompletedSession(
+            endedAt: Date(),
+            duration: 3000,
+            profileID: TimerProfile.deepWorkID,
+            profileName: "Deep Work"
+        )])
+        XCTAssertEqual(store.sessions().first?.profileID, TimerProfile.deepWorkID)
+    }
+
+    func testByProfileTotalsAreSortedByFocusTimeAndCountToday() {
+        let now = Date()
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: now)!
+        let study = UUID()
+        let sessions = [
+            StatsSnapshot.Session(date: yesterday, durationSeconds: 1500, profileID: TimerProfile.classicID, profileName: "Classic"),
+            StatsSnapshot.Session(date: now, durationSeconds: 1500, profileID: TimerProfile.classicID, profileName: "Classic"),
+            StatsSnapshot.Session(date: now, durationSeconds: 3000, profileID: study, profileName: "Study"),
+            StatsSnapshot.Session(date: now, durationSeconds: 3000, profileID: study, profileName: "Study"),
+        ]
+        let totals = StatsSnapshot(sessions: sessions, now: now).byProfile
+        XCTAssertEqual(totals.map(\.name), ["Study", "Classic"])
+        XCTAssertEqual(totals.map(\.count), [2, 2])
+        XCTAssertEqual(totals.map(\.totalFocusSeconds), [6000, 3000])
+        XCTAssertEqual(totals.map(\.todayCount), [2, 1])
+    }
+
+    func testByProfileUsesTheLatestNameAfterARename() {
+        let id = UUID()
+        let earlier = Date().addingTimeInterval(-3600)
+        let sessions = [
+            StatsSnapshot.Session(date: earlier, durationSeconds: 1500, profileID: id, profileName: "Study"),
+            StatsSnapshot.Session(date: Date(), durationSeconds: 1500, profileID: id, profileName: "Exam Prep"),
+        ]
+        XCTAssertEqual(StatsSnapshot(sessions: sessions).byProfile.map(\.name), ["Exam Prep"])
+    }
 }

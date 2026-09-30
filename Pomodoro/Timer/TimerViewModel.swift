@@ -13,12 +13,10 @@ final class TimerViewModel: ObservableObject {
             scheduleAppearancePush()
         }
     }
-    @Published var durations: PomodoroDurations {
-        didSet {
-            store.save(durations)
-            engine.updateDurations(durations)
-        }
-    }
+    /// Saved timer setups, in the user's order. Never empty.
+    @Published private(set) var profiles: [TimerProfile]
+    /// The one new sessions run with. Only switchable while idle.
+    @Published private(set) var activeProfile: TimerProfile
     @Published var silenceDuringFocus: Bool {
         didSet { store.save(silenceDuringFocus: silenceDuringFocus) }
     }
@@ -30,7 +28,12 @@ final class TimerViewModel: ObservableObject {
             // (Notification only — saving state from a settings toggle
             // could clobber a change another process just made.)
             if state.sessionActive, state.pausedAt == nil {
-                notifications.schedulePhaseEnd(phase: state.phase, endDate: state.endDate, playSound: soundEnabled)
+                notifications.schedulePhaseEnd(
+                    phase: state.phase,
+                    endDate: state.endDate,
+                    playSound: soundEnabled,
+                    profileLabel: store.loadActiveProfileLabel()
+                )
             }
         }
     }
@@ -68,11 +71,12 @@ final class TimerViewModel: ObservableObject {
         self.liveActivity = liveActivity
         self.alerting = alerting
         let loaded = store.loadState()
-        let loadedDurations = store.loadDurations()
-        self.engine = TimerEngine(state: loaded, durations: loadedDurations)
+        let loadedActive = store.loadActiveProfile()
+        self.engine = TimerEngine(state: loaded, profile: loadedActive)
         self.state = loaded
         self.accentColor = store.loadAccentColor()
-        self.durations = loadedDurations
+        self.profiles = store.loadProfiles()
+        self.activeProfile = loadedActive
         self.silenceDuringFocus = store.loadSilenceDuringFocus()
         self.soundEnabled = store.loadSoundEnabled()
         self.chime = store.loadChime()
@@ -81,6 +85,59 @@ final class TimerViewModel: ObservableObject {
     func start() {
         engine.start()
         persistAndPush()
+    }
+
+    // MARK: - Timer profiles
+
+    /// Switching is only allowed between sessions, so a running cycle never
+    /// changes shape underneath you.
+    func selectProfile(id: UUID) {
+        guard !state.sessionActive, let profile = profiles.first(where: { $0.id == id }) else { return }
+        activeProfile = profile
+        store.saveActiveProfileID(profile.id)
+        engine.updateProfile(profile)
+        reloadIdlePomodoroWidget()
+    }
+
+    /// Adds a new profile, or saves edits to an existing one. Editing the
+    /// active profile mid-session only affects the next phase, the same as
+    /// changing durations always has.
+    func saveProfile(_ profile: TimerProfile) {
+        var updated = profiles
+        if let index = updated.firstIndex(where: { $0.id == profile.id }) {
+            updated[index] = profile
+        } else {
+            updated.append(profile)
+        }
+        profiles = updated
+        store.save(profiles: updated)
+        if profile.id == activeProfile.id {
+            activeProfile = profile
+            engine.updateProfile(profile)
+        }
+        reloadIdlePomodoroWidget()
+    }
+
+    /// The last remaining profile can't go, and neither can the one a
+    /// running session is using.
+    func canDeleteProfile(_ profile: TimerProfile) -> Bool {
+        profiles.count > 1 && !(profile.id == activeProfile.id && state.sessionActive)
+    }
+
+    /// Past sessions keep their profile tag (and stored name), so deleting
+    /// a profile never removes anything from Stats.
+    func deleteProfile(id: UUID) {
+        guard let profile = profiles.first(where: { $0.id == id }), canDeleteProfile(profile) else { return }
+        let remaining = profiles.filter { $0.id != id }
+        profiles = remaining
+        store.save(profiles: remaining)
+        if id == activeProfile.id {
+            let next = remaining[0]
+            activeProfile = next
+            store.saveActiveProfileID(next.id)
+            engine.updateProfile(next)
+        }
+        reloadIdlePomodoroWidget()
     }
 
     // Pause/Resume/Skip first sync with the shared store (and catch up a

@@ -16,7 +16,8 @@ start a Focus session and control it without ever unlocking your phone.
 ## Description
 Simple: StandBy Timer is a focus timer built around the classic Pomodoro Technique:
 25 minutes of focused work, then a short break, repeating in a cycle with a
-longer break every 4th round — or set your own Focus and break lengths.
+longer break every 4th round — or save your own timer profiles, like Deep
+Work or Study, each with its own lengths and cycle.
 
 What makes it different is where it lives. Once you start a session, you
 never need to keep the app open:

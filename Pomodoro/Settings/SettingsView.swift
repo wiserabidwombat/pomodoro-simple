@@ -6,6 +6,7 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var viewModel: TimerViewModel
     @Environment(\.self) private var environment
+    @State private var editingProfile: TimerProfile?
 
     var body: some View {
         ZStack {
@@ -15,15 +16,24 @@ struct SettingsView: View {
                     Text("Accent Color")
                         .foregroundStyle(viewModel.accentColor.color)
                         .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 16) {
                         ForEach(AccentColorOption.presets, id: \.self) { option in
-                            Circle()
-                                .fill(option.color)
-                                .frame(width: 44, height: 44)
-                                .overlay(
-                                    Circle().strokeBorder(.white, lineWidth: option == viewModel.accentColor ? 3 : 0)
-                                )
-                                .onTapGesture { viewModel.accentColor = option }
+                            // A real Button (not a tap gesture on a shape) so
+                            // VoiceOver can find, name, and activate it.
+                            Button {
+                                viewModel.accentColor = option
+                            } label: {
+                                Circle()
+                                    .fill(option.color)
+                                    .frame(width: 44, height: 44)
+                                    .overlay(
+                                        Circle().strokeBorder(.white, lineWidth: option == viewModel.accentColor ? 3 : 0)
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(option.accessibilityName)
+                            .accessibilityAddTraits(option == viewModel.accentColor ? .isSelected : [])
                         }
                         ColorPicker("Custom", selection: Binding(
                             get: { viewModel.accentColor.color },
@@ -39,37 +49,65 @@ struct SettingsView: View {
                         .labelsHidden()
                         .scaleEffect(1.5)
                         .frame(width: 44, height: 44)
+                        .accessibilityLabel("Custom color")
                     }
                     .padding()
+                    if viewModel.accentColor.isLowContrastOnBlack {
+                        Text("This color is hard to read on the black background. A lighter shade will be easier on the eyes.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
 
-                    Text("Durations")
+                    Text("Timer Profiles")
                         .foregroundStyle(viewModel.accentColor.color)
                         .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
                     VStack(spacing: 12) {
-                        durationStepper(
-                            "Focus",
-                            minutes: Binding(
-                                get: { viewModel.durations.workMinutes },
-                                set: { viewModel.durations.workMinutes = $0 }
-                            ),
-                            range: 1...120
-                        )
-                        durationStepper(
-                            "Short Break",
-                            minutes: Binding(
-                                get: { viewModel.durations.shortBreakMinutes },
-                                set: { viewModel.durations.shortBreakMinutes = $0 }
-                            ),
-                            range: 1...60
-                        )
-                        durationStepper(
-                            "Long Break",
-                            minutes: Binding(
-                                get: { viewModel.durations.longBreakMinutes },
-                                set: { viewModel.durations.longBreakMinutes = $0 }
-                            ),
-                            range: 1...60
-                        )
+                        ForEach(viewModel.profiles) { profile in
+                            Button {
+                                editingProfile = profile
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(profile.name)
+                                            .foregroundStyle(.white)
+                                        Text(profile.summary)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    if profile.id == viewModel.activeProfile.id {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(viewModel.accentColor.color)
+                                    }
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(profile.name)
+                            .accessibilityValue(profile.id == viewModel.activeProfile.id
+                                ? "In use. \(profile.spokenSummary)"
+                                : profile.spokenSummary)
+                            .accessibilityHint("Edit this profile.")
+                        }
+                        Button {
+                            // New profiles start from the active one's
+                            // settings; the name is left blank to fill in.
+                            editingProfile = TimerProfile(
+                                name: "",
+                                durations: viewModel.activeProfile.durations,
+                                sessionsBeforeLongBreak: viewModel.activeProfile.sessionsBeforeLongBreak
+                            )
+                        } label: {
+                            Label("Add Profile", systemImage: "plus")
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .foregroundStyle(viewModel.accentColor.color)
                     }
                     .padding(.horizontal)
 
@@ -96,6 +134,7 @@ struct SettingsView: View {
                     Text("Sound")
                         .foregroundStyle(viewModel.accentColor.color)
                         .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
                     Toggle(isOn: $viewModel.soundEnabled) {
                         Text("Play Sound")
                             .foregroundStyle(.white)
@@ -116,11 +155,14 @@ struct SettingsView: View {
                                     if viewModel.chime == option {
                                         Image(systemName: "checkmark")
                                             .foregroundStyle(viewModel.accentColor.color)
+                                            .accessibilityHidden(true)
                                     }
                                 }
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
+                            .accessibilityAddTraits(viewModel.chime == option ? .isSelected : [])
+                            .accessibilityHint("Selects this sound and plays a preview.")
                         }
                     }
                     .padding(.horizontal)
@@ -128,17 +170,16 @@ struct SettingsView: View {
                 .padding(.vertical)
             }
         }
-    }
-
-    private func durationStepper(_ title: String, minutes: Binding<Int>, range: ClosedRange<Int>) -> some View {
-        Stepper(value: minutes, in: range) {
-            HStack {
-                Text(title)
-                    .foregroundStyle(.white)
-                Spacer()
-                Text("\(minutes.wrappedValue) min")
-                    .foregroundStyle(.secondary)
-            }
+        .sheet(item: $editingProfile) { profile in
+            ProfileEditorView(
+                profile: profile,
+                isNew: !viewModel.profiles.contains(where: { $0.id == profile.id }),
+                canDelete: viewModel.canDeleteProfile(profile),
+                accentColor: viewModel.accentColor,
+                onSave: { viewModel.saveProfile($0) },
+                onDelete: { viewModel.deleteProfile(id: profile.id) }
+            )
         }
     }
+
 }

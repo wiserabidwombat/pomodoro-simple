@@ -31,10 +31,10 @@ final class NotificationScheduler {
         }
     }
 
-    func schedulePhaseEnd(phase: PomodoroPhase, endDate: Date, playSound: Bool = true) {
+    func schedulePhaseEnd(phase: PomodoroPhase, endDate: Date, playSound: Bool = true, profileLabel: String? = nil) {
         cancelPhaseEnd()
         let content = UNMutableNotificationContent()
-        content.title = phase.displayName
+        content.title = phase.title(profileLabel: profileLabel)
         content.body = Self.body(for: phase)
         // Honors Settings → Play Sound for the background alert too, not
         // just the in-app chime.

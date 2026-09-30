@@ -5,20 +5,79 @@ import Charts
 struct StatsView: View {
     @ObservedObject var viewModel: TimerViewModel
     let historyStore: HistoryStore
-    /// Computed once per appearance and whenever new sessions are recorded
-    /// (historyRevision), not queried from SwiftData inside `body` on every
-    /// render as before.
-    @State private var stats = StatsSnapshot()
+    /// Fetched once per appearance and whenever new sessions are recorded
+    /// (historyRevision) — never queried from SwiftData inside `body`.
+    @State private var sessions: [StatsSnapshot.Session] = []
+    /// nil = all profiles combined.
+    @State private var profileFilter: UUID?
+
+    private struct ProfileOption: Identifiable {
+        let id: UUID
+        let name: String
+    }
 
     var body: some View {
+        let overall = StatsSnapshot(sessions: sessions)
+        let stats = profileFilter.map { id in
+            StatsSnapshot(sessions: sessions.filter { $0.profileID == id })
+        } ?? overall
+        let options = filterOptions(overall)
+
         ZStack {
             Color.black.ignoresSafeArea()
             List {
-                Section {
-                    statRow("Today", "\(stats.todayCount)")
-                    statRow("All time", "\(stats.totalCount)")
+                if options.count > 1 {
+                    Section {
+                        Picker("Showing", selection: $profileFilter) {
+                            Text("All Profiles").tag(UUID?.none)
+                            ForEach(options) { option in
+                                Text(option.name).tag(Optional(option.id))
+                            }
+                        }
+                        .pickerStyle(.menu)
+                    }
+                }
+                Section(sectionTitle(options)) {
+                    statRow("Today", "\(stats.todayCount)", spoken: Self.spokenSessions(stats.todayCount))
+                    statRow("All time", "\(stats.totalCount)", spoken: Self.spokenSessions(stats.totalCount))
                     statRow("Current streak", "\(stats.currentStreak) day\(stats.currentStreak == 1 ? "" : "s")")
-                    statRow("Total focus time", Self.formattedFocusTime(stats.totalFocusSeconds))
+                    statRow(
+                        "Total focus time",
+                        Self.formattedFocusTime(stats.totalFocusSeconds),
+                        spoken: SpokenDuration.string(stats.totalFocusSeconds, units: [.hour, .minute])
+                    )
+                }
+                // The overall view breaks the combined totals down by
+                // profile; tapping one switches the whole screen to it.
+                if profileFilter == nil && overall.byProfile.count > 1 {
+                    Section("By Profile") {
+                        ForEach(overall.byProfile) { total in
+                            Button {
+                                profileFilter = total.id
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(displayName(total.id, fallback: total.name))
+                                        Text("\(total.count) session\(total.count == 1 ? "" : "s") · \(Self.formattedFocusTime(total.totalFocusSeconds))")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Text("\(total.todayCount) today")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(displayName(total.id, fallback: total.name))
+                            .accessibilityValue("\(Self.spokenSessions(total.count)), \(SpokenDuration.string(total.totalFocusSeconds, units: [.hour, .minute])) of focus, \(total.todayCount) today")
+                            .accessibilityHint("Shows this profile's stats.")
+                        }
+                    }
                 }
                 Section("Last 7 Days") {
                     Chart(stats.lastSevenDays) { entry in
@@ -27,6 +86,11 @@ struct StatsView: View {
                             y: .value("Sessions", entry.count)
                         )
                         .foregroundStyle(viewModel.accentColor.color)
+                        // Swift Charts exposes each bar to VoiceOver (and
+                        // Audio Graphs); these make each one read as
+                        // "Tuesday, 3 sessions" instead of a raw date/number.
+                        .accessibilityLabel(entry.day.formatted(.dateTime.weekday(.wide)))
+                        .accessibilityValue(Self.spokenSessions(entry.count))
                     }
                     // A fixed floor keeps an all-zero week (fresh install,
                     // or a week off) from asking Charts to scale a 0...0
@@ -52,7 +116,11 @@ struct StatsView: View {
                             .foregroundStyle(.secondary)
                     } else {
                         ForEach(stats.byDay) { entry in
-                            statRow(entry.day.formatted(date: .abbreviated, time: .omitted), "\(entry.count)")
+                            statRow(
+                                entry.day.formatted(date: .abbreviated, time: .omitted),
+                                "\(entry.count)",
+                                spoken: Self.spokenSessions(entry.count)
+                            )
                         }
                     }
                 }
@@ -67,15 +135,44 @@ struct StatsView: View {
     }
 
     private func reload() {
-        stats = historyStore.snapshot()
+        sessions = historyStore.sessions()
     }
 
-    private func statRow(_ title: String, _ value: String) -> some View {
+    /// Current profiles in their Settings order, then any deleted profile
+    /// that still has history (so its past sessions stay reachable).
+    private func filterOptions(_ overall: StatsSnapshot) -> [ProfileOption] {
+        var options = viewModel.profiles.map { ProfileOption(id: $0.id, name: $0.name) }
+        for total in overall.byProfile where !options.contains(where: { $0.id == total.id }) {
+            options.append(ProfileOption(id: total.id, name: total.name))
+        }
+        return options
+    }
+
+    private func sectionTitle(_ options: [ProfileOption]) -> String {
+        guard let profileFilter else { return options.count > 1 ? "Overall" : "" }
+        return options.first(where: { $0.id == profileFilter })?.name ?? ""
+    }
+
+    /// Prefers a profile's current name, in case it was renamed since.
+    private func displayName(_ id: UUID, fallback: String) -> String {
+        viewModel.profiles.first(where: { $0.id == id })?.name ?? fallback
+    }
+
+    /// Read by VoiceOver as one item ("Today, 3 sessions") rather than two
+    /// separate stops for the title and a bare number.
+    private func statRow(_ title: String, _ value: String, spoken: String? = nil) -> some View {
         HStack {
             Text(title)
             Spacer()
             Text(value)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(title)
+        .accessibilityValue(spoken ?? value)
+    }
+
+    nonisolated static func spokenSessions(_ count: Int) -> String {
+        count == 1 ? "1 session" : "\(count) sessions"
     }
 
     nonisolated static func formattedFocusTime(_ seconds: TimeInterval) -> String {

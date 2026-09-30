@@ -56,6 +56,21 @@ enum AccentColorOption: Codable, Hashable {
         }
     }
 
+    /// What VoiceOver calls each swatch.
+    var accessibilityName: String {
+        switch self {
+        case .preset(let preset): return preset.rawValue.capitalized
+        case .custom: return "Custom color"
+        }
+    }
+
+    /// True when this color, used as text on the app's black background,
+    /// falls below WCAG's 4.5:1 contrast minimum for normal text. All seven
+    /// presets pass comfortably; only a dark custom color can trip it.
+    var isLowContrastOnBlack: Bool {
+        (relativeLuminance + 0.05) / 0.05 < 4.5
+    }
+
     /// WCAG relative luminance (0 = black, 1 = white).
     var relativeLuminance: Double {
         func linear(_ channel: Double) -> Double {

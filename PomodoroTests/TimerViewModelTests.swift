@@ -177,6 +177,59 @@ final class TimerViewModelTests: XCTestCase {
         XCTAssertEqual(store.loadAccentColor(), .purple)
     }
 
+    // MARK: - Timer profiles
+
+    func testSelectProfileWhileIdleSwitchesAndPersists() {
+        let (vm, _, _, store, _) = makeViewModel()
+        vm.selectProfile(id: TimerProfile.deepWorkID)
+        XCTAssertEqual(vm.activeProfile, .deepWork)
+        XCTAssertEqual(store.loadActiveProfile(), .deepWork)
+
+        vm.start()
+        XCTAssertEqual(vm.state.endDate.timeIntervalSince(vm.state.startDate), 50 * 60, accuracy: 0.5)
+    }
+
+    func testSelectProfileIsIgnoredDuringASession() {
+        let (vm, _, _, store, _) = makeViewModel()
+        vm.start()
+        vm.selectProfile(id: TimerProfile.deepWorkID)
+        XCTAssertEqual(vm.activeProfile, .classic)
+        XCTAssertEqual(store.loadActiveProfile(), .classic)
+    }
+
+    func testAddingAndEditingProfiles() {
+        let (vm, _, _, store, _) = makeViewModel()
+        var study = TimerProfile(name: "Study", durations: .default, sessionsBeforeLongBreak: 3)
+        vm.saveProfile(study)
+        XCTAssertEqual(vm.profiles.map(\.name), ["Classic", "Deep Work", "Study"])
+
+        study.name = "Exam Prep"
+        vm.saveProfile(study)
+        XCTAssertEqual(vm.profiles.map(\.name), ["Classic", "Deep Work", "Exam Prep"])
+        XCTAssertEqual(store.loadProfiles(), vm.profiles)
+    }
+
+    func testDeletingTheActiveProfileSwitchesToTheFirstRemaining() {
+        let (vm, _, _, store, _) = makeViewModel()
+        vm.selectProfile(id: TimerProfile.deepWorkID)
+        vm.deleteProfile(id: TimerProfile.deepWorkID)
+        XCTAssertEqual(vm.profiles, [.classic])
+        XCTAssertEqual(vm.activeProfile, .classic)
+        XCTAssertEqual(store.loadActiveProfile(), .classic)
+    }
+
+    func testCannotDeleteTheLastProfileOrTheOneInUse() {
+        let (vm, _, _, _, _) = makeViewModel()
+        vm.start()
+        XCTAssertFalse(vm.canDeleteProfile(.classic)) // active + running
+        XCTAssertTrue(vm.canDeleteProfile(.deepWork))
+        vm.deleteProfile(id: TimerProfile.deepWorkID)
+        vm.restart()
+        XCTAssertFalse(vm.canDeleteProfile(.classic)) // the only one left
+        vm.deleteProfile(id: TimerProfile.classicID)
+        XCTAssertEqual(vm.profiles, [.classic])
+    }
+
     func testReviewMilestoneRequestedAfterTenTotalSessions() {
         let (vm, _, _, store, history) = makeViewModel()
         for _ in 0..<9 {

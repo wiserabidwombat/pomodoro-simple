@@ -3,7 +3,7 @@ import SwiftUI
 
 struct HelpView: View {
     let accentColor: AccentColorOption
-    let durations: PomodoroDurations
+    let profile: TimerProfile
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -13,6 +13,7 @@ struct HelpView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     Text("How Pomodoro Works")
                         .font(.title2.bold())
+                        .accessibilityAddTraits(.isHeader)
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.top, 8)
 
@@ -22,7 +23,11 @@ struct HelpView: View {
                     )
                     helpSection(
                         title: "The cycle",
-                        body: "Work in a \(durations.workMinutes)-minute Focus session, then take a \(durations.shortBreakMinutes)-minute Short Break. Repeat. Every 4th Focus session is followed by a longer \(durations.longBreakMinutes)-minute Long Break, after which the cycle count resets and you start back at Focus #1. The 4 dots below the countdown fill in one at a time as each Focus session in the current cycle completes. (Durations can be changed in Settings.)"
+                        body: cycleDescription
+                    )
+                    helpSection(
+                        title: "Timer profiles",
+                        body: "Save different setups — like Deep Work or Study — under Settings → Timer Profiles, each with its own lengths and number of Focus sessions per cycle. Switch between them with the button above the timer whenever no session is running. Stats shows each profile on its own and everything combined."
                     )
                     helpSection(
                         title: "Controls",
@@ -47,10 +52,20 @@ struct HelpView: View {
         .foregroundStyle(accentColor.color)
     }
 
+    private var cycleDescription: String {
+        let d = profile.durations
+        let n = profile.sessionsBeforeLongBreak
+        let longBreakTiming = n == 1
+            ? "Every Focus session is followed by a longer \(d.longBreakMinutes)-minute Long Break."
+            : "After every \(n) Focus sessions you get a longer \(d.longBreakMinutes)-minute Long Break, then the cycle starts over."
+        return "Work in a \(d.workMinutes)-minute Focus session, then take a \(d.shortBreakMinutes)-minute Short Break. Repeat. \(longBreakTiming) The dots below the countdown fill in as each Focus session in the current cycle completes. (These are the \(profile.name) profile's settings.)"
+    }
+
     private func helpSection(title: String, body: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.headline)
+                .accessibilityAddTraits(.isHeader)
             Text(body)
                 .font(.body)
                 .foregroundStyle(accentColor.color.opacity(0.85))

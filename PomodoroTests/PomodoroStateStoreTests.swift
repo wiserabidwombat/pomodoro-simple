@@ -55,11 +55,53 @@ final class PomodoroStateStoreTests: XCTestCase {
         XCTAssertEqual(store.loadDurations(), .default)
     }
 
-    func testSaveAndLoadDurationsRoundTrips() {
+    // MARK: - Timer profiles
+
+    func testFreshInstallGetsClassicAndDeepWorkWithClassicActive() {
         let store = makeIsolatedStore()
-        let durations = PomodoroDurations(workMinutes: 50, shortBreakMinutes: 10, longBreakMinutes: 30)
-        store.save(durations)
-        XCTAssertEqual(store.loadDurations(), durations)
+        XCTAssertEqual(store.loadProfiles(), [.classic, .deepWork])
+        XCTAssertEqual(store.loadActiveProfile(), .classic)
+    }
+
+    func testUpdatingFromBeforeProfilesCarriesOldDurationsIntoClassic() {
+        let suiteName = "test-suite-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        let old = PomodoroDurations(workMinutes: 40, shortBreakMinutes: 8, longBreakMinutes: 20)
+        defaults.set(try! JSONEncoder().encode(old), forKey: "pomodoro.durations")
+        let store = PomodoroStateStore(defaults: defaults)
+
+        let classic = store.loadProfiles().first { $0.id == TimerProfile.classicID }
+        XCTAssertEqual(classic?.durations, old)
+        XCTAssertEqual(store.loadDurations(), old)
+    }
+
+    func testSaveProfilesAndActiveProfileRoundTrip() {
+        let store = makeIsolatedStore()
+        let study = TimerProfile(name: "Study", durations: PomodoroDurations(workMinutes: 45, shortBreakMinutes: 10, longBreakMinutes: 20), sessionsBeforeLongBreak: 3)
+        store.save(profiles: [.classic, study])
+        store.saveActiveProfileID(study.id)
+
+        XCTAssertEqual(store.loadProfiles(), [.classic, study])
+        XCTAssertEqual(store.loadActiveProfile(), study)
+        XCTAssertEqual(store.loadDurations(), study.durations)
+        XCTAssertEqual(store.loadActiveProfileLabel(), "Study")
+    }
+
+    func testActiveProfileFallsBackToFirstWhenItsProfileIsGone() {
+        let store = makeIsolatedStore()
+        store.saveActiveProfileID(UUID())
+        XCTAssertEqual(store.loadActiveProfile(), .classic)
+    }
+
+    func testProfileLabelIsHiddenWithOnlyOneProfile() {
+        let store = makeIsolatedStore()
+        store.save(profiles: [.classic])
+        XCTAssertNil(store.loadActiveProfileLabel())
+    }
+
+    func testSessionsPerCycleIsClampedToTheSupportedRange() {
+        XCTAssertEqual(TimerProfile(name: "x", durations: .default, sessionsBeforeLongBreak: 0).sessionsBeforeLongBreak, 1)
+        XCTAssertEqual(TimerProfile(name: "x", durations: .default, sessionsBeforeLongBreak: 99).sessionsBeforeLongBreak, 8)
     }
 
     func testLoadSilenceDuringFocusDefaultsToFalse() {
@@ -136,7 +178,12 @@ final class PomodoroStateStoreTests: XCTestCase {
         XCTAssertEqual(store.loadCachedTodayCount(), 0)
 
         recordNaturalCompletion(CompletedPhase(phase: .work, endedAt: now, duration: 1500), store: store)
-        XCTAssertEqual(store.drainPendingCompletedSessions(), [PendingCompletedSession(endedAt: now, duration: 1500)])
+        XCTAssertEqual(store.drainPendingCompletedSessions(), [PendingCompletedSession(
+            endedAt: now,
+            duration: 1500,
+            profileID: TimerProfile.classicID,
+            profileName: "Classic"
+        )])
         XCTAssertEqual(store.loadCachedTodayCount(), 1)
     }
 

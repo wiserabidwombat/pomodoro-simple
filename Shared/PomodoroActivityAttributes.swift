@@ -9,6 +9,14 @@ struct PomodoroActivityAttributes: ActivityAttributes {
         var endDate: Date
         var pausedAt: Date?
         var accentColor: AccentColorOption
+        /// Shown before the phase ("Deep Work · Focus"); nil with only one
+        /// profile. Optional with a default so content encoded by an older
+        /// build still decodes.
+        var profileName: String? = nil
+
+        var title: String {
+            phase.title(profileLabel: profileName)
+        }
 
         /// "MM:SS" for the frozen remaining time while paused. Used instead
         /// of `Text(timerInterval:pauseTime:)`'s own pause handling, which
@@ -30,13 +38,14 @@ extension PomodoroActivityAttributes.ContentState {
     /// The one place app-side state becomes Live Activity content — used by
     /// LiveActivityController and the Lock Screen intents alike. (Declared
     /// in an extension so the memberwise initializer stays available.)
-    init(_ state: PomodoroState, accentColor: AccentColorOption) {
+    init(_ state: PomodoroState, accentColor: AccentColorOption, profileName: String? = nil) {
         self.init(
             phase: state.phase,
             startDate: state.startDate,
             endDate: state.endDate,
             pausedAt: state.pausedAt,
-            accentColor: accentColor
+            accentColor: accentColor,
+            profileName: profileName
         )
     }
 

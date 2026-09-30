@@ -17,8 +17,10 @@ struct NotificationPrimerView: View {
                 Spacer()
                 Image(systemName: "bell.badge")
                     .font(.system(size: 52))
+                    .accessibilityHidden(true) // decorative
                 Text("Stay on Track")
                     .font(.title2.bold())
+                    .accessibilityAddTraits(.isHeader)
                 Text("Simple: StandBy Timer can let you know the moment a Focus session or break ends — even if the app is closed or your phone is locked. That's the only thing it sends; no ads, no other reminders.")
                     .font(.body)
                     .multilineTextAlignment(.center)

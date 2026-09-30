@@ -23,6 +23,9 @@ struct StatsView: View {
             StatsSnapshot(sessions: sessions.filter { $0.profileID == id })
         } ?? overall
         let options = filterOptions(overall)
+        // The daily goal is across all profiles, so it only appears on the
+        // combined (All Profiles) view.
+        let goal = profileFilter == nil ? viewModel.dailyGoal : 0
 
         ZStack {
             Color.black.ignoresSafeArea()
@@ -50,6 +53,18 @@ struct StatsView: View {
                 }
                 // The overall view breaks the combined totals down by
                 // profile; tapping one switches the whole screen to it.
+                if goal > 0 {
+                    Section("Daily Goal") {
+                        statRow("Goal", "\(goal) a day", spoken: "\(Self.spokenSessions(goal)) a day")
+                        statRow(
+                            "Met in the last 7 days",
+                            "\(StatsSnapshot.goalDaysInLastSeven(overall.lastSevenDays, goal: goal)) of 7",
+                            spoken: "\(StatsSnapshot.goalDaysInLastSeven(overall.lastSevenDays, goal: goal)) of 7 days"
+                        )
+                        let goalStreak = StatsSnapshot.goalStreak(byDay: overall.byDay, goal: goal, calendar: .current, now: Date())
+                        statRow("Goal streak", "\(goalStreak) day\(goalStreak == 1 ? "" : "s")")
+                    }
+                }
                 if profileFilter == nil && overall.byProfile.count > 1 {
                     Section("By Profile") {
                         ForEach(overall.byProfile) { total in
@@ -81,22 +96,33 @@ struct StatsView: View {
                     }
                 }
                 Section("Last 7 Days") {
-                    Chart(stats.lastSevenDays) { entry in
-                        BarMark(
-                            x: .value("Day", entry.day, unit: .day),
-                            y: .value("Sessions", entry.count)
-                        )
-                        .foregroundStyle(viewModel.accentColor.color)
-                        // Swift Charts exposes each bar to VoiceOver (and
-                        // Audio Graphs); these make each one read as
-                        // "Tuesday, 3 sessions" instead of a raw date/number.
-                        .accessibilityLabel(entry.day.formatted(.dateTime.weekday(.wide)))
-                        .accessibilityValue(Self.spokenSessions(entry.count))
+                    Chart {
+                        ForEach(stats.lastSevenDays) { entry in
+                            BarMark(
+                                x: .value("Day", entry.day, unit: .day),
+                                y: .value("Sessions", entry.count)
+                            )
+                            .foregroundStyle(viewModel.accentColor.color)
+                            // Swift Charts exposes each bar to VoiceOver (and
+                            // Audio Graphs); these make each one read as
+                            // "Tuesday, 3 sessions" instead of a raw date/number.
+                            .accessibilityLabel(entry.day.formatted(.dateTime.weekday(.wide)))
+                            .accessibilityValue(Self.spokenSessions(entry.count))
+                        }
+                        if goal > 0 {
+                            // Dashed line at the daily goal: bars that reach
+                            // it are goal days.
+                            RuleMark(y: .value("Daily goal", goal))
+                                .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                                .foregroundStyle(viewModel.accentColor.color.opacity(0.6))
+                                .accessibilityLabel("Daily goal")
+                                .accessibilityValue(Self.spokenSessions(goal))
+                        }
                     }
                     // A fixed floor keeps an all-zero week (fresh install,
                     // or a week off) from asking Charts to scale a 0...0
-                    // axis.
-                    .chartYScale(domain: 0...max(4, stats.lastSevenDays.map(\.count).max() ?? 0))
+                    // axis; the goal line always stays in view.
+                    .chartYScale(domain: 0...max(4, goal, stats.lastSevenDays.map(\.count).max() ?? 0))
                     .frame(height: 140)
                     .chartXAxis {
                         AxisMarks(values: .stride(by: .day)) { _ in

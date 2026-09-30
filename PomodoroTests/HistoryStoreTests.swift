@@ -254,4 +254,27 @@ final class HistoryStoreTests: XCTestCase {
         XCTAssertEqual(HistoryCSV.escape("Reading, Writing"), "\"Reading, Writing\"")
         XCTAssertEqual(HistoryCSV.escape("The \"Big\" Project"), "\"The \"\"Big\"\" Project\"")
     }
+
+    // MARK: - Daily goal
+
+    func testGoalStreakCountsConsecutiveGoalDaysAndIgnoresAnUnfinishedToday() {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        func day(_ offset: Int) -> Date { calendar.date(byAdding: .day, value: -offset, to: today)! }
+        let byDay = [
+            DailyCount(day: day(0), count: 1), // today: not met yet
+            DailyCount(day: day(1), count: 4),
+            DailyCount(day: day(2), count: 5),
+            DailyCount(day: day(3), count: 2), // missed — streak stops here
+            DailyCount(day: day(4), count: 6),
+        ]
+        XCTAssertEqual(StatsSnapshot.goalStreak(byDay: byDay, goal: 4, calendar: calendar, now: Date()), 2)
+        XCTAssertEqual(StatsSnapshot.goalStreak(byDay: byDay, goal: 0, calendar: calendar, now: Date()), 0)
+    }
+
+    func testGoalDaysInLastSeven() {
+        let week = (0..<7).map { DailyCount(day: Date(timeIntervalSince1970: Double($0) * 86_400), count: $0) }
+        XCTAssertEqual(StatsSnapshot.goalDaysInLastSeven(week, goal: 4), 3) // counts 4, 5, 6
+        XCTAssertEqual(StatsSnapshot.goalDaysInLastSeven(week, goal: 0), 0)
+    }
 }

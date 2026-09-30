@@ -177,6 +177,12 @@ but a physical device docked and charging in landscape is the real test):
 - [ ] Finish sessions under two profiles; confirm Stats → All Profiles shows
       the combined totals plus a By Profile breakdown, and tapping a profile
       (or picking it in "Showing") filters the whole screen to it.
+- [ ] Settings → Daily Goal: set 3. The Timer screen shows "0 of 3 today"
+      with a bar that fills as sessions finish (from any profile), then
+      "Daily goal reached". The medium widget shows "1/3" and "Goal met" once
+      reached. Stats (All Profiles) gets a Daily Goal section and a dashed goal
+      line on the 7-day chart; picking one profile hides them. Set it back to
+      0 and all of it disappears.
 - [ ] Stats → Export History as CSV: share to Files or Mail, open it in
       Numbers/Excel; confirm one row per session (date, time, profile,
       minutes), oldest first, including sessions from a deleted profile. The

@@ -111,6 +111,21 @@ struct StatsSnapshot: Equatable {
         return streak
     }
 
+    /// Consecutive days that met the daily goal, counting back from today;
+    /// today only counts once it's met, so an unfinished today doesn't
+    /// break a streak built on prior days (same rule as currentStreak).
+    static func goalStreak(byDay: [DailyCount], goal: Int, calendar: Calendar, now: Date) -> Int {
+        guard goal > 0 else { return 0 }
+        let metDays = Set(byDay.filter { $0.count >= goal }.map { $0.day })
+        return currentStreak(daysWithSessions: metDays, calendar: calendar, now: now)
+    }
+
+    /// How many of the last 7 days (today included) met the goal.
+    static func goalDaysInLastSeven(_ lastSevenDays: [DailyCount], goal: Int) -> Int {
+        guard goal > 0 else { return 0 }
+        return lastSevenDays.filter { $0.count >= goal }.count
+    }
+
     /// Zero-filled, unlike countByDay() (a fixed-width chart axis needs
     /// every day). Built with uniquingKeysWith rather than
     /// uniqueKeysWithValues, which traps on a duplicate key instead of

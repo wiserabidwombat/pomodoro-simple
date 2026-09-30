@@ -25,6 +25,7 @@ struct PomodoroStateStore {
     private let silenceDuringFocusKey = "pomodoro.silenceDuringFocus"
     private let soundEnabledKey = "pomodoro.soundEnabled"
     private let keepScreenAwakeKey = "pomodoro.keepScreenAwake"
+    private let dailyGoalKey = "pomodoro.dailyGoal"
     private let chimeKey = "pomodoro.chime"
     private let todayCountKey = "pomodoro.todayCount"
     private let todayCountDateKey = "pomodoro.todayCountDate"
@@ -142,6 +143,22 @@ struct PomodoroStateStore {
 
     func save(keepScreenAwake: Bool) {
         defaults.set(keepScreenAwake, forKey: keepScreenAwakeKey)
+    }
+
+    static let dailyGoalRange = 0...16
+
+    /// Focus sessions to aim for each day, across all profiles. 0 = no goal
+    /// (the default). In the App Group so the widget can show progress.
+    func loadDailyGoal() -> Int {
+        clampDailyGoal(defaults.integer(forKey: dailyGoalKey))
+    }
+
+    func save(dailyGoal: Int) {
+        defaults.set(clampDailyGoal(dailyGoal), forKey: dailyGoalKey)
+    }
+
+    private func clampDailyGoal(_ goal: Int) -> Int {
+        min(max(goal, Self.dailyGoalRange.lowerBound), Self.dailyGoalRange.upperBound)
     }
 
     func save(silenceDuringFocus: Bool) {

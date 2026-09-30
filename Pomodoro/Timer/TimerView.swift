@@ -69,6 +69,7 @@ struct TimerView: View {
                 }
                 cycleProgress
                 controls
+                dailyGoalProgress
             }
             .foregroundStyle(viewModel.accentColor.color)
             .padding()
@@ -307,6 +308,29 @@ struct TimerView: View {
         case ..<1: return "less than a minute"
         case 1: return "1 minute"
         default: return "\(minutes) minutes"
+        }
+    }
+
+    /// "3 of 6 today" with a thin bar, only when a daily goal is set
+    /// (Settings → Daily Goal). Counts every profile's sessions.
+    @ViewBuilder
+    private var dailyGoalProgress: some View {
+        if viewModel.dailyGoal > 0 {
+            let done = viewModel.todayCount
+            let goal = viewModel.dailyGoal
+            VStack(spacing: 6) {
+                ProgressView(value: Double(min(done, goal)), total: Double(goal))
+                    .tint(viewModel.accentColor.color)
+                    .frame(maxWidth: 180)
+                Text(done >= goal ? "Daily goal reached · \(done) today" : "\(done) of \(goal) today")
+                    .font(.caption)
+                    .opacity(0.8)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Daily goal")
+            .accessibilityValue(done >= goal
+                ? "Reached, \(done) Focus sessions today"
+                : "\(done) of \(goal) Focus sessions today")
         }
     }
 }

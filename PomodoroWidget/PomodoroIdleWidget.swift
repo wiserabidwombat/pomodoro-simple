@@ -13,6 +13,8 @@ struct PomodoroIdleEntry: TimelineEntry {
     /// Full length of the current phase, for the Lock Screen progress ring.
     /// (endDate − startDate isn't it: pausing pushes endDate back.)
     var phaseLength: TimeInterval = 0
+    /// Settings → Daily Goal (0 = off); the medium widget shows "3/6".
+    var dailyGoal: Int = 0
 }
 
 struct PomodoroIdleProvider: TimelineProvider {
@@ -49,7 +51,8 @@ struct PomodoroIdleProvider: TimelineProvider {
             todayCount: store.loadCachedTodayCount(),
             profileLabel: store.loadActiveProfileLabel(),
             sessionsPerCycle: profile.sessionsBeforeLongBreak,
-            phaseLength: profile.durations.duration(for: state.phase)
+            phaseLength: profile.durations.duration(for: state.phase),
+            dailyGoal: store.loadDailyGoal()
         ))
     }
 
@@ -62,6 +65,7 @@ struct PomodoroIdleProvider: TimelineProvider {
         let activeProfile = store.loadActiveProfile()
         let sessionsPerCycle = activeProfile.sessionsBeforeLongBreak
         let phaseLength = activeProfile.durations.duration(for: state.phase)
+        let dailyGoal = store.loadDailyGoal()
         let now = Date()
         func entry(at date: Date) -> PomodoroIdleEntry {
             PomodoroIdleEntry(
@@ -71,7 +75,8 @@ struct PomodoroIdleProvider: TimelineProvider {
                 todayCount: todayCount,
                 profileLabel: profileLabel,
                 sessionsPerCycle: sessionsPerCycle,
-                phaseLength: phaseLength
+                phaseLength: phaseLength,
+                dailyGoal: dailyGoal
             )
         }
 
@@ -279,12 +284,17 @@ struct PomodoroIdleWidgetView: View {
             VStack(alignment: .trailing, spacing: 12) {
                 cycleDots
                 VStack(alignment: .trailing, spacing: 0) {
-                    Text("\(entry.todayCount)")
+                    Text(entry.dailyGoal > 0 ? "\(entry.todayCount)/\(entry.dailyGoal)" : "\(entry.todayCount)")
                         .font(.title2.bold())
-                    Text("Today")
+                    Text(entry.dailyGoal > 0 && entry.todayCount >= entry.dailyGoal ? "Goal met" : "Today")
                         .font(.caption2)
                         .opacity(0.7)
                 }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Today")
+                .accessibilityValue(entry.dailyGoal > 0
+                    ? "\(entry.todayCount) of \(entry.dailyGoal) Focus sessions"
+                    : "\(entry.todayCount) Focus sessions")
             }
         }
     }

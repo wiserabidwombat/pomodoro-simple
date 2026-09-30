@@ -10,6 +10,9 @@ struct PomodoroIdleEntry: TimelineEntry {
     /// The active profile's name, or nil when there's only one profile.
     var profileLabel: String? = nil
     var sessionsPerCycle: Int = 4
+    /// Full length of the current phase, for the Lock Screen progress ring.
+    /// (endDate − startDate isn't it: pausing pushes endDate back.)
+    var phaseLength: TimeInterval = 0
 }
 
 struct PomodoroIdleProvider: TimelineProvider {
@@ -33,17 +36,20 @@ struct PomodoroIdleProvider: TimelineProvider {
                 completedWorkCycles: 1,
                 sessionActive: true
             )
-            completion(PomodoroIdleEntry(date: now, state: example, accentColor: .white, todayCount: 3, sessionsPerCycle: 4))
+            completion(PomodoroIdleEntry(date: now, state: example, accentColor: .white, todayCount: 3, sessionsPerCycle: 4, phaseLength: 25 * 60))
             return
         }
         let store = PomodoroStateStore()
+        let state = store.loadState()
+        let profile = store.loadActiveProfile()
         completion(PomodoroIdleEntry(
             date: Date(),
-            state: store.loadState(),
+            state: state,
             accentColor: store.loadAccentColor(),
             todayCount: store.loadCachedTodayCount(),
             profileLabel: store.loadActiveProfileLabel(),
-            sessionsPerCycle: store.loadActiveProfile().sessionsBeforeLongBreak
+            sessionsPerCycle: profile.sessionsBeforeLongBreak,
+            phaseLength: profile.durations.duration(for: state.phase)
         ))
     }
 
@@ -53,7 +59,9 @@ struct PomodoroIdleProvider: TimelineProvider {
         let accentColor = store.loadAccentColor()
         let todayCount = store.loadCachedTodayCount()
         let profileLabel = store.loadActiveProfileLabel()
-        let sessionsPerCycle = store.loadActiveProfile().sessionsBeforeLongBreak
+        let activeProfile = store.loadActiveProfile()
+        let sessionsPerCycle = activeProfile.sessionsBeforeLongBreak
+        let phaseLength = activeProfile.durations.duration(for: state.phase)
         let now = Date()
         func entry(at date: Date) -> PomodoroIdleEntry {
             PomodoroIdleEntry(
@@ -62,7 +70,8 @@ struct PomodoroIdleProvider: TimelineProvider {
                 accentColor: accentColor,
                 todayCount: todayCount,
                 profileLabel: profileLabel,
-                sessionsPerCycle: sessionsPerCycle
+                sessionsPerCycle: sessionsPerCycle,
+                phaseLength: phaseLength
             )
         }
 
@@ -132,19 +141,74 @@ struct PomodoroIdleWidgetView: View {
     @ViewBuilder
     private var circularContent: some View {
         if entry.state.sessionActive {
-            VStack(spacing: 1) {
-                Image(systemName: "timer")
-                    .font(.caption2)
-                    .accessibilityHidden(true) // decorative
-                countdownText
-                    .font(.caption2)
-                    .minimumScaleFactor(0.6)
-                    .lineLimit(1)
+            // A ring that drains as the phase counts down. While running it's
+            // ProgressView(timerInterval:), which iOS animates on its own —
+            // no timeline entries or reloads needed, same as the countdown
+            // text. Paused, it's a static ring frozen at the paused point;
+            // expired, an empty ring with a checkmark.
+            ZStack {
+                AccessoryWidgetBackground()
+                progressRing
+                ringCenter
+                    .padding(.horizontal, 6)
             }
+            .accessibilityElement(children: .combine)
         } else {
             Image(systemName: "timer")
                 .font(.title2)
                 .accessibilityLabel("Pomodoro timer, not running")
+        }
+    }
+
+    /// The phase's full span, ending at endDate — built from the phase
+    /// length rather than startDate, because pausing moves endDate later
+    /// without moving startDate, which would make the ring show less time
+    /// left than the countdown does.
+    private var ringRange: ClosedRange<Date> {
+        let end = entry.state.endDate
+        let length = entry.phaseLength > 0 ? entry.phaseLength : end.timeIntervalSince(entry.state.startDate)
+        return end.addingTimeInterval(-max(length, 1))...end
+    }
+
+    @ViewBuilder
+    private var progressRing: some View {
+        if isExpired {
+            ProgressView(value: 0.0)
+                .progressViewStyle(.circular)
+        } else if let pausedAt = entry.state.pausedAt {
+            let total = ringRange.upperBound.timeIntervalSince(ringRange.lowerBound)
+            let remaining = max(0, entry.state.endDate.timeIntervalSince(pausedAt))
+            ProgressView(value: min(remaining, total), total: total)
+                .progressViewStyle(.circular)
+        } else {
+            ProgressView(timerInterval: ringRange, countsDown: true) {
+                EmptyView()
+            } currentValueLabel: {
+                EmptyView()
+            }
+            .progressViewStyle(.circular)
+        }
+    }
+
+    @ViewBuilder
+    private var ringCenter: some View {
+        if isExpired {
+            Image(systemName: "checkmark")
+                .font(.body.bold())
+                .accessibilityLabel("\(entry.state.phase.displayName) finished")
+        } else {
+            VStack(spacing: 0) {
+                if entry.state.pausedAt != nil {
+                    Image(systemName: "pause.fill")
+                        .font(.system(size: 8))
+                        .accessibilityHidden(true)
+                }
+                countdownText
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
+                    .minimumScaleFactor(0.5)
+                    .lineLimit(1)
+            }
         }
     }
 

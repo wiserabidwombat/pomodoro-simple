@@ -173,9 +173,23 @@ final class HistoryStore {
 
     /// Imports sessions queued in the App Group by other processes/paths
     /// (see PendingCompletedSession) with a single save.
+    ///
+    /// Skips any session that ended within a second of one already recorded:
+    /// with an Apple Watch, the iPhone and the watch can each notice the
+    /// same Focus session running out (both derive its end from the same
+    /// shared endDate), and it must only count once.
     func recordCompletedSessions(_ pending: [PendingCompletedSession]) {
         guard !pending.isEmpty else { return }
+        var insertedDates: [Date] = []
         for session in pending {
+            let lower = session.endedAt.addingTimeInterval(-1)
+            let upper = session.endedAt.addingTimeInterval(1)
+            let alreadyRecorded = ((try? context.fetchCount(FetchDescriptor<CompletedSession>(
+                predicate: #Predicate { $0.date >= lower && $0.date <= upper }
+            ))) ?? 0) > 0
+            let duplicateInBatch = insertedDates.contains { abs($0.timeIntervalSince(session.endedAt)) <= 1 }
+            if alreadyRecorded || duplicateInBatch { continue }
+            insertedDates.append(session.endedAt)
             context.insert(CompletedSession(
                 date: session.endedAt,
                 durationSeconds: session.duration,

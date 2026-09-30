@@ -144,6 +144,7 @@ final class TimerViewModel: ObservableObject {
         store.saveActiveProfileID(profile.id)
         engine.updateProfile(profile)
         reloadIdlePomodoroWidget()
+        WatchSyncHook.stateDidChange?()
     }
 
     /// Adds a new profile, or saves edits to an existing one. Editing the
@@ -163,6 +164,7 @@ final class TimerViewModel: ObservableObject {
             engine.updateProfile(profile)
         }
         reloadIdlePomodoroWidget()
+        WatchSyncHook.stateDidChange?()
         // So Siri recognizes new and renamed profiles in "Start … with …".
         PomodoroAppShortcuts.updateAppShortcutParameters()
     }
@@ -187,6 +189,7 @@ final class TimerViewModel: ObservableObject {
             engine.updateProfile(next)
         }
         reloadIdlePomodoroWidget()
+        WatchSyncHook.stateDidChange?()
         PomodoroAppShortcuts.updateAppShortcutParameters()
     }
 
@@ -372,6 +375,8 @@ final class TimerViewModel: ObservableObject {
     private func refreshTodayCount() {
         todayCountDay = Date()
         let count = historyStore.todayCount
+        // Keep the widget's quick counter honest with the real history.
+        store.saveCachedTodayCount(count)
         // Only publish a real change (see catchUpIfNeeded's note on why).
         if count != todayCount {
             todayCount = count
@@ -436,6 +441,7 @@ final class TimerViewModel: ObservableObject {
                 self.liveActivity.update(state: self.state, accentColor: self.displayAccent)
             }
             reloadIdlePomodoroWidget()
+            WatchSyncHook.stateDidChange?()
         }
     }
 

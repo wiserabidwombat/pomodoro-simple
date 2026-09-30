@@ -277,4 +277,34 @@ final class HistoryStoreTests: XCTestCase {
         XCTAssertEqual(StatsSnapshot.goalDaysInLastSeven(week, goal: 4), 3) // counts 4, 5, 6
         XCTAssertEqual(StatsSnapshot.goalDaysInLastSeven(week, goal: 0), 0)
     }
+
+    // MARK: - Apple Watch de-duplication
+
+    @MainActor
+    func testTheSameSessionReportedTwiceIsRecordedOnce() {
+        // The iPhone and the Watch can both notice the same Focus session
+        // end; both report it with the same shared endDate.
+        let store = makeInMemoryStore()
+        let endedAt = Date().addingTimeInterval(-60)
+        let fromPhone = PendingCompletedSession(endedAt: endedAt, duration: 1500)
+        let fromWatch = PendingCompletedSession(endedAt: endedAt.addingTimeInterval(0.3), duration: 1500)
+
+        store.recordCompletedSessions([fromPhone])
+        store.recordCompletedSessions([fromWatch])
+        XCTAssertEqual(store.totalCount, 1)
+
+        store.recordCompletedSessions([fromPhone, fromWatch]) // and within one batch
+        XCTAssertEqual(store.totalCount, 1)
+    }
+
+    @MainActor
+    func testDistinctSessionsAreAllRecorded() {
+        let store = makeInMemoryStore()
+        let now = Date()
+        store.recordCompletedSessions([
+            PendingCompletedSession(endedAt: now.addingTimeInterval(-3600), duration: 1500),
+            PendingCompletedSession(endedAt: now.addingTimeInterval(-1800), duration: 1500),
+        ])
+        XCTAssertEqual(store.totalCount, 2)
+    }
 }

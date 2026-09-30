@@ -14,12 +14,89 @@ struct PomodoroApp: App {
         UNUserNotificationCenter.current().delegate = notificationDelegate
         // Refresh the profile names Siri can match in "Start … with …".
         PomodoroAppShortcuts.updateAppShortcutParameters()
+        // Also runs for background launches (a Lock Screen intent, or the
+        // Watch delivering an update), so the watch link is always live.
+        PhoneWatchSync.start()
     }
 
     var body: some Scene {
         WindowGroup {
             RootView()
         }
+    }
+}
+
+/// The iPhone's end of the Apple Watch link. Sends the current state,
+/// active profile, and accent color whenever any of them change (via
+/// WatchSyncHook), and applies what the watch sends back: timer changes
+/// made on the wrist, and Focus sessions finished there (so they reach
+/// Stats even if the phone app wasn't running).
+enum PhoneWatchSync {
+    /// Kept alive here for the whole process — WCSession only holds its
+    /// delegate weakly.
+    static let relay = WatchConnectivityRelay()
+    /// True while applying a state that just came *from* the watch, so it
+    /// isn't immediately sent straight back. An echo could arrive after the
+    /// user's next tap on the watch and undo it (e.g. Pause then Resume
+    /// quickly would bounce back to paused).
+    private static var isApplyingWatchState = false
+
+    static func start() {
+        WatchSyncHook.stateDidChange = {
+            guard !isApplyingWatchState else { return }
+            sendCurrentState()
+        }
+        relay.onReceivePayload = { payload in
+            Task { @MainActor in applyFromWatch(payload.state) }
+        }
+        relay.onReceiveCompletedSession = { completed in
+            recordFromWatch(completed)
+        }
+        sendCurrentState()
+    }
+
+    static func sendCurrentState() {
+        let store = PomodoroStateStore()
+        relay.send(WatchSyncPayload(
+            state: store.loadState(),
+            accentColor: store.loadAccentColor(),
+            profile: store.loadActiveProfile(),
+            profileLabel: store.loadActiveProfileLabel()
+        ))
+    }
+
+    /// The watch is just another writer to the shared store, like the Lock
+    /// Screen intents: save it, keep the phase-end notification and widget
+    /// in step, and move the Live Activity to match. The app's own ticker
+    /// picks the new state up from the store on its next beat.
+    @MainActor
+    private static func applyFromWatch(_ state: PomodoroState) {
+        let store = PomodoroStateStore()
+        isApplyingWatchState = true
+        persistPomodoroState(state, store: store, notifications: NotificationScheduler())
+        isApplyingWatchState = false
+        reloadIdlePomodoroWidget()
+        let liveActivity = LiveActivityController()
+        let accentColor = store.loadAccentColor()
+        if !state.sessionActive {
+            liveActivity.end()
+        } else if liveActivity.needsRestart {
+            liveActivity.start(state: state, accentColor: accentColor)
+        } else {
+            liveActivity.update(state: state, accentColor: accentColor)
+        }
+    }
+
+    /// Queued exactly like a Lock Screen completion; the app imports it into
+    /// history on its next tick (de-duplicated, in case the phone noticed
+    /// the same session end on its own).
+    private static func recordFromWatch(_ completed: PendingCompletedSession) {
+        let store = PomodoroStateStore()
+        store.enqueueCompletedSession(completed)
+        if Calendar.current.isDateInToday(completed.endedAt) {
+            store.incrementCachedTodayCount()
+        }
+        reloadIdlePomodoroWidget()
     }
 }
 

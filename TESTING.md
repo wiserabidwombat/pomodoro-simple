@@ -140,3 +140,12 @@ but a physical device docked and charging in landscape is the real test):
       session shows in Stats with the minutes focused. Before halfway it
       skips without counting. Turn off Settings → Lock Screen Skip Counts
       Focus and confirm Skip past halfway no longer counts.
+- [ ] Apple Watch (paired, with the watch app installed from the iPhone's
+      Watch app if it doesn't install automatically): start on the phone and
+      the watch shows the same phase, countdown, profile, and color within a
+      few seconds; pause/resume/skip on the watch and the phone, Live
+      Activity, and widget follow. Let a Focus session end while only the
+      watch app is open; it taps your wrist and the session appears once in
+      the phone's Stats. Skip during Focus on the watch offers Finish & Count
+      It past halfway. With the phone out of range, the watch keeps working
+      and catches up when back.

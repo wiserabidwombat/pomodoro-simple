@@ -229,6 +229,15 @@ struct PomodoroStateStore {
         defaults.set(today, forKey: todayCountDateKey)
     }
 
+    /// Overwrites the widget's cached count with the true one from history —
+    /// the app calls this after importing sessions, so any drift (e.g. the
+    /// same session reported by both the iPhone and the Watch, which history
+    /// de-duplicates but the simple +1 counter can't) corrects itself.
+    func saveCachedTodayCount(_ count: Int, calendar: Calendar = .current, now: Date = Date()) {
+        defaults.set(count, forKey: todayCountKey)
+        defaults.set(calendar.startOfDay(for: now), forKey: todayCountDateKey)
+    }
+
     func loadCachedTodayCount(calendar: Calendar = .current, now: Date = Date()) -> Int {
         guard let cachedDay = defaults.object(forKey: todayCountDateKey) as? Date,
               calendar.isDate(cachedDay, inSameDayAs: now)

@@ -219,4 +219,25 @@ final class PomodoroStateStoreTests: XCTestCase {
         store.save(dailyGoal: -3)
         XCTAssertEqual(store.loadDailyGoal(), 0)
     }
+
+    func testSaveCachedTodayCountOverwritesDrift() {
+        let store = makeIsolatedStore()
+        store.incrementCachedTodayCount()
+        store.incrementCachedTodayCount() // e.g. counted by both phone and watch
+        store.saveCachedTodayCount(1)
+        XCTAssertEqual(store.loadCachedTodayCount(), 1)
+    }
+
+    func testWatchSyncPayloadRoundTrips() throws {
+        let now = Date(timeIntervalSince1970: 1_790_000_000)
+        let state = PomodoroState(phase: .work, startDate: now, endDate: now.addingTimeInterval(1500), pausedAt: nil, completedWorkCycles: 1, sessionActive: true)
+        let fromPhone = WatchSyncPayload(state: state, accentColor: .cyan, profile: .deepWork, profileLabel: "Deep Work")
+        let fromWatch = WatchSyncPayload(state: state)
+
+        for payload in [fromPhone, fromWatch] {
+            let data = try JSONEncoder().encode(payload)
+            XCTAssertEqual(try JSONDecoder().decode(WatchSyncPayload.self, from: data), payload)
+        }
+        XCTAssertNil(fromWatch.profile) // the watch never overrides the phone's profile/color
+    }
 }

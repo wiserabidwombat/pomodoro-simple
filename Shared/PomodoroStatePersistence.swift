@@ -18,6 +18,17 @@ func persistPomodoroState(_ state: PomodoroState, store: PomodoroStateStore, not
     } else {
         notifications.cancelPhaseEnd()
     }
+    // Every state change on the iPhone funnels through here — the app, the
+    // Lock Screen/widget intents (which run in the app's process), Siri —
+    // so this one call keeps the Apple Watch in sync with all of them.
+    WatchSyncHook.stateDidChange?()
+}
+
+/// Set by the iPhone app at launch to forward the current state, active
+/// profile, and accent color to the Apple Watch. nil everywhere else (the
+/// widget extension, unit tests), where it's simply a no-op.
+enum WatchSyncHook {
+    static var stateDidChange: (() -> Void)?
 }
 
 /// The idle/Home Screen widget has no way to know the shared store changed

@@ -68,6 +68,47 @@ private func performPomodoroAction(_ label: String, _ action: (TimerEngine) -> V
     await applyAndPush(engine.state, accentColor: store.loadAccentColor(), store: store, notifications: NotificationScheduler())
 }
 
+/// Starts a fresh session with the active profile — shared by the plain
+/// Start intent (widget button, "Start Simple Timer") and the per-profile
+/// one. Returns false, changing nothing, if a session is already running:
+/// the Home Screen widget can still show Start for a moment after a session
+/// began somewhere else (its refresh lags), and Siri can be asked to start
+/// mid-session. Neither should wipe out the session in progress.
+@MainActor
+private func startSessionWithActiveProfile(store: PomodoroStateStore) async -> Bool {
+    let current = store.loadState()
+    guard !current.sessionActive else {
+        reloadIdlePomodoroWidget()
+        return false
+    }
+    let engine = TimerEngine(state: current, profile: store.loadActiveProfile())
+    engine.start()
+    let newState = engine.state
+    persistPomodoroState(newState, store: store, notifications: NotificationScheduler())
+    reloadIdlePomodoroWidget()
+
+    // Unlike Pause/Resume/Skip, there may be no existing Live Activity to
+    // update (or a stale one orphaned from a previous process — see
+    // LiveActivityController's fix for the same issue), so this sweeps
+    // any existing activities before requesting a fresh one.
+    for activity in Activity<PomodoroActivityAttributes>.activities {
+        await activity.end(nil, dismissalPolicy: .immediate)
+    }
+    guard ActivityAuthorizationInfo().areActivitiesEnabled else { return true }
+    // staleDate omitted on the initial request — see the matching
+    // comment in LiveActivityController.start() for why.
+    let content = ActivityContent(
+        state: PomodoroActivityAttributes.ContentState(newState, accentColor: store.loadAccentColor(), profileName: store.loadActiveProfileLabel()),
+        staleDate: nil
+    )
+    do {
+        _ = try Activity.request(attributes: PomodoroActivityAttributes(), content: content)
+    } catch {
+        intentLogger.error("startSessionWithActiveProfile Activity.request threw: \(String(describing: error), privacy: .public)")
+    }
+    return true
+}
+
 struct StartPomodoroIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Start Focus Session"
 
@@ -75,42 +116,48 @@ struct StartPomodoroIntent: LiveActivityIntent {
     func perform() async throws -> some IntentResult {
         guard IntentActionGate.begin() else { return .result() }
         defer { IntentActionGate.end() }
-        let store = PomodoroStateStore()
-        let current = store.loadState()
-        // The Home Screen widget can still be showing Start for a moment
-        // after a session began somewhere else (its refresh lags), and Siri
-        // can be asked to start while one is running. Neither should wipe
-        // out the session in progress — just refresh the widget.
-        guard !current.sessionActive else {
-            reloadIdlePomodoroWidget()
-            return .result()
-        }
-        let engine = TimerEngine(state: current, profile: store.loadActiveProfile())
-        engine.start()
-        let newState = engine.state
-        persistPomodoroState(newState, store: store, notifications: NotificationScheduler())
-        reloadIdlePomodoroWidget()
-
-        // Unlike Pause/Resume/Skip, there may be no existing Live Activity to
-        // update (or a stale one orphaned from a previous process — see
-        // LiveActivityController's fix for the same issue), so this sweeps
-        // any existing activities before requesting a fresh one.
-        for activity in Activity<PomodoroActivityAttributes>.activities {
-            await activity.end(nil, dismissalPolicy: .immediate)
-        }
-        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return .result() }
-        // staleDate omitted on the initial request — see the matching
-        // comment in LiveActivityController.start() for why.
-        let content = ActivityContent(
-            state: PomodoroActivityAttributes.ContentState(newState, accentColor: store.loadAccentColor(), profileName: store.loadActiveProfileLabel()),
-            staleDate: nil
-        )
-        do {
-            _ = try Activity.request(attributes: PomodoroActivityAttributes(), content: content)
-        } catch {
-            intentLogger.error("StartPomodoroIntent Activity.request threw: \(String(describing: error), privacy: .public)")
-        }
+        _ = await startSessionWithActiveProfile(store: PomodoroStateStore())
         return .result()
+    }
+}
+
+/// "Start Deep Work with Simple Timer" — and the action to put on the
+/// Action Button, or in any Shortcut, to start a particular profile in one
+/// press. Makes the chosen profile the active one (just as picking it on
+/// the Timer screen would), then starts. A LiveActivityIntent, so it runs
+/// in the background and the Live Activity appears without opening the app.
+struct StartProfileIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "Start Timer Profile"
+    static var description = IntentDescription("Starts a Focus session using one of your timer profiles.")
+
+    @Parameter(title: "Profile")
+    var profile: TimerProfileEntity
+
+    static var parameterSummary: some ParameterSummary {
+        Summary("Start \(\.$profile)")
+    }
+
+    init() {}
+
+    init(profile: TimerProfileEntity) {
+        self.profile = profile
+    }
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        guard IntentActionGate.begin() else { return .result(dialog: "One moment — still starting.") }
+        defer { IntentActionGate.end() }
+        let store = PomodoroStateStore()
+        guard !store.loadState().sessionActive else {
+            reloadIdlePomodoroWidget()
+            return .result(dialog: "A session is already running. Stop it first to switch profiles.")
+        }
+        guard let chosen = store.loadProfiles().first(where: { $0.id == profile.id }) else {
+            return .result(dialog: "That timer profile doesn't exist anymore.")
+        }
+        store.saveActiveProfileID(chosen.id)
+        _ = await startSessionWithActiveProfile(store: store)
+        return .result(dialog: "Starting \(chosen.name).")
     }
 }
 

@@ -131,6 +131,24 @@ struct SettingsView: View {
                     .tint(viewModel.accentColor.color)
                     .padding(.horizontal)
 
+                    Stepper(value: $viewModel.dailyGoal, in: PomodoroStateStore.dailyGoalRange) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack {
+                                Text("Daily Goal")
+                                    .foregroundStyle(.white)
+                                Spacer()
+                                Text(viewModel.dailyGoal == 0 ? "Off" : "\(viewModel.dailyGoal) sessions")
+                                    .foregroundStyle(.secondary)
+                            }
+                            Text("Focus sessions to aim for each day, across all profiles. Shows on the Timer screen, the medium widget, and Stats.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .accessibilityLabel("Daily goal")
+                    .accessibilityValue(viewModel.dailyGoal == 0 ? "Off" : "\(viewModel.dailyGoal) Focus sessions")
+                    .padding(.horizontal)
+
                     Toggle(isOn: $viewModel.keepScreenAwake) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Keep Screen Awake")

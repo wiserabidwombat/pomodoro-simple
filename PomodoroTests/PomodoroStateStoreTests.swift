@@ -201,4 +201,15 @@ final class PomodoroStateStoreTests: XCTestCase {
         XCTAssertEqual(store.loadCachedTodayCount(), 0)
         XCTAssertEqual(store.drainPendingCompletedSessions().count, 1)
     }
+
+    func testDailyGoalDefaultsOffRoundTripsAndIsClamped() {
+        let store = makeIsolatedStore()
+        XCTAssertEqual(store.loadDailyGoal(), 0)
+        store.save(dailyGoal: 6)
+        XCTAssertEqual(store.loadDailyGoal(), 6)
+        store.save(dailyGoal: 99)
+        XCTAssertEqual(store.loadDailyGoal(), 16)
+        store.save(dailyGoal: -3)
+        XCTAssertEqual(store.loadDailyGoal(), 0)
+    }
 }

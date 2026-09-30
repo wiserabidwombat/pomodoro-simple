@@ -268,6 +268,19 @@ final class TimerViewModelTests: XCTestCase {
         XCTAssertFalse(store.loadHasRequestedReview())
     }
 
+    // MARK: - Daily goal
+
+    func testDailyGoalPersistsAndTodayCountFollowsNewSessions() {
+        let (vm, _, _, store, _) = makeViewModel()
+        vm.dailyGoal = 6
+        XCTAssertEqual(store.loadDailyGoal(), 6)
+        XCTAssertEqual(vm.todayCount, 0)
+
+        store.enqueueCompletedSession(PendingCompletedSession(endedAt: Date(), duration: 1500))
+        vm.tick()
+        XCTAssertEqual(vm.todayCount, 1)
+    }
+
     // MARK: - Finish early
 
     func testFinishEarlyRecordsTheSessionAndMovesToTheBreak() {

@@ -26,6 +26,18 @@ final class TimerViewModel: ObservableObject {
     @Published var keepScreenAwake: Bool {
         didSet { store.save(keepScreenAwake: keepScreenAwake) }
     }
+    /// Focus sessions to aim for each day (all profiles); 0 = off.
+    @Published var dailyGoal: Int {
+        didSet {
+            store.save(dailyGoal: dailyGoal)
+            reloadIdlePomodoroWidget()
+        }
+    }
+    /// Completed Focus sessions today, for the daily-goal progress. Kept
+    /// here (rather than queried by the view) so the Timer screen doesn't
+    /// hit SwiftData on every render.
+    @Published private(set) var todayCount: Int
+    private var todayCountDay = Date()
     @Published var soundEnabled: Bool {
         didSet {
             store.save(soundEnabled: soundEnabled)
@@ -85,6 +97,8 @@ final class TimerViewModel: ObservableObject {
         self.activeProfile = loadedActive
         self.silenceDuringFocus = store.loadSilenceDuringFocus()
         self.keepScreenAwake = store.loadKeepScreenAwake()
+        self.dailyGoal = store.loadDailyGoal()
+        self.todayCount = historyStore.todayCount
         self.soundEnabled = store.loadSoundEnabled()
         self.chime = store.loadChime()
     }
@@ -309,11 +323,26 @@ final class TimerViewModel: ObservableObject {
     /// Moves Focus sessions queued in the App Group (by this ticker, or by
     /// a Lock Screen/widget intent or notification dismissal) into SwiftData.
     private func importPendingSessions() {
+        // Runs every tick, so it's also where "today" rolls over at
+        // midnight for an app left open overnight.
+        if !Calendar.current.isDate(todayCountDay, inSameDayAs: Date()) {
+            refreshTodayCount()
+        }
         let pending = store.drainPendingCompletedSessions()
         guard !pending.isEmpty else { return }
         historyStore.recordCompletedSessions(pending)
         historyRevision += 1
+        refreshTodayCount()
         checkReviewMilestone()
+    }
+
+    private func refreshTodayCount() {
+        todayCountDay = Date()
+        let count = historyStore.todayCount
+        // Only publish a real change (see catchUpIfNeeded's note on why).
+        if count != todayCount {
+            todayCount = count
+        }
     }
 
     /// Fires at most once ever, right after a Focus session completes

@@ -172,6 +172,10 @@ but a physical device docked and charging in landscape is the real test):
 - [ ] Finish sessions under two profiles; confirm Stats → All Profiles shows
       the combined totals plus a By Profile breakdown, and tapping a profile
       (or picking it in "Showing") filters the whole screen to it.
+- [ ] Stats → Export History as CSV: share to Files or Mail, open it in
+      Numbers/Excel; confirm one row per session (date, time, profile,
+      minutes), oldest first, including sessions from a deleted profile. The
+      button is hidden when there's no history yet.
 - [ ] Delete a profile that has history; confirm its sessions still count in
       the overall stats and it's still selectable under "Showing".
 - [ ] Turn on Settings → Keep Screen Awake, start a session, and leave the

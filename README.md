@@ -120,6 +120,11 @@ but a physical device docked and charging in landscape is the real test):
 - [ ] Let a work phase's countdown run out with the app foregrounded; confirm
       it auto-advances to a short break and the Stats screen's "Today" count
       increments by one.
+- [ ] Add the small round (circular) widget to the Lock Screen and start a
+      session: the ring drains in real time with the countdown in the middle,
+      with the app closed. Pause: the ring freezes with a pause glyph.
+      Pause/resume a few times; the ring still matches the countdown. When
+      the phase ends, the ring empties and shows a checkmark.
 - [ ] Add the idle widget to the Home Screen and to the Lock Screen; confirm
       tapping either opens the app.
 - [ ] From the Home Screen widget, tap Pause/Resume and Skip; confirm they

@@ -96,6 +96,9 @@ struct TimerView: View {
                                 .font(.title3)
                         }
                         .accessibilityLabel("Restart session")
+                        // External-keyboard shortcuts (mostly for iPad):
+                        // ⌘R restart, Space start/pause/resume, S skip.
+                        .keyboardShortcut("r", modifiers: .command)
                         .foregroundStyle(viewModel.accentColor.color.opacity(0.7))
                         .padding()
                     }
@@ -271,6 +274,7 @@ struct TimerView: View {
     private var controls: some View {
         if !viewModel.state.sessionActive {
             Button("Start") { viewModel.start() }
+                .keyboardShortcut(.space, modifiers: [])
         } else {
             HStack(spacing: 20) {
                 // Minimum width so the Skip button doesn't shift when this
@@ -280,8 +284,10 @@ struct TimerView: View {
                 Group {
                     if viewModel.state.pausedAt == nil {
                         Button("Pause") { viewModel.pause() }
+                            .keyboardShortcut(.space, modifiers: [])
                     } else {
                         Button("Resume") { viewModel.resume() }
+                            .keyboardShortcut(.space, modifiers: [])
                     }
                 }
                 .frame(minWidth: 90)
@@ -294,6 +300,7 @@ struct TimerView: View {
                         viewModel.skip()
                     }
                 }
+                .keyboardShortcut("s", modifiers: [])
                 .accessibilityHint(viewModel.state.phase == .work
                     ? "Lets you finish this Focus session early and count it, or skip it without counting."
                     : "Ends this break now and starts the next Focus session.")

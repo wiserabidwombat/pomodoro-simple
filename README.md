@@ -201,6 +201,13 @@ but a physical device docked and charging in landscape is the real test):
 - [ ] Action Button (iPhone 15 Pro and later): Settings → Action Button →
       Shortcut → Simple: StandBy Timer → Start Timer Profile, pick a profile;
       pressing the button starts it with the Live Activity, app closed.
+- [ ] iPad (Simulator or device): full screen and wide Split View show a
+      sidebar (Timer / Stats / Settings) with the content capped and
+      centered; narrow Split View / Slide Over falls back to the tab bar.
+      Rotate to landscape. Tapping the widget or notification still lands on
+      Timer. With a keyboard: Space starts/pauses/resumes, S skips (Focus
+      still asks first), ⌘R restarts. Help and the notification primer stay
+      a readable width. (Live Activities and StandBy don't exist on iPad.)
 - [ ] VoiceOver pass (Settings → Accessibility → VoiceOver, or triple-click
       the side button if set up): swipe through Timer, Stats, and Settings.
       Every control should say what it is ("How it works", "Restart session",

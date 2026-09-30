@@ -24,6 +24,7 @@ struct PomodoroStateStore {
     private let activeProfileIDKey = "pomodoro.activeProfileID"
     private let silenceDuringFocusKey = "pomodoro.silenceDuringFocus"
     private let soundEnabledKey = "pomodoro.soundEnabled"
+    private let keepScreenAwakeKey = "pomodoro.keepScreenAwake"
     private let chimeKey = "pomodoro.chime"
     private let todayCountKey = "pomodoro.todayCount"
     private let todayCountDateKey = "pomodoro.todayCountDate"
@@ -132,6 +133,15 @@ struct PomodoroStateStore {
 
     func loadSilenceDuringFocus() -> Bool {
         defaults.bool(forKey: silenceDuringFocusKey)
+    }
+
+    /// Off by default — it costs battery, so it's opt-in.
+    func loadKeepScreenAwake() -> Bool {
+        defaults.bool(forKey: keepScreenAwakeKey)
+    }
+
+    func save(keepScreenAwake: Bool) {
+        defaults.set(keepScreenAwake, forKey: keepScreenAwakeKey)
     }
 
     func save(silenceDuringFocus: Bool) {

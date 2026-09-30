@@ -20,6 +20,11 @@ final class TimerViewModel: ObservableObject {
     @Published var silenceDuringFocus: Bool {
         didSet { store.save(silenceDuringFocus: silenceDuringFocus) }
     }
+    /// Stop the phone from auto-locking while a session is running and the
+    /// Timer screen is showing (see TimerView.updateIdleTimer()).
+    @Published var keepScreenAwake: Bool {
+        didSet { store.save(keepScreenAwake: keepScreenAwake) }
+    }
     @Published var soundEnabled: Bool {
         didSet {
             store.save(soundEnabled: soundEnabled)
@@ -78,6 +83,7 @@ final class TimerViewModel: ObservableObject {
         self.profiles = store.loadProfiles()
         self.activeProfile = loadedActive
         self.silenceDuringFocus = store.loadSilenceDuringFocus()
+        self.keepScreenAwake = store.loadKeepScreenAwake()
         self.soundEnabled = store.loadSoundEnabled()
         self.chime = store.loadChime()
     }

@@ -177,6 +177,13 @@ final class TimerViewModelTests: XCTestCase {
         XCTAssertEqual(store.loadAccentColor(), .purple)
     }
 
+    func testKeepScreenAwakeSettingPersists() {
+        let (vm, _, _, store, _) = makeViewModel()
+        XCTAssertFalse(vm.keepScreenAwake)
+        vm.keepScreenAwake = true
+        XCTAssertTrue(store.loadKeepScreenAwake())
+    }
+
     // MARK: - Timer profiles
 
     func testSelectProfileWhileIdleSwitchesAndPersists() {

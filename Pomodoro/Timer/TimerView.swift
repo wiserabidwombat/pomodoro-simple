@@ -1,6 +1,7 @@
 // Pomodoro/Timer/TimerView.swift
 import StoreKit
 import SwiftUI
+import UIKit
 
 struct TimerView: View {
     @ObservedObject var viewModel: TimerViewModel
@@ -10,6 +11,9 @@ struct TimerView: View {
     @State private var showingNotificationPrimer = false
     @AppStorage("hasSeenPomodoroHelp") private var hasSeenHelp = false
     @AppStorage("hasSeenNotificationPrimer") private var hasSeenNotificationPrimer = false
+    /// Whether this tab is the one on screen (a TabView keeps it alive
+    /// while other tabs show, so appearance has to be tracked).
+    @State private var isVisible = false
 
     var body: some View {
         ZStack {
@@ -90,6 +94,8 @@ struct TimerView: View {
             }
         }
         .onAppear {
+            isVisible = true
+            updateIdleTimer()
             if !hasSeenNotificationPrimer {
                 showingNotificationPrimer = true
             } else if !hasSeenHelp {
@@ -97,6 +103,12 @@ struct TimerView: View {
                 showingHelp = true
             }
         }
+        .onDisappear {
+            isVisible = false
+            updateIdleTimer()
+        }
+        .onChange(of: viewModel.keepScreenAwake) { _, _ in updateIdleTimer() }
+        .onChange(of: viewModel.state.sessionActive) { _, _ in updateIdleTimer() }
         .onChange(of: viewModel.pendingReviewRequest) { _, isPending in
             if isPending {
                 requestReview()
@@ -130,6 +142,17 @@ struct TimerView: View {
             }
             .interactiveDismissDisabled()
         }
+    }
+
+    /// "Keep Screen Awake" only holds the screen on while it's useful: the
+    /// setting is on, a session is running (or paused), and this tab is
+    /// showing. Switching tabs, stopping the session, or turning the setting
+    /// off hands auto-lock straight back to the system. (iOS also ignores
+    /// the flag while the app is in the background.)
+    private func updateIdleTimer() {
+        UIApplication.shared.isIdleTimerDisabled = isVisible
+            && viewModel.keepScreenAwake
+            && viewModel.state.sessionActive
     }
 
     /// Which timer profile this session uses. Tappable (a menu) only while

@@ -131,6 +131,18 @@ struct SettingsView: View {
                     .tint(viewModel.accentColor.color)
                     .padding(.horizontal)
 
+                    Toggle(isOn: $viewModel.keepScreenAwake) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Keep Screen Awake")
+                                .foregroundStyle(.white)
+                            Text("Stops the phone from locking while a session is running and the Timer screen is open — handy with the phone propped on a desk. Uses more battery, so it's best while charging.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .tint(viewModel.accentColor.color)
+                    .padding(.horizontal)
+
                     Text("Sound")
                         .foregroundStyle(viewModel.accentColor.color)
                         .font(.headline)

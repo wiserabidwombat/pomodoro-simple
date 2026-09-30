@@ -161,6 +161,10 @@ but a physical device docked and charging in landscape is the real test):
       (or picking it in "Showing") filters the whole screen to it.
 - [ ] Delete a profile that has history; confirm its sessions still count in
       the overall stats and it's still selectable under "Showing".
+- [ ] Turn on Settings → Keep Screen Awake, start a session, and leave the
+      phone on the Timer screen past its Auto-Lock time; confirm it stays on.
+      Then confirm it does lock normally after switching to another tab, when no
+      session is running, or with the setting off.
 - [ ] VoiceOver pass (Settings → Accessibility → VoiceOver, or triple-click
       the side button if set up): swipe through Timer, Stats, and Settings.
       Every control should say what it is ("How it works", "Restart session",

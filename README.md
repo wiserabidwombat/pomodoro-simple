@@ -128,6 +128,11 @@ but a physical device docked and charging in landscape is the real test):
       widgets (app closed); confirm a session starts with the active profile,
       the Live Activity appears on the Lock Screen, and opening the app shows
       it running. Tapping Start again right away must not restart it.
+- [ ] Tap Skip during Focus: a prompt asks first. Before the halfway mark it
+      offers only "Skip Without Counting"; past halfway it also offers
+      "Finish & Count It", which moves to the break, fills a cycle dot, and
+      adds the session to Stats with the minutes actually focused. Skip
+      during a break still skips immediately.
 - [ ] Tap Restart mid-session; confirm the confirmation alert appears
       (centered, not a bottom sheet) and accepting it resets to a fresh
       Focus session with the cycle dots back to empty.

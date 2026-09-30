@@ -6,6 +6,15 @@ struct TimerView: View {
     @ObservedObject var viewModel: TimerViewModel
     @Environment(\.requestReview) private var requestReview
     @State private var showingRestartConfirmation = false
+    /// Set when Skip is tapped during Focus; drives the "end Focus early?"
+    /// choice between counting the session and throwing it away.
+    @State private var focusEndPrompt: FocusEndPrompt?
+
+    private struct FocusEndPrompt {
+        let elapsed: TimeInterval
+        let minimumToCount: TimeInterval
+        var canCount: Bool { elapsed >= minimumToCount }
+    }
     @State private var showingHelp = false
     @State private var showingNotificationPrimer = false
     @AppStorage("hasSeenPomodoroHelp") private var hasSeenHelp = false
@@ -112,6 +121,27 @@ struct TimerView: View {
         } message: {
             Text("This stops the current session and resets back to the start of a fresh Work phase.")
         }
+        .confirmationDialog(
+            "End Focus early?",
+            isPresented: Binding(
+                get: { focusEndPrompt != nil },
+                set: { if !$0 { focusEndPrompt = nil } }
+            ),
+            titleVisibility: .visible,
+            presenting: focusEndPrompt
+        ) { prompt in
+            if prompt.canCount {
+                Button("Finish & Count It") { viewModel.finishEarly() }
+            }
+            Button("Skip Without Counting", role: .destructive) { viewModel.skip() }
+            Button("Keep Going", role: .cancel) {}
+        } message: { prompt in
+            if prompt.canCount {
+                Text("You've focused for \(Self.minutesText(prompt.elapsed)). Finishing counts it in Stats and starts your break.")
+            } else {
+                Text("You're \(Self.minutesText(prompt.elapsed)) in. Finishing early counts once you're halfway (\(Self.minutesText(prompt.minimumToCount))) — until then, skipping won't count it.")
+            }
+        }
         .sheet(isPresented: $showingHelp) {
             HelpView(accentColor: viewModel.accentColor, profile: viewModel.activeProfile)
         }
@@ -214,9 +244,29 @@ struct TimerView: View {
                     }
                 }
                 .frame(minWidth: 90)
-                Button("Skip") { viewModel.skip() }
-                    .accessibilityHint("Ends this phase now and starts the next one.")
+                Button("Skip") {
+                    // During Focus, ask first: Skip used to silently throw
+                    // away a nearly finished session. Breaks skip at once.
+                    if viewModel.state.phase == .work, let elapsed = viewModel.focusElapsed() {
+                        focusEndPrompt = FocusEndPrompt(elapsed: elapsed, minimumToCount: viewModel.minimumFocusToCount)
+                    } else {
+                        viewModel.skip()
+                    }
+                }
+                .accessibilityHint(viewModel.state.phase == .work
+                    ? "Lets you finish this Focus session early and count it, or skip it without counting."
+                    : "Ends this break now and starts the next Focus session.")
             }
+        }
+    }
+
+    /// "22 minutes", "1 minute", "less than a minute".
+    private static func minutesText(_ seconds: TimeInterval) -> String {
+        let minutes = Int(seconds / 60)
+        switch minutes {
+        case ..<1: return "less than a minute"
+        case 1: return "1 minute"
+        default: return "\(minutes) minutes"
         }
     }
 }

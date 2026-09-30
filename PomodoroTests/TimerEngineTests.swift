@@ -167,4 +167,54 @@ final class TimerEngineTests: XCTestCase {
         engine.skip() // work #2 done, cycles = 2 >= 1
         XCTAssertEqual(engine.state.phase, .longBreak)
     }
+
+    // MARK: - Finish early
+
+    func testFinishEarlyPastHalfwayCountsTheTimeActuallyFocused() {
+        let engine = TimerEngine(state: .idle) // 25-minute Focus
+        engine.start()
+        let twentyMinutesIn = engine.state.startDate.addingTimeInterval(20 * 60)
+
+        let completed = engine.finishEarly(now: twentyMinutesIn)
+
+        XCTAssertEqual(completed?.phase, .work)
+        XCTAssertEqual(completed?.duration ?? 0, 20 * 60, accuracy: 0.5)
+        XCTAssertEqual(completed?.endedAt, twentyMinutesIn)
+        XCTAssertEqual(engine.state.phase, .shortBreak)
+        XCTAssertEqual(engine.state.completedWorkCycles, 1) // counts toward the cycle
+    }
+
+    func testFinishEarlyBeforeHalfwayDoesNothing() {
+        let engine = TimerEngine(state: .idle)
+        engine.start()
+        let fiveMinutesIn = engine.state.startDate.addingTimeInterval(5 * 60)
+        XCTAssertFalse(engine.canFinishEarly(now: fiveMinutesIn))
+        XCTAssertNil(engine.finishEarly(now: fiveMinutesIn))
+        XCTAssertEqual(engine.state.phase, .work)
+    }
+
+    func testFinishEarlyIsOnlyForFocus() {
+        let engine = TimerEngine(state: .idle)
+        engine.start()
+        engine.skip() // -> shortBreak
+        XCTAssertNil(engine.focusElapsed())
+        XCTAssertNil(engine.finishEarly(now: engine.state.endDate))
+        XCTAssertEqual(engine.state.phase, .shortBreak)
+    }
+
+    func testFocusElapsedExcludesPausedTime() {
+        let now = Date()
+        // Paused 15 minutes into a 25-minute Focus (10 left), and the pause
+        // has lasted a while since — elapsed must stay frozen at 15.
+        let paused = PomodoroState(
+            phase: .work,
+            startDate: now.addingTimeInterval(-40 * 60),
+            endDate: now.addingTimeInterval(-15 * 60 + 10 * 60),
+            pausedAt: now.addingTimeInterval(-15 * 60),
+            completedWorkCycles: 0,
+            sessionActive: true
+        )
+        let engine = TimerEngine(state: paused)
+        XCTAssertEqual(engine.focusElapsed(now: now) ?? 0, 15 * 60, accuracy: 0.5)
+    }
 }

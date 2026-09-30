@@ -77,6 +77,44 @@ final class TimerEngine {
         advancePhase()
     }
 
+    // MARK: - Finish early
+
+    /// How far into a Focus session you need to be before finishing early
+    /// counts it — so tapping out a minute in doesn't pad Stats.
+    static let finishEarlyMinimumFraction = 0.5
+
+    /// Focus time actually spent in the current Focus phase, pauses
+    /// excluded (paused time pushes endDate back, so "planned − remaining"
+    /// is exactly the time counted down). nil outside a Focus phase.
+    func focusElapsed(now: Date = Date()) -> TimeInterval? {
+        guard state.sessionActive, state.phase == .work else { return nil }
+        let planned = durations.duration(for: .work)
+        return min(planned, max(0, planned - state.remainingSeconds(asOf: now)))
+    }
+
+    /// The least Focus time that finishing early will count.
+    var minimumFocusToCount: TimeInterval {
+        durations.duration(for: .work) * Self.finishEarlyMinimumFraction
+    }
+
+    func canFinishEarly(now: Date = Date()) -> Bool {
+        guard let elapsed = focusElapsed(now: now) else { return false }
+        return elapsed >= minimumFocusToCount
+    }
+
+    /// Ends the current Focus phase now and counts it — like Skip, it moves
+    /// on to the break and advances the cycle, but it also returns the
+    /// session (with the time actually focused) for the caller to record.
+    /// Returns nil, changing nothing, outside Focus or before the halfway
+    /// point.
+    @discardableResult
+    func finishEarly(now: Date = Date()) -> CompletedPhase? {
+        guard canFinishEarly(now: now), let elapsed = focusElapsed(now: now) else { return nil }
+        let completed = CompletedPhase(phase: .work, endedAt: now, duration: elapsed)
+        advancePhase()
+        return completed
+    }
+
     /// Stops the current session entirely and returns to the initial idle
     /// state — back to Work phase, cycle count reset to 0, not running.
     func reset() {

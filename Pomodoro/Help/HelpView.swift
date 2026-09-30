@@ -31,7 +31,7 @@ struct HelpView: View {
                     )
                     helpSection(
                         title: "Controls",
-                        body: "Pause and Resume freeze and continue the current phase's countdown. Skip jumps straight to the next phase without waiting it out."
+                        body: "Pause and Resume freeze and continue the current phase's countdown. Skip jumps straight to the next phase without waiting it out. During Focus, Skip first asks: once you're at least halfway through, you can Finish & Count It to record the session in Stats (with the time you actually focused); otherwise it moves on without counting."
                     )
                     helpSection(
                         title: "Lock Screen & StandBy",

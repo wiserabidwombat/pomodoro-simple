@@ -163,6 +163,29 @@ final class TimerViewModel: ObservableObject {
         persistAndPush()
     }
 
+    /// Focus time done so far in the current Focus phase (nil otherwise),
+    /// for the "end Focus early?" prompt.
+    func focusElapsed() -> TimeInterval? {
+        engine.focusElapsed()
+    }
+
+    var minimumFocusToCount: TimeInterval {
+        engine.minimumFocusToCount
+    }
+
+    /// "Finish & Count It": ends Focus now and records it in Stats with the
+    /// time actually focused, instead of throwing it away like Skip does.
+    /// Goes through the same queue as every other completion, so it's
+    /// tagged with the active profile and bumps the widget's Today count.
+    /// No chime — like Skip, it's a deliberate tap, not a timer running out.
+    func finishEarly() {
+        catchUpIfNeeded()
+        guard let completed = engine.finishEarly() else { return }
+        recordNaturalCompletion(completed, store: store)
+        importPendingSessions()
+        persistAndPush()
+    }
+
     /// Stops the session entirely and returns to idle (Work phase, cycle
     /// count reset to 0) — ends the Live Activity rather than updating it,
     /// since there's no longer a session to show.

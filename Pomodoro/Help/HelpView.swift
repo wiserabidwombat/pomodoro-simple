@@ -51,6 +51,10 @@ struct HelpView: View {
                         .padding(.top, 12)
                 }
                 .padding()
+                // iPad's sheets are much wider than a phone; keep the text
+                // at a readable line length, centered.
+                .frame(maxWidth: 500)
+                .frame(maxWidth: .infinity)
             }
         }
         .foregroundStyle(accentColor.color)

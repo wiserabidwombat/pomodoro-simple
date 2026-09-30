@@ -65,23 +65,41 @@ private struct RootView: View {
         alerting: SystemPhaseChangeAlert()
     )
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var selectedTab = AppTab.timer
 
-    private enum AppTab: Hashable {
+    private enum AppTab: Hashable, CaseIterable {
         case timer, stats, settings
+
+        var title: String {
+            switch self {
+            case .timer: return "Timer"
+            case .stats: return "Stats"
+            case .settings: return "Settings"
+            }
+        }
+
+        var systemImage: String {
+            switch self {
+            case .timer: return "timer"
+            case .stats: return "chart.bar"
+            case .settings: return "gear"
+            }
+        }
     }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            TimerView(viewModel: viewModel)
-                .tabItem { Label("Timer", systemImage: "timer") }
-                .tag(AppTab.timer)
-            StatsView(viewModel: viewModel, historyStore: AppEnvironment.historyStore)
-                .tabItem { Label("Stats", systemImage: "chart.bar") }
-                .tag(AppTab.stats)
-            SettingsView(viewModel: viewModel)
-                .tabItem { Label("Settings", systemImage: "gear") }
-                .tag(AppTab.settings)
+        // Adaptive layout: the tab bar on iPhone (and iPad in narrow Split
+        // View / Slide Over), a sidebar on iPad's wider layouts.
+        // horizontalSizeClass already accounts for multitasking width, not
+        // just the device. Both share selectedTab, so deep links and the
+        // notification tap land on the Timer either way.
+        Group {
+            if horizontalSizeClass == .regular {
+                sidebarLayout
+            } else {
+                tabLayout
+            }
         }
         .preferredColorScheme(.dark)
         // The selected tab's icon (and any other control still using the
@@ -113,6 +131,47 @@ private struct RootView: View {
             default:
                 break
             }
+        }
+    }
+
+    private var tabLayout: some View {
+        TabView(selection: $selectedTab) {
+            ForEach(AppTab.allCases, id: \.self) { tab in
+                screen(for: tab)
+                    .tabItem { Label(tab.title, systemImage: tab.systemImage) }
+                    .tag(tab)
+            }
+        }
+    }
+
+    private var sidebarLayout: some View {
+        NavigationSplitView {
+            List(AppTab.allCases, id: \.self, selection: Binding<AppTab?>(
+                get: { selectedTab },
+                set: { if let tab = $0 { selectedTab = tab } }
+            )) { tab in
+                Label(tab.title, systemImage: tab.systemImage)
+            }
+            .navigationTitle("Simple Timer")
+        } detail: {
+            // Capped and centered so the timer and lists don't stretch
+            // edge to edge on a 13-inch screen.
+            screen(for: selectedTab)
+                .frame(maxWidth: 640)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.black.ignoresSafeArea())
+        }
+    }
+
+    @ViewBuilder
+    private func screen(for tab: AppTab) -> some View {
+        switch tab {
+        case .timer:
+            TimerView(viewModel: viewModel)
+        case .stats:
+            StatsView(viewModel: viewModel, historyStore: AppEnvironment.historyStore)
+        case .settings:
+            SettingsView(viewModel: viewModel)
         }
     }
 }

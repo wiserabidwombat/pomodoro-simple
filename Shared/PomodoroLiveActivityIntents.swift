@@ -58,7 +58,7 @@ private func performPomodoroAction(_ label: String, _ action: (TimerEngine) -> V
     defer { IntentActionGate.end() }
     let store = PomodoroStateStore()
     let beforeState = store.loadState()
-    let engine = TimerEngine(state: beforeState, durations: store.loadDurations())
+    let engine = TimerEngine(state: beforeState, profile: store.loadActiveProfile())
     let completed = engine.catchUpIfExpired()
     if let completed {
         recordNaturalCompletion(completed, store: store)
@@ -76,7 +76,7 @@ struct StartPomodoroIntent: LiveActivityIntent {
         guard IntentActionGate.begin() else { return .result() }
         defer { IntentActionGate.end() }
         let store = PomodoroStateStore()
-        let engine = TimerEngine(state: store.loadState(), durations: store.loadDurations())
+        let engine = TimerEngine(state: store.loadState(), profile: store.loadActiveProfile())
         engine.start()
         let newState = engine.state
         persistPomodoroState(newState, store: store, notifications: NotificationScheduler())

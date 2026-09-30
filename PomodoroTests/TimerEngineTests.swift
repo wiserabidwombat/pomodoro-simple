@@ -143,4 +143,28 @@ final class TimerEngineTests: XCTestCase {
         engine.reset()
         XCTAssertEqual(engine.state, .idle)
     }
+
+    func testProfileWithTwoSessionsPerCycleReachesLongBreakAfterTheSecond() {
+        let engine = TimerEngine(state: .idle, profile: .deepWork)
+        engine.start()
+        XCTAssertEqual(engine.state.endDate.timeIntervalSince(engine.state.startDate), 50 * 60, accuracy: 0.01)
+        engine.skip() // work #1 -> shortBreak
+        XCTAssertEqual(engine.state.phase, .shortBreak)
+        engine.skip() // -> work #2
+        engine.skip() // work #2 -> longBreak
+        XCTAssertEqual(engine.state.phase, .longBreak)
+        XCTAssertEqual(engine.state.endDate.timeIntervalSince(engine.state.startDate), 30 * 60, accuracy: 0.01)
+        engine.skip() // longBreak -> work, cycle resets
+        XCTAssertEqual(engine.state.completedWorkCycles, 0)
+    }
+
+    func testLoweringSessionsPerCycleMidCycleStillLandsOnALongBreak() {
+        let engine = TimerEngine(state: .idle, profile: .classic)
+        engine.start()
+        engine.skip() // work #1 -> shortBreak (cycles = 1)
+        engine.skip() // -> work #2
+        engine.updateProfile(TimerProfile(name: "Short", durations: .default, sessionsBeforeLongBreak: 1))
+        engine.skip() // work #2 done, cycles = 2 >= 1
+        XCTAssertEqual(engine.state.phase, .longBreak)
+    }
 }

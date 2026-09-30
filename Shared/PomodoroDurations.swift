@@ -1,7 +1,7 @@
 // Shared/PomodoroDurations.swift
 import Foundation
 
-struct PomodoroDurations: Codable, Equatable {
+struct PomodoroDurations: Codable, Equatable, Hashable {
     var workMinutes: Int
     var shortBreakMinutes: Int
     var longBreakMinutes: Int

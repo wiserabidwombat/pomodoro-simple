@@ -18,10 +18,17 @@ struct CompletedPhase: Equatable {
 final class TimerEngine {
     private(set) var state: PomodoroState
     private(set) var durations: PomodoroDurations
+    /// Focus sessions per cycle before the Long Break (the active profile's).
+    private(set) var sessionsBeforeLongBreak: Int
 
-    init(state: PomodoroState = .idle, durations: PomodoroDurations = .default) {
+    init(state: PomodoroState = .idle, durations: PomodoroDurations = .default, sessionsBeforeLongBreak: Int = 4) {
         self.state = state
         self.durations = durations
+        self.sessionsBeforeLongBreak = max(1, sessionsBeforeLongBreak)
+    }
+
+    convenience init(state: PomodoroState, profile: TimerProfile) {
+        self.init(state: state, durations: profile.durations, sessionsBeforeLongBreak: profile.sessionsBeforeLongBreak)
     }
 
     func reload(_ newState: PomodoroState) {
@@ -33,6 +40,12 @@ final class TimerEngine {
     /// mid-session doesn't yank the countdown to a new length underfoot.
     func updateDurations(_ durations: PomodoroDurations) {
         self.durations = durations
+    }
+
+    /// Same "next transition only" rule as updateDurations(_:).
+    func updateProfile(_ profile: TimerProfile) {
+        durations = profile.durations
+        sessionsBeforeLongBreak = max(1, profile.sessionsBeforeLongBreak)
     }
 
     func start() {
@@ -112,7 +125,10 @@ final class TimerEngine {
         switch state.phase {
         case .work:
             cycles += 1
-            nextPhase = cycles.isMultiple(of: 4) ? .longBreak : .shortBreak
+            // >= rather than ==, so lowering the count mid-cycle (by
+            // editing the profile) still lands on a Long Break instead of
+            // running past it forever.
+            nextPhase = cycles >= sessionsBeforeLongBreak ? .longBreak : .shortBreak
         case .shortBreak:
             nextPhase = .work
         case .longBreak:

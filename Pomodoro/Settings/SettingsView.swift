@@ -6,6 +6,7 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var viewModel: TimerViewModel
     @Environment(\.self) private var environment
+    @State private var editingProfile: TimerProfile?
 
     var body: some View {
         ZStack {
@@ -42,34 +43,48 @@ struct SettingsView: View {
                     }
                     .padding()
 
-                    Text("Durations")
+                    Text("Timer Profiles")
                         .foregroundStyle(viewModel.accentColor.color)
                         .font(.headline)
                     VStack(spacing: 12) {
-                        durationStepper(
-                            "Focus",
-                            minutes: Binding(
-                                get: { viewModel.durations.workMinutes },
-                                set: { viewModel.durations.workMinutes = $0 }
-                            ),
-                            range: 1...120
-                        )
-                        durationStepper(
-                            "Short Break",
-                            minutes: Binding(
-                                get: { viewModel.durations.shortBreakMinutes },
-                                set: { viewModel.durations.shortBreakMinutes = $0 }
-                            ),
-                            range: 1...60
-                        )
-                        durationStepper(
-                            "Long Break",
-                            minutes: Binding(
-                                get: { viewModel.durations.longBreakMinutes },
-                                set: { viewModel.durations.longBreakMinutes = $0 }
-                            ),
-                            range: 1...60
-                        )
+                        ForEach(viewModel.profiles) { profile in
+                            Button {
+                                editingProfile = profile
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(profile.name)
+                                            .foregroundStyle(.white)
+                                        Text(profile.summary)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    if profile.id == viewModel.activeProfile.id {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(viewModel.accentColor.color)
+                                    }
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        Button {
+                            // New profiles start from the active one's
+                            // settings; the name is left blank to fill in.
+                            editingProfile = TimerProfile(
+                                name: "",
+                                durations: viewModel.activeProfile.durations,
+                                sessionsBeforeLongBreak: viewModel.activeProfile.sessionsBeforeLongBreak
+                            )
+                        } label: {
+                            Label("Add Profile", systemImage: "plus")
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .foregroundStyle(viewModel.accentColor.color)
                     }
                     .padding(.horizontal)
 
@@ -128,17 +143,16 @@ struct SettingsView: View {
                 .padding(.vertical)
             }
         }
-    }
-
-    private func durationStepper(_ title: String, minutes: Binding<Int>, range: ClosedRange<Int>) -> some View {
-        Stepper(value: minutes, in: range) {
-            HStack {
-                Text(title)
-                    .foregroundStyle(.white)
-                Spacer()
-                Text("\(minutes.wrappedValue) min")
-                    .foregroundStyle(.secondary)
-            }
+        .sheet(item: $editingProfile) { profile in
+            ProfileEditorView(
+                profile: profile,
+                isNew: !viewModel.profiles.contains(where: { $0.id == profile.id }),
+                canDelete: viewModel.canDeleteProfile(profile),
+                accentColor: viewModel.accentColor,
+                onSave: { viewModel.saveProfile($0) },
+                onDelete: { viewModel.deleteProfile(id: profile.id) }
+            )
         }
     }
+
 }

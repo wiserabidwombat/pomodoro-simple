@@ -17,6 +17,7 @@ struct TimerView: View {
             VStack(spacing: 24) {
                 Text(viewModel.state.phase.displayName)
                     .font(.title2.bold())
+                profilePicker
                 if viewModel.state.sessionActive {
                     // `Text(timerInterval:pauseTime:)`'s own pause handling has
                     // proven unreliable on this SDK (the countdown keeps
@@ -103,7 +104,7 @@ struct TimerView: View {
             Text("This stops the current session and resets back to the start of a fresh Work phase.")
         }
         .sheet(isPresented: $showingHelp) {
-            HelpView(accentColor: viewModel.accentColor, durations: viewModel.durations)
+            HelpView(accentColor: viewModel.accentColor, profile: viewModel.activeProfile)
         }
         .sheet(isPresented: $showingNotificationPrimer, onDismiss: {
             if !hasSeenHelp {
@@ -122,13 +123,53 @@ struct TimerView: View {
         }
     }
 
-    /// 4 dots for the classic Pomodoro cycle: filled for each completed
-    /// Focus session since the last Long Break, resetting to empty once
-    /// that 4th one lands. Uses `completedWorkCycles` directly, no new
-    /// state needed.
+    /// Which timer profile this session uses. Tappable (a menu) only while
+    /// idle; a running session shows the name without letting it change.
+    /// Hidden entirely when there's only one profile.
+    @ViewBuilder
+    private var profilePicker: some View {
+        if viewModel.profiles.count > 1 {
+            if viewModel.state.sessionActive {
+                Text(viewModel.activeProfile.name)
+                    .font(.subheadline)
+                    .opacity(0.7)
+            } else {
+                VStack(spacing: 4) {
+                    Menu {
+                        Picker("Timer Profile", selection: Binding(
+                            get: { viewModel.activeProfile.id },
+                            set: { viewModel.selectProfile(id: $0) }
+                        )) {
+                            ForEach(viewModel.profiles) { profile in
+                                Text(profile.name).tag(profile.id)
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(viewModel.activeProfile.name)
+                            Image(systemName: "chevron.down")
+                                .font(.caption.bold())
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 6)
+                        .overlay(Capsule().strokeBorder(viewModel.accentColor.color.opacity(0.6), lineWidth: 1))
+                    }
+                    Text(viewModel.activeProfile.summary)
+                        .font(.caption)
+                        .opacity(0.6)
+                }
+            }
+        }
+    }
+
+    /// One dot per Focus session in the active profile's cycle: filled for
+    /// each completed Focus session since the last Long Break, resetting to
+    /// empty once the cycle's last one lands. Uses `completedWorkCycles`
+    /// directly, no new state needed.
     private var cycleProgress: some View {
         HStack(spacing: 12) {
-            ForEach(0..<4, id: \.self) { index in
+            ForEach(0..<viewModel.activeProfile.sessionsBeforeLongBreak, id: \.self) { index in
                 Circle()
                     .fill(index < viewModel.state.completedWorkCycles ? viewModel.accentColor.color : Color.clear)
                     .overlay(Circle().strokeBorder(viewModel.accentColor.color, lineWidth: 1.5))

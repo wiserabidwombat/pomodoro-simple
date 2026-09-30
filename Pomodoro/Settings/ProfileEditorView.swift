@@ -54,6 +54,10 @@ struct ProfileEditorView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
+                    // Label and value split out so swiping up/down on the
+                    // stepper announces just the new number.
+                    .accessibilityLabel("Focus sessions per cycle")
+                    .accessibilityValue("\(draft.sessionsBeforeLongBreak)")
                 } footer: {
                     Text("The Long Break comes after the last Focus session in each cycle.")
                 }
@@ -112,5 +116,7 @@ struct ProfileEditorView: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .accessibilityLabel(title)
+        .accessibilityValue("\(value.wrappedValue) minute\(value.wrappedValue == 1 ? "" : "s")")
     }
 }

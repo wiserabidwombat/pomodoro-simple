@@ -47,4 +47,11 @@ extension TimerProfile {
     var summary: String {
         "\(durations.workMinutes) / \(durations.shortBreakMinutes) / \(durations.longBreakMinutes) min · \(sessionsBeforeLongBreak) per cycle"
     }
+
+    /// The same, as VoiceOver should read it — "25 / 5 / 15 min" is read
+    /// out as "25 slash 5 slash 15 min".
+    var spokenSummary: String {
+        let sessions = sessionsBeforeLongBreak == 1 ? "1 session" : "\(sessionsBeforeLongBreak) sessions"
+        return "\(durations.workMinutes) minute focus, \(durations.shortBreakMinutes) minute short break, \(durations.longBreakMinutes) minute long break, \(sessions) per cycle"
+    }
 }

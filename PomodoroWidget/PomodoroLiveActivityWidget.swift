@@ -17,11 +17,13 @@ struct PomodoroLiveActivityWidget: Widget {
                 }
             } compactLeading: {
                 Image(systemName: "timer")
+                    .accessibilityLabel(context.state.title)
             } compactTrailing: {
                 if context.state.pausedAt != nil {
                     Text(context.state.formattedRemainingWhilePaused)
                         .monospacedDigit()
                         .frame(width: 40)
+                        .accessibilityLabel(SpokenDuration.pausedLabel(endDate: context.state.endDate, pausedAt: context.state.pausedAt))
                 } else {
                     Text(timerInterval: context.state.startDate...context.state.endDate, countsDown: true)
                         .monospacedDigit()
@@ -30,6 +32,7 @@ struct PomodoroLiveActivityWidget: Widget {
                 }
             } minimal: {
                 Image(systemName: "timer")
+                    .accessibilityLabel(context.state.title)
             }
             .widgetURL(PomodoroDeepLink.timerURL)
         }
@@ -61,6 +64,7 @@ struct PomodoroLiveActivityView: View {
                 Text(state.formattedRemainingWhilePaused)
                     .font(.system(size: 40, weight: .bold, design: .rounded))
                     .monospacedDigit()
+                    .accessibilityLabel(SpokenDuration.pausedLabel(endDate: state.endDate, pausedAt: state.pausedAt))
             } else {
                 // Text(timerInterval:) reserves a wider bounding box than it
                 // visually needs (to avoid jitter as the digit count

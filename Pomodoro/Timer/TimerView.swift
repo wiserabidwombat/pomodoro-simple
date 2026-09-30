@@ -17,6 +17,7 @@ struct TimerView: View {
             VStack(spacing: 24) {
                 Text(viewModel.state.phase.displayName)
                     .font(.title2.bold())
+                    .accessibilityAddTraits(.isHeader)
                 profilePicker
                 if viewModel.state.sessionActive {
                     // `Text(timerInterval:pauseTime:)`'s own pause handling has
@@ -28,6 +29,8 @@ struct TimerView: View {
                         Text(viewModel.state.formattedRemainingWhilePaused)
                             .font(.system(size: 64, weight: .bold, design: .rounded))
                             .monospacedDigit()
+                            // "12:34" alone is read as a clock time.
+                            .accessibilityLabel(SpokenDuration.pausedLabel(endDate: viewModel.state.endDate, pausedAt: viewModel.state.pausedAt))
                     } else {
                         // Text(timerInterval:) reserves a wider bounding box
                         // than it visually needs (to avoid jitter as the
@@ -42,6 +45,10 @@ struct TimerView: View {
                         .monospacedDigit()
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)
+                        // No accessibility override here on purpose: the
+                        // live timer text already reads its current value to
+                        // VoiceOver, while a label computed at render time
+                        // would go stale (this view isn't redrawn every second).
                     }
                 } else {
                     Text("Ready")
@@ -61,6 +68,7 @@ struct TimerView: View {
                         Image(systemName: "questionmark.circle")
                             .font(.title3)
                     }
+                    .accessibilityLabel("How it works")
                     .foregroundStyle(viewModel.accentColor.color.opacity(0.7))
                     .padding()
 
@@ -73,6 +81,7 @@ struct TimerView: View {
                             Image(systemName: "arrow.counterclockwise")
                                 .font(.title3)
                         }
+                        .accessibilityLabel("Restart session")
                         .foregroundStyle(viewModel.accentColor.color.opacity(0.7))
                         .padding()
                     }
@@ -133,6 +142,7 @@ struct TimerView: View {
                 Text(viewModel.activeProfile.name)
                     .font(.subheadline)
                     .opacity(0.7)
+                    .accessibilityLabel("Timer profile: \(viewModel.activeProfile.name)")
             } else {
                 VStack(spacing: 4) {
                     Menu {
@@ -155,9 +165,13 @@ struct TimerView: View {
                         .padding(.vertical, 6)
                         .overlay(Capsule().strokeBorder(viewModel.accentColor.color.opacity(0.6), lineWidth: 1))
                     }
+                    .accessibilityLabel("Timer profile")
+                    .accessibilityValue(viewModel.activeProfile.name)
+                    .accessibilityHint("Choose which profile the next session uses.")
                     Text(viewModel.activeProfile.summary)
                         .font(.caption)
                         .opacity(0.6)
+                        .accessibilityLabel(viewModel.activeProfile.spokenSummary)
                 }
             }
         }
@@ -176,6 +190,10 @@ struct TimerView: View {
                     .frame(width: 12, height: 12)
             }
         }
+        // One element instead of N unlabeled circles.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Cycle progress")
+        .accessibilityValue("\(min(viewModel.state.completedWorkCycles, viewModel.activeProfile.sessionsBeforeLongBreak)) of \(viewModel.activeProfile.sessionsBeforeLongBreak) Focus sessions done")
     }
 
     @ViewBuilder
@@ -184,8 +202,10 @@ struct TimerView: View {
             Button("Start") { viewModel.start() }
         } else {
             HStack(spacing: 20) {
-                // Fixed width so the Skip button doesn't shift when this
-                // label's text changes length between "Pause" and "Resume".
+                // Minimum width so the Skip button doesn't shift when this
+                // label's text changes length between "Pause" and "Resume" —
+                // a minimum rather than a fixed 90pt, so larger Dynamic Type
+                // sizes can grow the button instead of truncating "Resume".
                 Group {
                     if viewModel.state.pausedAt == nil {
                         Button("Pause") { viewModel.pause() }
@@ -193,8 +213,9 @@ struct TimerView: View {
                         Button("Resume") { viewModel.resume() }
                     }
                 }
-                .frame(width: 90)
+                .frame(minWidth: 90)
                 Button("Skip") { viewModel.skip() }
+                    .accessibilityHint("Ends this phase now and starts the next one.")
             }
         }
     }

@@ -89,4 +89,42 @@ final class PomodoroModelsTests: XCTestCase {
         XCTAssertEqual(PomodoroPhase.work.title(profileLabel: nil), "Focus")
         XCTAssertEqual(PomodoroPhase.shortBreak.title(profileLabel: "Deep Work"), "Deep Work · Short Break")
     }
+
+    // MARK: - Accessibility text
+
+    func testSpokenDurationSpellsOutUnits() {
+        let spoken = SpokenDuration.string(12 * 60 + 34)
+        XCTAssertTrue(spoken.contains("12") && spoken.contains("34") && spoken.contains("minute"), spoken)
+        XCTAssertEqual(SpokenDuration.string(0), "0 minutes")
+        XCTAssertEqual(SpokenDuration.string(.nan), "0 minutes")
+    }
+
+    func testPausedLabelUsesTheFrozenRemainingTime() {
+        let pausedAt = Date(timeIntervalSince1970: 1_000)
+        let label = SpokenDuration.pausedLabel(endDate: pausedAt.addingTimeInterval(90), pausedAt: pausedAt)
+        XCTAssertTrue(label.hasPrefix("Paused, "), label)
+        XCTAssertTrue(label.hasSuffix(" remaining"), label)
+        XCTAssertTrue(label.contains("30"), label) // 1 minute, 30 seconds
+    }
+
+    func testProfileSpokenSummaryAvoidsSlashes() {
+        XCTAssertEqual(
+            TimerProfile.classic.spokenSummary,
+            "25 minute focus, 5 minute short break, 15 minute long break, 4 sessions per cycle"
+        )
+        let single = TimerProfile(name: "One", durations: .default, sessionsBeforeLongBreak: 1)
+        XCTAssertTrue(single.spokenSummary.hasSuffix("1 session per cycle"))
+    }
+
+    func testAccentColorAccessibilityNames() {
+        XCTAssertEqual(AccentColorOption.purple.accessibilityName, "Purple")
+        XCTAssertEqual(AccentColorOption.custom(red: 0.1, green: 0.2, blue: 0.3).accessibilityName, "Custom color")
+    }
+
+    func testOnlyDarkCustomColorsAreFlaggedAsLowContrast() {
+        for preset in AccentColorOption.presets {
+            XCTAssertFalse(preset.isLowContrastOnBlack, "\(preset)")
+        }
+        XCTAssertTrue(AccentColorOption.custom(red: 0, green: 0, blue: 0.4).isLowContrastOnBlack)
+    }
 }

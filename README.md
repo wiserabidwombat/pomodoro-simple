@@ -157,6 +157,17 @@ but a physical device docked and charging in landscape is the real test):
       (or picking it in "Showing") filters the whole screen to it.
 - [ ] Delete a profile that has history; confirm its sessions still count in
       the overall stats and it's still selectable under "Showing".
+- [ ] VoiceOver pass (Settings → Accessibility → VoiceOver, or triple-click
+      the side button if set up): swipe through Timer, Stats, and Settings.
+      Every control should say what it is ("How it works", "Restart session",
+      "Cycle progress, 2 of 4 Focus sessions done", color names), the paused
+      time should read as "Paused, 12 minutes, 34 seconds remaining", and
+      Stats rows should read as one item each ("Today, 3 sessions").
+- [ ] Largest text size (Settings → Accessibility → Display & Text Size →
+      Larger Text, max): Timer, Stats, Settings, and the profile editor stay
+      usable, and "Resume" isn't cut off.
+- [ ] Pick a very dark custom color; confirm Settings shows the
+      hard-to-read warning.
 ### Testing
 
 Unit tests live in `PomodoroTests/` and run from the `Pomodoro` scheme. The

@@ -38,10 +38,14 @@ struct StatsView: View {
                     }
                 }
                 Section(sectionTitle(options)) {
-                    statRow("Today", "\(stats.todayCount)")
-                    statRow("All time", "\(stats.totalCount)")
+                    statRow("Today", "\(stats.todayCount)", spoken: Self.spokenSessions(stats.todayCount))
+                    statRow("All time", "\(stats.totalCount)", spoken: Self.spokenSessions(stats.totalCount))
                     statRow("Current streak", "\(stats.currentStreak) day\(stats.currentStreak == 1 ? "" : "s")")
-                    statRow("Total focus time", Self.formattedFocusTime(stats.totalFocusSeconds))
+                    statRow(
+                        "Total focus time",
+                        Self.formattedFocusTime(stats.totalFocusSeconds),
+                        spoken: SpokenDuration.string(stats.totalFocusSeconds, units: [.hour, .minute])
+                    )
                 }
                 // The overall view breaks the combined totals down by
                 // profile; tapping one switches the whole screen to it.
@@ -69,6 +73,9 @@ struct StatsView: View {
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
+                            .accessibilityLabel(displayName(total.id, fallback: total.name))
+                            .accessibilityValue("\(Self.spokenSessions(total.count)), \(SpokenDuration.string(total.totalFocusSeconds, units: [.hour, .minute])) of focus, \(total.todayCount) today")
+                            .accessibilityHint("Shows this profile's stats.")
                         }
                     }
                 }
@@ -79,6 +86,11 @@ struct StatsView: View {
                             y: .value("Sessions", entry.count)
                         )
                         .foregroundStyle(viewModel.accentColor.color)
+                        // Swift Charts exposes each bar to VoiceOver (and
+                        // Audio Graphs); these make each one read as
+                        // "Tuesday, 3 sessions" instead of a raw date/number.
+                        .accessibilityLabel(entry.day.formatted(.dateTime.weekday(.wide)))
+                        .accessibilityValue(Self.spokenSessions(entry.count))
                     }
                     // A fixed floor keeps an all-zero week (fresh install,
                     // or a week off) from asking Charts to scale a 0...0
@@ -104,7 +116,11 @@ struct StatsView: View {
                             .foregroundStyle(.secondary)
                     } else {
                         ForEach(stats.byDay) { entry in
-                            statRow(entry.day.formatted(date: .abbreviated, time: .omitted), "\(entry.count)")
+                            statRow(
+                                entry.day.formatted(date: .abbreviated, time: .omitted),
+                                "\(entry.count)",
+                                spoken: Self.spokenSessions(entry.count)
+                            )
                         }
                     }
                 }
@@ -142,12 +158,21 @@ struct StatsView: View {
         viewModel.profiles.first(where: { $0.id == id })?.name ?? fallback
     }
 
-    private func statRow(_ title: String, _ value: String) -> some View {
+    /// Read by VoiceOver as one item ("Today, 3 sessions") rather than two
+    /// separate stops for the title and a bare number.
+    private func statRow(_ title: String, _ value: String, spoken: String? = nil) -> some View {
         HStack {
             Text(title)
             Spacer()
             Text(value)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(title)
+        .accessibilityValue(spoken ?? value)
+    }
+
+    nonisolated static func spokenSessions(_ count: Int) -> String {
+        count == 1 ? "1 session" : "\(count) sessions"
     }
 
     nonisolated static func formattedFocusTime(_ seconds: TimeInterval) -> String {

@@ -13,6 +13,7 @@ struct HelpView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     Text("How Pomodoro Works")
                         .font(.title2.bold())
+                        .accessibilityAddTraits(.isHeader)
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.top, 8)
 
@@ -64,6 +65,7 @@ struct HelpView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.headline)
+                .accessibilityAddTraits(.isHeader)
             Text(body)
                 .font(.body)
                 .foregroundStyle(accentColor.color.opacity(0.85))

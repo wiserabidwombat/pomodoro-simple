@@ -51,3 +51,26 @@ struct PomodoroState: Codable, Equatable {
         return String(format: "%02d:%02d", total / 60, total % 60)
     }
 }
+
+/// Durations as VoiceOver should say them ("12 minutes, 34 seconds")
+/// rather than how they're drawn ("12:34", "6h 5m"), which VoiceOver reads
+/// as a clock time or as letters.
+enum SpokenDuration {
+    static func string(_ seconds: TimeInterval, units: NSCalendar.Unit = [.minute, .second]) -> String {
+        let formatter = DateComponentsFormatter()
+        formatter.unitsStyle = .full
+        formatter.allowedUnits = units
+        formatter.zeroFormattingBehavior = .dropAll
+        guard seconds.isFinite, seconds >= 1, let spoken = formatter.string(from: seconds.rounded(.up)) else {
+            return "0 minutes"
+        }
+        return spoken
+    }
+
+    /// "Paused, 12 minutes, 34 seconds remaining" — for the frozen "12:34"
+    /// shown while paused, which VoiceOver would otherwise read as a time.
+    static func pausedLabel(endDate: Date, pausedAt: Date?) -> String {
+        let remaining = max(0, endDate.timeIntervalSince(pausedAt ?? Date()))
+        return "Paused, \(string(remaining)) remaining"
+    }
+}

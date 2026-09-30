@@ -135,6 +135,7 @@ struct PomodoroIdleWidgetView: View {
             VStack(spacing: 1) {
                 Image(systemName: "timer")
                     .font(.caption2)
+                    .accessibilityHidden(true) // decorative
                 countdownText
                     .font(.caption2)
                     .minimumScaleFactor(0.6)
@@ -143,6 +144,7 @@ struct PomodoroIdleWidgetView: View {
         } else {
             Image(systemName: "timer")
                 .font(.title2)
+                .accessibilityLabel("Pomodoro timer, not running")
         }
     }
 
@@ -185,6 +187,7 @@ struct PomodoroIdleWidgetView: View {
             } else {
                 Image(systemName: "timer")
                     .font(.title2)
+                    .accessibilityHidden(true) // the title already says it
             }
         }
     }
@@ -234,6 +237,9 @@ struct PomodoroIdleWidgetView: View {
                     .frame(width: 10, height: 10)
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Cycle progress")
+        .accessibilityValue("\(min(entry.state.completedWorkCycles, entry.sessionsPerCycle)) of \(entry.sessionsPerCycle) Focus sessions done")
     }
 
     /// Same LiveActivityIntent-conforming intents the Live Activity's own
@@ -255,14 +261,17 @@ struct PomodoroIdleWidgetView: View {
                     Button(intent: PausePomodoroIntent()) {
                         Image(systemName: "pause.fill")
                     }
+                    .accessibilityLabel("Pause")
                 } else {
                     Button(intent: ResumePomodoroIntent()) {
                         Image(systemName: "play.fill")
                     }
+                    .accessibilityLabel("Resume")
                 }
                 Button(intent: SkipPomodoroIntent()) {
                     Image(systemName: "forward.fill")
                 }
+                .accessibilityLabel("Skip")
             }
         }
     }
@@ -273,6 +282,7 @@ struct PomodoroIdleWidgetView: View {
             Text("Time's up")
         } else if entry.state.pausedAt != nil {
             Text(entry.state.formattedRemainingWhilePaused)
+                .accessibilityLabel(SpokenDuration.pausedLabel(endDate: entry.state.endDate, pausedAt: entry.state.pausedAt))
         } else {
             // Text(timerInterval:) reserves a wider bounding box than it
             // visually needs and renders left-aligned within it by default —

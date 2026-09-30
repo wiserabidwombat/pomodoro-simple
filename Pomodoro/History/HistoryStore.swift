@@ -211,3 +211,52 @@ final class HistoryStore {
         }
     }
 }
+
+/// Builds the "Export History" CSV. Kept free of UI and SwiftData so the
+/// exact output is unit-testable.
+enum HistoryCSV {
+    static let header = "Date,Time,Profile,Focus Minutes"
+
+    /// One row per completed Focus session, oldest first. Date and time are
+    /// the moment the session ended, in the given time zone, in fixed
+    /// formats (2026-09-30, 14:25) so spreadsheets parse them the same way
+    /// in every locale. Minutes keep one decimal, since finished-early and
+    /// custom-length sessions aren't whole numbers.
+    static func make(
+        _ sessions: [StatsSnapshot.Session],
+        profileName: (StatsSnapshot.Session) -> String,
+        timeZone: TimeZone = .current
+    ) -> String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dateFormatter.timeZone = timeZone
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let timeFormatter = DateFormatter()
+        timeFormatter.locale = Locale(identifier: "en_US_POSIX")
+        timeFormatter.timeZone = timeZone
+        timeFormatter.dateFormat = "HH:mm"
+
+        let rows = sessions
+            .sorted { $0.date < $1.date }
+            .map { session in
+                [
+                    dateFormatter.string(from: session.date),
+                    timeFormatter.string(from: session.date),
+                    escape(profileName(session)),
+                    String(format: "%.1f", session.durationSeconds / 60),
+                ].joined(separator: ",")
+            }
+        return ([header] + rows).joined(separator: "\n") + "\n"
+    }
+
+    /// RFC 4180: a field containing a comma, quote, or line break is
+    /// wrapped in quotes, with any quotes inside doubled.
+    static func escape(_ field: String) -> String {
+        // Scalar-level check: Swift treats "\r\n" as one Character, which a
+        // per-Character comparison against "\n" or "\r" would miss.
+        guard field.rangeOfCharacter(from: CharacterSet(charactersIn: ",\"\r\n")) != nil else {
+            return field
+        }
+        return "\"" + field.replacingOccurrences(of: "\"", with: "\"\"") + "\""
+    }
+}

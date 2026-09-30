@@ -1,6 +1,7 @@
 // Pomodoro/History/StatsView.swift
 import SwiftUI
 import Charts
+import UniformTypeIdentifiers
 
 struct StatsView: View {
     @ObservedObject var viewModel: TimerViewModel
@@ -124,6 +125,20 @@ struct StatsView: View {
                         }
                     }
                 }
+                if !sessions.isEmpty {
+                    Section {
+                        // Always every session, whatever profile the screen
+                        // is filtered to — the Profile column covers that.
+                        ShareLink(
+                            item: HistoryExport(sessions: sessions, currentNames: currentProfileNames),
+                            preview: SharePreview("Focus History (CSV)", image: Image(systemName: "tablecells"))
+                        ) {
+                            Label("Export History as CSV", systemImage: "square.and.arrow.up")
+                        }
+                    } footer: {
+                        Text("All \(Self.spokenSessions(sessions.count)): date, time, profile, and minutes focused. Opens in Numbers, Excel, or Google Sheets.")
+                    }
+                }
             }
             // Lists paint their own opaque background by default in iOS 16+;
             // hiding it is what lets the black ZStack background show through.
@@ -151,6 +166,12 @@ struct StatsView: View {
     private func sectionTitle(_ options: [ProfileOption]) -> String {
         guard let profileFilter else { return options.count > 1 ? "Overall" : "" }
         return options.first(where: { $0.id == profileFilter })?.name ?? ""
+    }
+
+    /// id → current name, so the export uses today's names for profiles
+    /// that still exist (a deleted one keeps the name stored with it).
+    private var currentProfileNames: [UUID: String] {
+        Dictionary(viewModel.profiles.map { ($0.id, $0.name) }, uniquingKeysWith: { first, _ in first })
     }
 
     /// Prefers a profile's current name, in case it was renamed since.
@@ -181,5 +202,32 @@ struct StatsView: View {
         let hours = totalMinutes / 60
         let minutes = totalMinutes % 60
         return hours > 0 ? "\(hours)h \(minutes)m" : "\(minutes)m"
+    }
+}
+
+/// What the Stats share button hands to the share sheet: a CSV file, only
+/// built when the user actually picks a destination (not on every render).
+struct HistoryExport: Transferable {
+    let sessions: [StatsSnapshot.Session]
+    let currentNames: [UUID: String]
+
+    static var transferRepresentation: some TransferRepresentation {
+        FileRepresentation(exportedContentType: .commaSeparatedText) { export in
+            let csv = HistoryCSV.make(export.sessions) { session in
+                session.profileID.flatMap { export.currentNames[$0] }
+                    ?? session.profileName
+                    ?? TimerProfile.classic.name
+            }
+            // Local date for the file name (ISO8601FormatStyle would use UTC,
+            // naming an evening export after tomorrow).
+            let dayFormatter = DateFormatter()
+            dayFormatter.locale = Locale(identifier: "en_US_POSIX")
+            dayFormatter.dateFormat = "yyyy-MM-dd"
+            let day = dayFormatter.string(from: Date())
+            let url = FileManager.default.temporaryDirectory
+                .appendingPathComponent("Focus History \(day).csv")
+            try Data(csv.utf8).write(to: url, options: .atomic)
+            return SentTransferredFile(url)
+        }
     }
 }

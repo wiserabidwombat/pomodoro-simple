@@ -227,4 +227,31 @@ final class HistoryStoreTests: XCTestCase {
         ]
         XCTAssertEqual(StatsSnapshot(sessions: sessions).byProfile.map(\.name), ["Exam Prep"])
     }
+
+    // MARK: - CSV export
+
+    func testCSVHasAHeaderAndOneRowPerSessionOldestFirst() {
+        let utc = TimeZone(identifier: "UTC")!
+        let later = StatsSnapshot.Session(date: Date(timeIntervalSince1970: 1_790_000_000), durationSeconds: 1500, profileID: TimerProfile.classicID, profileName: "Classic")
+        let earlier = StatsSnapshot.Session(date: Date(timeIntervalSince1970: 1_789_900_000), durationSeconds: 1230, profileID: TimerProfile.deepWorkID, profileName: "Deep Work")
+
+        let csv = HistoryCSV.make([later, earlier], profileName: { $0.profileName ?? "" }, timeZone: utc)
+        let lines = csv.split(separator: "\n").map(String.init)
+
+        XCTAssertEqual(lines, [
+            "Date,Time,Profile,Focus Minutes",
+            "2026-09-20,10:26,Deep Work,20.5",
+            "2026-09-21,14:13,Classic,25.0",
+        ])
+    }
+
+    func testCSVWithNoSessionsIsJustTheHeader() {
+        XCTAssertEqual(HistoryCSV.make([], profileName: { _ in "" }), "Date,Time,Profile,Focus Minutes\n")
+    }
+
+    func testCSVEscapesCommasAndQuotesInProfileNames() {
+        XCTAssertEqual(HistoryCSV.escape("Study"), "Study")
+        XCTAssertEqual(HistoryCSV.escape("Reading, Writing"), "\"Reading, Writing\"")
+        XCTAssertEqual(HistoryCSV.escape("The \"Big\" Project"), "\"The \"\"Big\"\" Project\"")
+    }
 }

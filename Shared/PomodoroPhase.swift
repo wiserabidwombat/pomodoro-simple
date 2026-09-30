@@ -6,6 +6,13 @@ enum PomodoroPhase: String, Codable, CaseIterable, Hashable {
     case shortBreak
     case longBreak
 
+    /// "Deep Work · Focus" when a profile label is given (see
+    /// PomodoroStateStore.loadActiveProfileLabel()), else just "Focus".
+    func title(profileLabel: String?) -> String {
+        guard let profileLabel else { return displayName }
+        return "\(profileLabel) · \(displayName)"
+    }
+
     var displayName: String {
         switch self {
         case .work: return "Focus"

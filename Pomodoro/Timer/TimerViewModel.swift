@@ -28,7 +28,12 @@ final class TimerViewModel: ObservableObject {
             // (Notification only — saving state from a settings toggle
             // could clobber a change another process just made.)
             if state.sessionActive, state.pausedAt == nil {
-                notifications.schedulePhaseEnd(phase: state.phase, endDate: state.endDate, playSound: soundEnabled)
+                notifications.schedulePhaseEnd(
+                    phase: state.phase,
+                    endDate: state.endDate,
+                    playSound: soundEnabled,
+                    profileLabel: store.loadActiveProfileLabel()
+                )
             }
         }
     }

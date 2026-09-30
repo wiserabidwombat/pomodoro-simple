@@ -84,4 +84,9 @@ final class PomodoroModelsTests: XCTestCase {
         XCTAssertEqual(AccentColorOption.white.relativeLuminance, 1, accuracy: 0.0001)
         XCTAssertEqual(AccentColorOption.custom(red: 0, green: 0, blue: 0).relativeLuminance, 0, accuracy: 0.0001)
     }
+
+    func testPhaseTitleIncludesTheProfileOnlyWhenGiven() {
+        XCTAssertEqual(PomodoroPhase.work.title(profileLabel: nil), "Focus")
+        XCTAssertEqual(PomodoroPhase.shortBreak.title(profileLabel: "Deep Work"), "Deep Work · Short Break")
+    }
 }

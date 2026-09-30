@@ -41,7 +41,7 @@ private func applyAndPush(_ newState: PomodoroState, accentColor: AccentColorOpt
         intentLogger.error("applyAndPush() aborted: no active Live Activity found")
         return
     }
-    let contentState = PomodoroActivityAttributes.ContentState(newState, accentColor: accentColor)
+    let contentState = PomodoroActivityAttributes.ContentState(newState, accentColor: accentColor, profileName: store.loadActiveProfileLabel())
     let content = ActivityContent(state: contentState, staleDate: contentState.staleDate)
     intentLogger.log("applyAndPush() persisted \(newState.phase.rawValue, privacy: .public)(cycles=\(newState.completedWorkCycles, privacy: .public)) to store, pushing activity.update() id=\(activity.id, privacy: .public)")
     await activity.update(content)
@@ -93,7 +93,7 @@ struct StartPomodoroIntent: LiveActivityIntent {
         // staleDate omitted on the initial request — see the matching
         // comment in LiveActivityController.start() for why.
         let content = ActivityContent(
-            state: PomodoroActivityAttributes.ContentState(newState, accentColor: store.loadAccentColor()),
+            state: PomodoroActivityAttributes.ContentState(newState, accentColor: store.loadAccentColor(), profileName: store.loadActiveProfileLabel()),
             staleDate: nil
         )
         do {

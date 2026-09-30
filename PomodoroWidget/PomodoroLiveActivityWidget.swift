@@ -42,8 +42,10 @@ struct PomodoroLiveActivityView: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            Text(state.phase.displayName)
+            Text(state.title)
                 .font(.headline)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
             if isStale && state.pausedAt == nil {
                 // The system marks content stale once the current phase's
                 // countdown should have ended — this fires whenever a phase

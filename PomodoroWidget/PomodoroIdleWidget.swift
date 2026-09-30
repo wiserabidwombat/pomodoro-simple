@@ -7,6 +7,9 @@ struct PomodoroIdleEntry: TimelineEntry {
     let state: PomodoroState
     let accentColor: AccentColorOption
     let todayCount: Int
+    /// The active profile's name, or nil when there's only one profile.
+    var profileLabel: String? = nil
+    var sessionsPerCycle: Int = 4
 }
 
 struct PomodoroIdleProvider: TimelineProvider {
@@ -30,11 +33,18 @@ struct PomodoroIdleProvider: TimelineProvider {
                 completedWorkCycles: 1,
                 sessionActive: true
             )
-            completion(PomodoroIdleEntry(date: now, state: example, accentColor: .white, todayCount: 3))
+            completion(PomodoroIdleEntry(date: now, state: example, accentColor: .white, todayCount: 3, sessionsPerCycle: 4))
             return
         }
         let store = PomodoroStateStore()
-        completion(PomodoroIdleEntry(date: Date(), state: store.loadState(), accentColor: store.loadAccentColor(), todayCount: store.loadCachedTodayCount()))
+        completion(PomodoroIdleEntry(
+            date: Date(),
+            state: store.loadState(),
+            accentColor: store.loadAccentColor(),
+            todayCount: store.loadCachedTodayCount(),
+            profileLabel: store.loadActiveProfileLabel(),
+            sessionsPerCycle: store.loadActiveProfile().sessionsBeforeLongBreak
+        ))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<PomodoroIdleEntry>) -> Void) {
@@ -42,9 +52,18 @@ struct PomodoroIdleProvider: TimelineProvider {
         let state = store.loadState()
         let accentColor = store.loadAccentColor()
         let todayCount = store.loadCachedTodayCount()
+        let profileLabel = store.loadActiveProfileLabel()
+        let sessionsPerCycle = store.loadActiveProfile().sessionsBeforeLongBreak
         let now = Date()
         func entry(at date: Date) -> PomodoroIdleEntry {
-            PomodoroIdleEntry(date: date, state: state, accentColor: accentColor, todayCount: todayCount)
+            PomodoroIdleEntry(
+                date: date,
+                state: state,
+                accentColor: accentColor,
+                todayCount: todayCount,
+                profileLabel: profileLabel,
+                sessionsPerCycle: sessionsPerCycle
+            )
         }
 
         var entries = [entry(at: now)]
@@ -77,6 +96,15 @@ struct PomodoroIdleWidgetView: View {
     /// Continue button (like the Live Activity) rather than a frozen 00:00
     /// with Pause/Skip, where Skip would catch up *and* skip, advancing two
     /// phases in one tap.
+    /// "Deep Work · Focus" (or just "Focus") during a session; with no
+    /// session, the profile that Start would use, or "Pomodoro".
+    private var title: String {
+        if entry.state.sessionActive {
+            return entry.state.phase.title(profileLabel: entry.profileLabel)
+        }
+        return entry.profileLabel ?? "Pomodoro"
+    }
+
     private var isExpired: Bool {
         entry.state.sessionActive && entry.state.pausedAt == nil && entry.date >= entry.state.endDate
     }
@@ -127,7 +155,9 @@ struct PomodoroIdleWidgetView: View {
     @ViewBuilder
     private var rectangularContent: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(entry.state.sessionActive ? entry.state.phase.displayName : "Pomodoro")
+            Text(title)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
                 .font(.caption.bold())
             if entry.state.sessionActive {
                 countdownText
@@ -143,7 +173,9 @@ struct PomodoroIdleWidgetView: View {
     @ViewBuilder
     private var homeScreenContent: some View {
         VStack(spacing: 4) {
-            Text(entry.state.sessionActive ? entry.state.phase.displayName : "Pomodoro")
+            Text(title)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
                 .font(.caption)
             if entry.state.sessionActive {
                 countdownText
@@ -163,7 +195,9 @@ struct PomodoroIdleWidgetView: View {
     private var mediumContent: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(entry.state.sessionActive ? entry.state.phase.displayName : "Pomodoro")
+                Text(title)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                     .font(.headline)
                 if entry.state.sessionActive {
                     countdownText
@@ -193,7 +227,7 @@ struct PomodoroIdleWidgetView: View {
 
     private var cycleDots: some View {
         HStack(spacing: 8) {
-            ForEach(0..<4, id: \.self) { index in
+            ForEach(0..<entry.sessionsPerCycle, id: \.self) { index in
                 Circle()
                     .fill(index < entry.state.completedWorkCycles ? entry.accentColor.color : Color.clear)
                     .overlay(Circle().strokeBorder(entry.accentColor.color, lineWidth: 1.5))

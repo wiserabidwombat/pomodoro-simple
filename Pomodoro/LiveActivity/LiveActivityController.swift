@@ -44,7 +44,8 @@ final class LiveActivityController: LiveActivityControlling {
         // (also https://developer.apple.com/forums/thread/724774). Revisit
         // this once that's fixed; update() below is unaffected and still
         // carries a staleDate.
-        let content = ActivityContent(state: PomodoroActivityAttributes.ContentState(state, accentColor: accentColor), staleDate: nil)
+        let contentState = PomodoroActivityAttributes.ContentState(state, accentColor: accentColor, profileName: PomodoroStateStore().loadActiveProfileLabel())
+        let content = ActivityContent(state: contentState, staleDate: nil)
         Task {
             // Awaited, not fire-and-forget: requesting a new Activity
             // before an old one has actually finished ending was racy —
@@ -68,7 +69,7 @@ final class LiveActivityController: LiveActivityControlling {
             logger.error("update() aborted: no active Live Activity found")
             return
         }
-        let contentState = PomodoroActivityAttributes.ContentState(state, accentColor: accentColor)
+        let contentState = PomodoroActivityAttributes.ContentState(state, accentColor: accentColor, profileName: PomodoroStateStore().loadActiveProfileLabel())
         let content = ActivityContent(state: contentState, staleDate: contentState.staleDate)
         logger.log("update() calling activity.update on id=\(activity.id, privacy: .public) pausedAt=\(state.pausedAt?.description ?? "nil", privacy: .public)")
         Task {

@@ -116,6 +116,10 @@ but a physical device docked and charging in landscape is the real test):
       tapping either opens the app.
 - [ ] From the Home Screen widget, tap Pause/Resume and Skip; confirm they
       respond immediately (no multi-second delay) and the widget updates.
+- [ ] With no session running, tap Start on the small and medium Home Screen
+      widgets (app closed); confirm a session starts with the active profile,
+      the Live Activity appears on the Lock Screen, and opening the app shows
+      it running. Tapping Start again right away must not restart it.
 - [ ] Tap Restart mid-session; confirm the confirmation alert appears
       (centered, not a bottom sheet) and accepting it resets to a fresh
       Focus session with the cycle dots back to empty.

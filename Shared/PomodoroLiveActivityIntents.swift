@@ -76,7 +76,16 @@ struct StartPomodoroIntent: LiveActivityIntent {
         guard IntentActionGate.begin() else { return .result() }
         defer { IntentActionGate.end() }
         let store = PomodoroStateStore()
-        let engine = TimerEngine(state: store.loadState(), profile: store.loadActiveProfile())
+        let current = store.loadState()
+        // The Home Screen widget can still be showing Start for a moment
+        // after a session began somewhere else (its refresh lags), and Siri
+        // can be asked to start while one is running. Neither should wipe
+        // out the session in progress — just refresh the widget.
+        guard !current.sessionActive else {
+            reloadIdlePomodoroWidget()
+            return .result()
+        }
+        let engine = TimerEngine(state: current, profile: store.loadActiveProfile())
         engine.start()
         let newState = engine.state
         persistPomodoroState(newState, store: store, notifications: NotificationScheduler())

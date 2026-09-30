@@ -185,9 +185,7 @@ struct PomodoroIdleWidgetView: View {
                     .monospacedDigit()
                 controls
             } else {
-                Image(systemName: "timer")
-                    .font(.title2)
-                    .accessibilityHidden(true) // the title already says it
+                startButton
             }
         }
     }
@@ -210,8 +208,7 @@ struct PomodoroIdleWidgetView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                     controls
                 } else {
-                    Text("Tap to start")
-                        .font(.subheadline)
+                    startButton
                 }
             }
             Spacer()
@@ -240,6 +237,22 @@ struct PomodoroIdleWidgetView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Cycle progress")
         .accessibilityValue("\(min(entry.state.completedWorkCycles, entry.sessionsPerCycle)) of \(entry.sessionsPerCycle) Focus sessions done")
+    }
+
+    /// Starts a session with the active profile right from the Home Screen
+    /// (the title above it names the profile when there's more than one).
+    /// Same LiveActivityIntent as Siri/Shortcuts' "Start", so the app wakes
+    /// in the background and the Live Activity appears as usual. Only on
+    /// the Home Screen sizes: Lock Screen accessory widgets are too small
+    /// for buttons (see rectangularContent).
+    private var startButton: some View {
+        Button(intent: StartPomodoroIntent()) {
+            Label("Start", systemImage: "play.fill")
+                .foregroundStyle(entry.accentColor.contrastingTextColor)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(entry.accentColor.color)
+        .accessibilityHint("Starts a Focus session.")
     }
 
     /// Same LiveActivityIntent-conforming intents the Live Activity's own

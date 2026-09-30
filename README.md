@@ -143,6 +143,20 @@ but a physical device docked and charging in landscape is the real test):
       confirm the Live Activity and widget pick it up within a second or two.
 - [ ] Turn Settings → Play Sound off mid-phase, lock the phone, and confirm
       the phase-end notification arrives silently.
+- [ ] Updating from a build without profiles: confirm Settings → Timer
+      Profiles shows "Classic" with the durations you had set before, plus
+      "Deep Work", and that existing Stats history appears under Classic.
+- [ ] Add a profile with 2 sessions per cycle; select it on the Timer screen;
+      confirm 2 cycle dots and a Long Break after the 2nd Focus session.
+- [ ] Start a session and confirm the profile menu can't be changed until
+      it's stopped, and that the profile you're using can't be deleted.
+- [ ] With 2+ profiles, confirm the Live Activity, widget, and phase-end
+      notification read "<Profile> · Focus".
+- [ ] Finish sessions under two profiles; confirm Stats → All Profiles shows
+      the combined totals plus a By Profile breakdown, and tapping a profile
+      (or picking it in "Showing") filters the whole screen to it.
+- [ ] Delete a profile that has history; confirm its sessions still count in
+      the overall stats and it's still selectable under "Showing".
 ### Testing
 
 Unit tests live in `PomodoroTests/` and run from the `Pomodoro` scheme. The

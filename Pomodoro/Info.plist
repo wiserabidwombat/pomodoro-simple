@@ -29,6 +29,17 @@
 	<string>2</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>INAlternativeAppNames</key>
+	<array>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>Simple Timer</string>
+		</dict>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>StandBy Timer</string>
+		</dict>
+	</array>
 	<key>NSFocusStatusUsageDescription</key>
 	<string>Used to silence the phase-change sound and haptic while one of your Focus modes is on.</string>
 	<key>NSSupportsLiveActivities</key>

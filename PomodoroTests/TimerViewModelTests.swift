@@ -305,4 +305,15 @@ final class TimerViewModelTests: XCTestCase {
         vm.skip()
         XCTAssertEqual(history.totalCount, 0)
     }
+
+    // MARK: - Siri / Shortcuts
+
+    func testTickPicksUpAProfileSwitchedFromOutsideTheApp() {
+        // StartProfileIntent (Siri, Shortcuts, Action Button) switches the
+        // active profile in the shared store; the Timer screen must follow.
+        let (vm, _, _, store, _) = makeViewModel()
+        store.saveActiveProfileID(TimerProfile.deepWorkID)
+        vm.tick()
+        XCTAssertEqual(vm.activeProfile, .deepWork)
+    }
 }

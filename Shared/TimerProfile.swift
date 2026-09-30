@@ -1,4 +1,5 @@
 // Shared/TimerProfile.swift
+import AppIntents
 import Foundation
 
 /// A named, saved timer setup ("Deep Work", "Study", ...): the three phase
@@ -53,5 +54,47 @@ extension TimerProfile {
     var spokenSummary: String {
         let sessions = sessionsBeforeLongBreak == 1 ? "1 session" : "\(sessionsBeforeLongBreak) sessions"
         return "\(durations.workMinutes) minute focus, \(durations.shortBreakMinutes) minute short break, \(durations.longBreakMinutes) minute long break, \(sessions) per cycle"
+    }
+}
+
+/// A timer profile as Siri, Shortcuts, and the Action Button see it. Only
+/// the id and name cross over; the durations are always read fresh from
+/// the App Group when a session actually starts.
+struct TimerProfileEntity: AppEntity {
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Timer Profile"
+    static var defaultQuery = TimerProfileQuery()
+
+    let id: UUID
+    let name: String
+
+    init(_ profile: TimerProfile) {
+        id = profile.id
+        name = profile.name
+    }
+
+    var displayRepresentation: DisplayRepresentation {
+        DisplayRepresentation(title: "\(name)")
+    }
+}
+
+/// Lets Siri and Shortcuts list the user's profiles and match one by name
+/// ("Start Deep Work…").
+struct TimerProfileQuery: EntityStringQuery {
+    init() {}
+
+    func entities(for identifiers: [UUID]) async throws -> [TimerProfileEntity] {
+        PomodoroStateStore().loadProfiles()
+            .filter { identifiers.contains($0.id) }
+            .map(TimerProfileEntity.init)
+    }
+
+    func entities(matching string: String) async throws -> [TimerProfileEntity] {
+        PomodoroStateStore().loadProfiles()
+            .filter { $0.name.localizedCaseInsensitiveContains(string) }
+            .map(TimerProfileEntity.init)
+    }
+
+    func suggestedEntities() async throws -> [TimerProfileEntity] {
+        PomodoroStateStore().loadProfiles().map(TimerProfileEntity.init)
     }
 }

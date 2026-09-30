@@ -1,3 +1,4 @@
+import AppIntents
 import SwiftUI
 import SwiftData
 import UserNotifications
@@ -10,6 +11,8 @@ struct PomodoroApp: App {
 
     init() {
         UNUserNotificationCenter.current().delegate = notificationDelegate
+        // Refresh the profile names Siri can match in "Start … with …".
+        PomodoroAppShortcuts.updateAppShortcutParameters()
     }
 
     var body: some Scene {

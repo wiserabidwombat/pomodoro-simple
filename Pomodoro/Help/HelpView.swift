@@ -34,6 +34,10 @@ struct HelpView: View {
                         body: "Pause and Resume freeze and continue the current phase's countdown. Skip jumps straight to the next phase without waiting it out. During Focus, Skip first asks: once you're at least halfway through, you can Finish & Count It to record the session in Stats (with the time you actually focused); otherwise it moves on without counting."
                     )
                     helpSection(
+                        title: "Siri, Shortcuts & the Action Button",
+                        body: "Say \"Start Deep Work with Simple Timer\" (use any of your profile names), or just \"Start Simple Timer\" for the current profile. To start a profile with one press, go to Settings → Action Button → Shortcut and choose Start Timer Profile; the same action works in any Shortcut."
+                    )
+                    helpSection(
                         title: "Lock Screen & StandBy",
                         body: "While a session is running, a Live Activity shows the countdown on your Lock Screen, in the Dynamic Island, and on StandBy — with the same Pause/Resume/Skip controls, so you don't need to open the app. When a phase ends while your phone is locked, tap Continue (or just dismiss the notification) to start the next one."
                     )

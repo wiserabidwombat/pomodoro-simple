@@ -1,4 +1,5 @@
 // Pomodoro/Timer/TimerViewModel.swift
+import AppIntents
 import Foundation
 import os
 
@@ -122,6 +123,8 @@ final class TimerViewModel: ObservableObject {
             engine.updateProfile(profile)
         }
         reloadIdlePomodoroWidget()
+        // So Siri recognizes new and renamed profiles in "Start … with …".
+        PomodoroAppShortcuts.updateAppShortcutParameters()
     }
 
     /// The last remaining profile can't go, and neither can the one a
@@ -144,6 +147,7 @@ final class TimerViewModel: ObservableObject {
             engine.updateProfile(next)
         }
         reloadIdlePomodoroWidget()
+        PomodoroAppShortcuts.updateAppShortcutParameters()
     }
 
     // Pause/Resume/Skip first sync with the shared store (and catch up a
@@ -249,6 +253,14 @@ final class TimerViewModel: ObservableObject {
         // advancing to Break, then reopening the app immediately reverting
         // to Focus because the ticker caught up a still-Focus in-memory
         // copy a beat before/after the real reload landed.
+        // Siri, a Shortcut, or the Action Button can switch the active
+        // profile from outside the app (StartProfileIntent); pick that up
+        // too, so the Timer screen's menu, dots, and Help match.
+        let storedProfile = store.loadActiveProfile()
+        if storedProfile != activeProfile {
+            activeProfile = storedProfile
+            engine.updateProfile(storedProfile)
+        }
         let beforeReload = engine.state
         engine.reload(store.loadState())
         let reloaded = engine.state

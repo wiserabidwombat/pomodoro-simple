@@ -127,4 +127,10 @@ final class PomodoroModelsTests: XCTestCase {
         }
         XCTAssertTrue(AccentColorOption.custom(red: 0, green: 0, blue: 0.4).isLowContrastOnBlack)
     }
+
+    func testTimerProfileEntityCarriesIdAndName() {
+        let entity = TimerProfileEntity(.deepWork)
+        XCTAssertEqual(entity.id, TimerProfile.deepWorkID)
+        XCTAssertEqual(entity.name, "Deep Work")
+    }
 }

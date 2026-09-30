@@ -15,6 +15,17 @@ struct StatsSnapshot: Equatable {
     struct Session: Equatable {
         let date: Date
         let durationSeconds: TimeInterval
+        var profileID: UUID? = nil
+        var profileName: String? = nil
+    }
+
+    /// One profile's share of the sessions, for the "By Profile" summary.
+    struct ProfileTotal: Identifiable, Equatable {
+        let id: UUID
+        var name: String
+        var count: Int
+        var totalFocusSeconds: TimeInterval
+        var todayCount: Int
     }
 
     var todayCount = 0
@@ -25,6 +36,8 @@ struct StatsSnapshot: Equatable {
     var lastSevenDays: [DailyCount] = []
     /// Only days that have at least one session, newest first.
     var byDay: [DailyCount] = []
+    /// Per-profile totals, most focus time first.
+    var byProfile: [ProfileTotal] = []
 
     init() {}
 
@@ -37,6 +50,39 @@ struct StatsSnapshot: Equatable {
         self.currentStreak = Self.currentStreak(daysWithSessions: Set(byDay.map { $0.day }), calendar: calendar, now: now)
         self.lastSevenDays = Self.lastSevenDays(byDay, calendar: calendar, now: now)
         self.byDay = byDay
+        self.byProfile = Self.profileTotals(sessions, calendar: calendar, now: now)
+    }
+
+    /// Sessions with no profile predate profiles and count as Classic. A
+    /// profile's latest recorded name wins, so a rename shows up once new
+    /// sessions are finished under it (the Stats screen also prefers the
+    /// current name of profiles that still exist).
+    static func profileTotals(_ sessions: [Session], calendar: Calendar, now: Date) -> [ProfileTotal] {
+        var totals: [UUID: ProfileTotal] = [:]
+        for session in sessions.sorted(by: { $0.date < $1.date }) {
+            let id = session.profileID ?? TimerProfile.classicID
+            var total = totals[id] ?? ProfileTotal(
+                id: id,
+                name: session.profileName ?? TimerProfile.classic.name,
+                count: 0,
+                totalFocusSeconds: 0,
+                todayCount: 0
+            )
+            if let name = session.profileName {
+                total.name = name
+            }
+            total.count += 1
+            total.totalFocusSeconds += session.durationSeconds
+            if calendar.isDate(session.date, inSameDayAs: now) {
+                total.todayCount += 1
+            }
+            totals[id] = total
+        }
+        return totals.values.sorted {
+            $0.totalFocusSeconds != $1.totalFocusSeconds
+                ? $0.totalFocusSeconds > $1.totalFocusSeconds
+                : $0.name < $1.name
+        }
     }
 
     static func countByDay(_ dates: [Date], calendar: Calendar) -> [DailyCount] {
@@ -98,8 +144,8 @@ final class HistoryStore {
         self.context = context
     }
 
-    func recordCompletedSession(duration: TimeInterval, on date: Date = Date()) {
-        context.insert(CompletedSession(date: date, durationSeconds: duration))
+    func recordCompletedSession(duration: TimeInterval, on date: Date = Date(), profile: TimerProfile? = nil) {
+        context.insert(CompletedSession(date: date, durationSeconds: duration, profileID: profile?.id, profileName: profile?.name))
         try? context.save()
     }
 
@@ -108,19 +154,27 @@ final class HistoryStore {
     func recordCompletedSessions(_ pending: [PendingCompletedSession]) {
         guard !pending.isEmpty else { return }
         for session in pending {
-            context.insert(CompletedSession(date: session.endedAt, durationSeconds: session.duration))
+            context.insert(CompletedSession(
+                date: session.endedAt,
+                durationSeconds: session.duration,
+                profileID: session.profileID,
+                profileName: session.profileName
+            ))
         }
         try? context.save()
     }
 
     /// One fetch for the whole Stats screen, instead of the ~6 separate
     /// queries it used to run on every render.
-    func snapshot(calendar: Calendar = .current, now: Date = Date()) -> StatsSnapshot {
-        StatsSnapshot(sessions: allSessions(), calendar: calendar, now: now)
+    /// Pass a profile id to get that profile's stats alone.
+    func snapshot(profileID: UUID? = nil, calendar: Calendar = .current, now: Date = Date()) -> StatsSnapshot {
+        let all = sessions()
+        let filtered = profileID.map { id in all.filter { $0.profileID == id } } ?? all
+        return StatsSnapshot(sessions: filtered, calendar: calendar, now: now)
     }
 
     func countByDay(calendar: Calendar = .current) -> [DailyCount] {
-        StatsSnapshot.countByDay(allSessions().map { $0.date }, calendar: calendar)
+        StatsSnapshot.countByDay(sessions().map { $0.date }, calendar: calendar)
     }
 
     var totalCount: Int {
@@ -132,7 +186,7 @@ final class HistoryStore {
     }
 
     var totalFocusSeconds: TimeInterval {
-        allSessions().reduce(0) { $0 + $1.durationSeconds }
+        sessions().reduce(0) { $0 + $1.durationSeconds }
     }
 
     func currentStreak(calendar: Calendar = .current, referenceDate: Date = Date()) -> Int {
@@ -144,8 +198,16 @@ final class HistoryStore {
         StatsSnapshot.lastSevenDays(countByDay(calendar: calendar), calendar: calendar, now: referenceDate)
     }
 
-    private func allSessions() -> [StatsSnapshot.Session] {
+    /// Every recorded session, with pre-profiles ones attributed to Classic.
+    func sessions() -> [StatsSnapshot.Session] {
         let all = (try? context.fetch(FetchDescriptor<CompletedSession>())) ?? []
-        return all.map { StatsSnapshot.Session(date: $0.date, durationSeconds: $0.durationSeconds) }
+        return all.map {
+            StatsSnapshot.Session(
+                date: $0.date,
+                durationSeconds: $0.durationSeconds,
+                profileID: $0.profileID ?? TimerProfile.classicID,
+                profileName: $0.profileName ?? TimerProfile.classic.name
+            )
+        }
     }
 }

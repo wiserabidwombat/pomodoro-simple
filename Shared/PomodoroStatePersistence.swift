@@ -33,7 +33,15 @@ func reloadIdlePomodoroWidget() {
 /// dismissing its notification — never showed up in Stats at all.
 func recordNaturalCompletion(_ completed: CompletedPhase, store: PomodoroStateStore, calendar: Calendar = .current) {
     guard completed.phase == .work else { return }
-    store.enqueueCompletedSession(PendingCompletedSession(endedAt: completed.endedAt, duration: completed.duration))
+    // Profiles can only be switched while idle, so the active profile is
+    // the one this session ran under.
+    let profile = store.loadActiveProfile()
+    store.enqueueCompletedSession(PendingCompletedSession(
+        endedAt: completed.endedAt,
+        duration: completed.duration,
+        profileID: profile.id,
+        profileName: profile.name
+    ))
     if calendar.isDateInToday(completed.endedAt) {
         store.incrementCachedTodayCount(calendar: calendar)
     }

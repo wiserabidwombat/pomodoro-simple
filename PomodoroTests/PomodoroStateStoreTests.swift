@@ -178,7 +178,12 @@ final class PomodoroStateStoreTests: XCTestCase {
         XCTAssertEqual(store.loadCachedTodayCount(), 0)
 
         recordNaturalCompletion(CompletedPhase(phase: .work, endedAt: now, duration: 1500), store: store)
-        XCTAssertEqual(store.drainPendingCompletedSessions(), [PendingCompletedSession(endedAt: now, duration: 1500)])
+        XCTAssertEqual(store.drainPendingCompletedSessions(), [PendingCompletedSession(
+            endedAt: now,
+            duration: 1500,
+            profileID: TimerProfile.classicID,
+            profileName: "Classic"
+        )])
         XCTAssertEqual(store.loadCachedTodayCount(), 1)
     }
 

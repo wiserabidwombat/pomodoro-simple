@@ -9,6 +9,8 @@ import Foundation
 struct PendingCompletedSession: Codable, Equatable {
     let endedAt: Date
     let duration: TimeInterval
+    var profileID: UUID? = nil
+    var profileName: String? = nil
 }
 
 struct PomodoroStateStore {

@@ -26,6 +26,10 @@ final class TimerViewModel: ObservableObject {
     @Published var keepScreenAwake: Bool {
         didSet { store.save(keepScreenAwake: keepScreenAwake) }
     }
+    /// Skip on the Lock Screen/StandBy/widgets counts Focus past halfway.
+    @Published var skipCountsPastHalfway: Bool {
+        didSet { store.save(skipCountsPastHalfway: skipCountsPastHalfway) }
+    }
     /// Focus sessions to aim for each day (all profiles); 0 = off.
     @Published var dailyGoal: Int {
         didSet {
@@ -97,6 +101,7 @@ final class TimerViewModel: ObservableObject {
         self.activeProfile = loadedActive
         self.silenceDuringFocus = store.loadSilenceDuringFocus()
         self.keepScreenAwake = store.loadKeepScreenAwake()
+        self.skipCountsPastHalfway = store.loadSkipCountsPastHalfway()
         self.dailyGoal = store.loadDailyGoal()
         self.todayCount = historyStore.todayCount
         self.soundEnabled = store.loadSoundEnabled()

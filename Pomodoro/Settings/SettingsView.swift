@@ -161,6 +161,18 @@ struct SettingsView: View {
                     .tint(viewModel.accentColor.color)
                     .padding(.horizontal)
 
+                    Toggle(isOn: $viewModel.skipCountsPastHalfway) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Lock Screen Skip Counts Focus")
+                                .foregroundStyle(.white)
+                            Text("Skipping a Focus session from the Lock Screen, StandBy, a widget, or Siri after the halfway mark counts it in Stats, like Finish & Count It. Before halfway, it skips without counting.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .tint(viewModel.accentColor.color)
+                    .padding(.horizontal)
+
                     Text("Sound")
                         .foregroundStyle(viewModel.accentColor.color)
                         .font(.headline)

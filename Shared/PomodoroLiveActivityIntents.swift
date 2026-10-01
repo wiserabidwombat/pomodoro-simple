@@ -186,7 +186,15 @@ struct SkipPomodoroIntent: LiveActivityIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        await performPomodoroAction("Skip") { $0.skip() }
+        // No room to ask "Finish & Count It?" on the Lock Screen, so the
+        // setting decides: past halfway in Focus, Skip counts the session.
+        let store = PomodoroStateStore()
+        let countPastHalfway = store.loadSkipCountsPastHalfway()
+        await performPomodoroAction("Skip") { engine in
+            if let completed = engine.skipFromOutsideApp(countPastHalfway: countPastHalfway) {
+                recordNaturalCompletion(completed, store: store)
+            }
+        }
         return .result()
     }
 }

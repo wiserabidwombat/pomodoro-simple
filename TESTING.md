@@ -125,3 +125,8 @@ but a physical device docked and charging in landscape is the real test):
       notification (once on the phone, once on a paired Apple Watch). Wait a
       minute, open the app: no TestFlight crash prompt, and the timer has
       moved on to the next phase.
+- [ ] Lock Screen Skip during Focus: past halfway, Skip on the Live Activity
+      (or Home Screen widget) moves to the break, fills a cycle dot, and the
+      session shows in Stats with the minutes focused. Before halfway it
+      skips without counting. Turn off Settings → Lock Screen Skip Counts
+      Focus and confirm Skip past halfway no longer counts.

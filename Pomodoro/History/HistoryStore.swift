@@ -154,10 +154,17 @@ struct StatsSnapshot: Equatable {
 @MainActor
 final class HistoryStore {
     private let context: ModelContext
+    /// Whether the database opened normally this launch (see HistoryContainer).
+    let health: HistoryStoreHealth
 
-    init(context: ModelContext) {
+    init(context: ModelContext, health: HistoryStoreHealth = .normal) {
         self.context = context
+        self.health = health
     }
+
+    /// False when history is in memory only; sessions should then stay
+    /// queued in the App Group for a later launch rather than be imported.
+    var isPersistent: Bool { health != .memoryOnly }
 
     func recordCompletedSession(duration: TimeInterval, on date: Date = Date(), profile: TimerProfile? = nil) {
         context.insert(CompletedSession(date: date, durationSeconds: duration, profileID: profile?.id, profileName: profile?.name))

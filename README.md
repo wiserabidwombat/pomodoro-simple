@@ -29,6 +29,10 @@ Privacy policy: [everything stays on your phone](https://aarontilley.me/projects
   current phase and countdown, with a Start button when idle and
   Pause/Resume and Skip while running. A round Lock Screen widget shows a
   progress ring that drains as the phase runs.
+- **Apple Watch app.** Start, pause, skip, and finish early from your
+  wrist, with today's progress toward your goal. It stays in sync with the
+  phone, keeps working when the phone is out of range, and Focus sessions
+  finished on the watch show up in Stats.
 - **Timer profiles.** Save different setups, each with its own Focus, Short
   Break and Long Break lengths and number of sessions before a Long Break.
   Comes with Classic (25/5/15, Long Break after 4) and Deep Work (50/10/30,
@@ -70,7 +74,8 @@ Privacy policy: [everything stays on your phone](https://aarontilley.me/projects
 ## Tech stack
 
 Swift · SwiftUI · WidgetKit · ActivityKit · App Intents · SwiftData · Swift
-Charts · UserNotifications · XcodeGen (project generation) · XCTest
+Charts · UserNotifications · WatchConnectivity · XcodeGen (project generation) ·
+XCTest
 
 ## How I built it
 

@@ -24,11 +24,16 @@ func persistPomodoroState(_ state: PomodoroState, store: PomodoroStateStore, not
     WatchSyncHook.stateDidChange?()
 }
 
-/// Set by the iPhone app at launch to forward the current state, active
-/// profile, and accent color to the Apple Watch. nil everywhere else (the
-/// widget extension, unit tests), where it's simply a no-op.
+/// Set by the iPhone app at launch to keep the Apple Watch in sync. nil
+/// everywhere else (the widget extension, unit tests): a no-op there.
 enum WatchSyncHook {
+    /// The timer state changed (start, pause, skip, a phase ending...).
     static var stateDidChange: (() -> Void)?
+    /// Something else the watch shows changed: the accent color or holiday
+    /// theme, the active profile, today's count, or the daily goal. Kept
+    /// separate so these don't count as a newer *timer* change and override
+    /// a pause made on the watch while it was out of range.
+    static var settingsDidChange: (() -> Void)?
 }
 
 /// The idle/Home Screen widget has no way to know the shared store changed
@@ -58,7 +63,20 @@ func recordNaturalCompletion(_ completed: CompletedPhase, store: PomodoroStateSt
         profileID: profile.id,
         profileName: profile.name
     ))
-    if calendar.isDateInToday(completed.endedAt) {
+    countTowardToday(completed.endedAt, store: store, calendar: calendar)
+}
+
+/// Bumps the widget's quick "today" counter for a Focus session that just
+/// ended, once: with an Apple Watch, the phone and the watch can each
+/// report the same session (both derive its end from the same endDate).
+/// History de-duplicates on import; this keeps the counter from briefly
+/// reading one too high in the meantime.
+func countTowardToday(_ endedAt: Date, store: PomodoroStateStore, calendar: Calendar = .current) {
+    if let last = store.loadLastCountedFocusEnd(), abs(last.timeIntervalSince(endedAt)) <= 1 {
+        return
+    }
+    store.save(lastCountedFocusEnd: endedAt)
+    if calendar.isDateInToday(endedAt) {
         store.incrementCachedTodayCount(calendar: calendar)
     }
 }

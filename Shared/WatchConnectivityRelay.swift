@@ -6,13 +6,23 @@ import os
 private let watchLogger = Logger(subsystem: "com.aarontilley.pomodoro", category: "WatchConnectivity")
 
 /// What the iPhone and Apple Watch tell each other. The phone owns the
-/// accent color and timer profiles, so it always sends them; the watch only
-/// sends the timer state (those fields stay nil).
+/// accent color, timer profiles and Stats, so it always sends those; the
+/// watch only sends the timer state (those fields stay nil).
 struct WatchSyncPayload: Codable, Equatable {
     var state: PomodoroState
+    /// When `state` last changed on the device that sent it. Each side only
+    /// adopts a state newer than its own, so after the two have been out of
+    /// range and both changed something, they agree on the newest change
+    /// instead of each taking the other's (older) one.
+    var stateChangedAt: Date
+    /// The color to draw with: the user's accent, or the active holiday
+    /// theme's (see PomodoroStateStore.loadEffectiveAccentColor).
     var accentColor: AccentColorOption? = nil
     var profile: TimerProfile? = nil
     var profileLabel: String? = nil
+    /// Focus sessions finished today, and the daily goal (0 = none).
+    var todayCount: Int? = nil
+    var dailyGoal: Int? = nil
 }
 
 /// Thin WCSession wrapper, compiled into the iPhone app and the watch app
@@ -31,6 +41,10 @@ final class WatchConnectivityRelay: NSObject {
     var onReceivePayload: ((WatchSyncPayload) -> Void)?
     /// Called on the main queue (iPhone side).
     var onReceiveCompletedSession: ((PendingCompletedSession) -> Void)?
+    /// Called on the main queue (iPhone side) when the watch app is
+    /// installed or removed, or a different watch is paired, so the phone
+    /// can send the current state right away instead of at the next change.
+    var onWatchAvailabilityChange: (() -> Void)?
 
     private let session: WCSession?
     /// Anything sent before activation finishes is held and sent right after.
@@ -89,9 +103,17 @@ extension WatchConnectivityRelay: WCSessionDelegate {
         }
         watchLogger.log("activation completed, state=\(activationState.rawValue, privacy: .public)")
         flushPending()
+        // The last context the other side sent is kept by the system even
+        // if it arrived while this app wasn't running. Apply it now so the
+        // first screen isn't stale (stateChangedAt makes a repeat harmless).
+        deliver(session.receivedApplicationContext)
     }
 
     func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
+        deliver(applicationContext)
+    }
+
+    private func deliver(_ applicationContext: [String: Any]) {
         guard let data = applicationContext["payload"] as? Data,
               let payload = try? JSONDecoder().decode(WatchSyncPayload.self, from: data)
         else { return }
@@ -115,6 +137,12 @@ extension WatchConnectivityRelay: WCSessionDelegate {
     func sessionDidDeactivate(_ session: WCSession) {
         // Switching to a different paired watch: reactivate for the new one.
         session.activate()
+    }
+
+    func sessionWatchStateDidChange(_ session: WCSession) {
+        DispatchQueue.main.async { [weak self] in
+            self?.onWatchAvailabilityChange?()
+        }
     }
     #endif
 }

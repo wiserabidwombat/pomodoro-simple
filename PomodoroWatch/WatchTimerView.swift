@@ -24,6 +24,7 @@ struct WatchTimerView: View {
                     .font(.system(size: 32, weight: .bold, design: .rounded))
                     .monospacedDigit()
                 cycleDots
+                todayProgress
                 controls
             }
             .padding(.vertical, 4)
@@ -84,6 +85,27 @@ struct WatchTimerView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Cycle progress")
         .accessibilityValue("\(min(viewModel.state.completedWorkCycles, viewModel.profile.sessionsBeforeLongBreak)) of \(viewModel.profile.sessionsBeforeLongBreak) Focus sessions done")
+    }
+
+    /// "2 of 4 today" with a daily goal, "2 today" without one; hidden
+    /// until there's something to show.
+    @ViewBuilder
+    private var todayProgress: some View {
+        let count = viewModel.todayCount
+        let goal = viewModel.dailyGoal
+        if goal > 0 {
+            Text(count >= goal ? "Goal met · \(count) today" : "\(count) of \(goal) today")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .accessibilityLabel(count >= goal
+                    ? "Daily goal reached, \(count) Focus sessions today"
+                    : "\(count) of \(goal) Focus sessions today")
+        } else if count > 0 {
+            Text("\(count) today")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .accessibilityLabel("\(count) Focus session\(count == 1 ? "" : "s") today")
+        }
     }
 
     @ViewBuilder

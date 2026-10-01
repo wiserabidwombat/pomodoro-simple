@@ -69,6 +69,7 @@ targets:
       - path: Shared/AppGroup.swift
       - path: Shared/AccentColorOption.swift
       - path: Shared/ChimeOption.swift
+      - path: Shared/HolidayTheme.swift
       - path: Shared/PomodoroPhase.swift
       - path: Shared/PomodoroState.swift
       - path: Shared/PomodoroDurations.swift

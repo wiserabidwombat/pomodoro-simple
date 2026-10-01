@@ -31,6 +31,8 @@ struct PomodoroStateStore {
     private let chimeKey = "pomodoro.chime"
     private let todayCountKey = "pomodoro.todayCount"
     private let todayCountDateKey = "pomodoro.todayCountDate"
+    private let lastCountedFocusEndKey = "pomodoro.lastCountedFocusEnd"
+    private let stateChangedAtKey = "pomodoro.stateChangedAt"
     private let hasRequestedReviewKey = "pomodoro.hasRequestedReview"
     private let pendingSessionsKey = "pomodoro.pendingCompletedSessions"
     /// Intents run in the app's own process (LiveActivityIntent), possibly
@@ -222,6 +224,26 @@ struct PomodoroStateStore {
     /// container), so this is the channel it reads "today's count" from
     /// instead. Day-tagged so a stale cache from a previous day reads back
     /// as 0 rather than showing yesterday's number after midnight.
+    /// When the last Focus session counted toward today ended (see
+    /// countTowardToday), so the same session reported twice counts once.
+    func loadLastCountedFocusEnd() -> Date? {
+        defaults.object(forKey: lastCountedFocusEndKey) as? Date
+    }
+
+    func save(lastCountedFocusEnd: Date) {
+        defaults.set(lastCountedFocusEnd, forKey: lastCountedFocusEndKey)
+    }
+
+    /// When the timer state last changed on this device, for Apple Watch
+    /// sync (see WatchSyncPayload.stateChangedAt). distantPast if never.
+    func loadStateChangedAt() -> Date {
+        defaults.object(forKey: stateChangedAtKey) as? Date ?? .distantPast
+    }
+
+    func save(stateChangedAt: Date) {
+        defaults.set(stateChangedAt, forKey: stateChangedAtKey)
+    }
+
     func incrementCachedTodayCount(calendar: Calendar = .current, now: Date = Date()) {
         let today = calendar.startOfDay(for: now)
         let count = loadCachedTodayCount(calendar: calendar, now: now)

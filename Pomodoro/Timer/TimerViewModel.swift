@@ -53,6 +53,7 @@ final class TimerViewModel: ObservableObject {
         didSet {
             store.save(dailyGoal: dailyGoal)
             reloadIdlePomodoroWidget()
+            WatchSyncHook.settingsDidChange?()
         }
     }
     /// Completed Focus sessions today, for the daily-goal progress. Kept
@@ -144,7 +145,7 @@ final class TimerViewModel: ObservableObject {
         store.saveActiveProfileID(profile.id)
         engine.updateProfile(profile)
         reloadIdlePomodoroWidget()
-        WatchSyncHook.stateDidChange?()
+        WatchSyncHook.settingsDidChange?()
     }
 
     /// Adds a new profile, or saves edits to an existing one. Editing the
@@ -164,7 +165,7 @@ final class TimerViewModel: ObservableObject {
             engine.updateProfile(profile)
         }
         reloadIdlePomodoroWidget()
-        WatchSyncHook.stateDidChange?()
+        WatchSyncHook.settingsDidChange?()
         // So Siri recognizes new and renamed profiles in "Start … with …".
         PomodoroAppShortcuts.updateAppShortcutParameters()
     }
@@ -189,7 +190,7 @@ final class TimerViewModel: ObservableObject {
             engine.updateProfile(next)
         }
         reloadIdlePomodoroWidget()
-        WatchSyncHook.stateDidChange?()
+        WatchSyncHook.settingsDidChange?()
         PomodoroAppShortcuts.updateAppShortcutParameters()
     }
 
@@ -380,6 +381,7 @@ final class TimerViewModel: ObservableObject {
         // Only publish a real change (see catchUpIfNeeded's note on why).
         if count != todayCount {
             todayCount = count
+            WatchSyncHook.settingsDidChange?()
         }
     }
 
@@ -441,7 +443,7 @@ final class TimerViewModel: ObservableObject {
                 self.liveActivity.update(state: self.state, accentColor: self.displayAccent)
             }
             reloadIdlePomodoroWidget()
-            WatchSyncHook.stateDidChange?()
+            WatchSyncHook.settingsDidChange?()
         }
     }
 

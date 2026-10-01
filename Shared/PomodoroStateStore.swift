@@ -17,6 +17,7 @@ struct PomodoroStateStore {
     private let defaults: UserDefaults
     private let stateKey = "pomodoro.state"
     private let colorKey = "pomodoro.accentColor"
+    private let themeKey = "pomodoro.theme"
     /// Pre-profiles single set of durations; only read now, to seed the
     /// Classic profile for people updating from an older build.
     private let legacyDurationsKey = "pomodoro.durations"
@@ -77,6 +78,23 @@ struct PomodoroStateStore {
     func save(_ color: AccentColorOption) {
         guard let data = try? JSONEncoder().encode(color) else { return }
         defaults.set(data, forKey: colorKey)
+    }
+
+    // MARK: - Holiday theme
+
+    func loadThemeSetting() -> ThemeSetting {
+        defaults.string(forKey: themeKey).flatMap(ThemeSetting.init(rawValue:)) ?? .off
+    }
+
+    func save(themeSetting: ThemeSetting) {
+        defaults.set(themeSetting.rawValue, forKey: themeKey)
+    }
+
+    /// The color to draw with right now: the active holiday theme's accent,
+    /// or the user's own accent color when no theme is showing. The widgets
+    /// and Live Activity use this; Settings still edits loadAccentColor().
+    func loadEffectiveAccentColor(now: Date = Date()) -> AccentColorOption {
+        loadThemeSetting().activeTheme(on: now)?.accent ?? loadAccentColor()
     }
 
     // MARK: - Timer profiles

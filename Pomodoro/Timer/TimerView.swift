@@ -26,7 +26,7 @@ struct TimerView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            ThemedBackground(theme: viewModel.activeTheme, showsParticles: true, isAnimating: isVisible)
             VStack(spacing: 24) {
                 Text(viewModel.state.phase.displayName)
                     .font(.title2.bold())
@@ -71,7 +71,7 @@ struct TimerView: View {
                 controls
                 dailyGoalProgress
             }
-            .foregroundStyle(viewModel.accentColor.color)
+            .foregroundStyle(viewModel.displayAccent.color)
             .padding()
 
             VStack {
@@ -83,7 +83,7 @@ struct TimerView: View {
                             .font(.title3)
                     }
                     .accessibilityLabel("How it works")
-                    .foregroundStyle(viewModel.accentColor.color.opacity(0.7))
+                    .foregroundStyle(viewModel.displayAccent.color.opacity(0.7))
                     .padding()
 
                     Spacer()
@@ -96,11 +96,15 @@ struct TimerView: View {
                                 .font(.title3)
                         }
                         .accessibilityLabel("Restart session")
-                        .foregroundStyle(viewModel.accentColor.color.opacity(0.7))
+                        .foregroundStyle(viewModel.displayAccent.color.opacity(0.7))
                         .padding()
                     }
                 }
                 Spacer()
+            }
+
+            if let theme = viewModel.activeTheme {
+                CelebrationBurstView(theme: theme, trigger: viewModel.celebrationCount)
             }
         }
         .onAppear {
@@ -156,7 +160,7 @@ struct TimerView: View {
             }
         }
         .sheet(isPresented: $showingHelp) {
-            HelpView(accentColor: viewModel.accentColor, profile: viewModel.activeProfile)
+            HelpView(accentColor: viewModel.displayAccent, profile: viewModel.activeProfile)
         }
         .sheet(isPresented: $showingNotificationPrimer, onDismiss: {
             if !hasSeenHelp {
@@ -164,7 +168,7 @@ struct TimerView: View {
                 showingHelp = true
             }
         }) {
-            NotificationPrimerView(accentColor: viewModel.accentColor) { enableNotifications in
+            NotificationPrimerView(accentColor: viewModel.displayAccent) { enableNotifications in
                 hasSeenNotificationPrimer = true
                 showingNotificationPrimer = false
                 if enableNotifications {
@@ -234,7 +238,7 @@ struct TimerView: View {
                         .font(.subheadline.weight(.semibold))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 6)
-                        .overlay(Capsule().strokeBorder(viewModel.accentColor.color.opacity(0.6), lineWidth: 1))
+                        .overlay(Capsule().strokeBorder(viewModel.displayAccent.color.opacity(0.6), lineWidth: 1))
                     }
                     .accessibilityLabel("Timer profile")
                     .accessibilityValue(viewModel.activeProfile.name)
@@ -256,8 +260,8 @@ struct TimerView: View {
         HStack(spacing: 12) {
             ForEach(0..<viewModel.activeProfile.sessionsBeforeLongBreak, id: \.self) { index in
                 Circle()
-                    .fill(index < viewModel.state.completedWorkCycles ? viewModel.accentColor.color : Color.clear)
-                    .overlay(Circle().strokeBorder(viewModel.accentColor.color, lineWidth: 1.5))
+                    .fill(index < viewModel.state.completedWorkCycles ? viewModel.displayAccent.color : Color.clear)
+                    .overlay(Circle().strokeBorder(viewModel.displayAccent.color, lineWidth: 1.5))
                     .frame(width: 12, height: 12)
             }
         }
@@ -320,7 +324,7 @@ struct TimerView: View {
             let goal = viewModel.dailyGoal
             VStack(spacing: 6) {
                 ProgressView(value: Double(min(done, goal)), total: Double(goal))
-                    .tint(viewModel.accentColor.color)
+                    .tint(viewModel.displayAccent.color)
                     .frame(maxWidth: 180)
                 Text(done >= goal ? "Daily goal reached · \(done) today" : "\(done) of \(goal) today")
                     .font(.caption)

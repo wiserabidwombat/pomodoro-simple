@@ -177,6 +177,23 @@ final class TimerViewModelTests: XCTestCase {
         XCTAssertEqual(store.loadAccentColor(), .purple)
     }
 
+    func testHolidayThemeOverridesDisplayAccentButNotTheUsersColor() {
+        let (vm, _, _, store, _) = makeViewModel()
+        vm.accentColor = .preset(.green)
+        XCTAssertNil(vm.activeTheme)
+        XCTAssertEqual(vm.displayAccent, .preset(.green))
+
+        vm.themeSetting = .christmas
+        XCTAssertEqual(vm.activeTheme, .christmas)
+        XCTAssertEqual(vm.displayAccent, HolidayTheme.christmas.accent)
+        XCTAssertEqual(vm.accentColor, .preset(.green))
+        XCTAssertEqual(store.loadThemeSetting(), .christmas)
+
+        vm.themeSetting = .off
+        XCTAssertNil(vm.activeTheme)
+        XCTAssertEqual(vm.displayAccent, .preset(.green))
+    }
+
     func testKeepScreenAwakeSettingPersists() {
         let (vm, _, _, store, _) = makeViewModel()
         XCTAssertFalse(vm.keepScreenAwake)

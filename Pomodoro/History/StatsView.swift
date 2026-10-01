@@ -40,7 +40,7 @@ struct StatsView: View {
         let goal = profileFilter == nil ? viewModel.dailyGoal : 0
 
         ZStack {
-            Color.black.ignoresSafeArea()
+            ThemedBackground(theme: viewModel.activeTheme)
             List {
                 if let notice = storageNotice {
                     Section {
@@ -121,7 +121,7 @@ struct StatsView: View {
                                 x: .value("Day", entry.day, unit: .day),
                                 y: .value("Sessions", entry.count)
                             )
-                            .foregroundStyle(viewModel.accentColor.color)
+                            .foregroundStyle(viewModel.displayAccent.color)
                             // Swift Charts exposes each bar to VoiceOver (and
                             // Audio Graphs); these make each one read as
                             // "Tuesday, 3 sessions" instead of a raw date/number.
@@ -133,7 +133,7 @@ struct StatsView: View {
                             // it are goal days.
                             RuleMark(y: .value("Daily goal", goal))
                                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
-                                .foregroundStyle(viewModel.accentColor.color.opacity(0.6))
+                                .foregroundStyle(viewModel.displayAccent.color.opacity(0.6))
                                 .accessibilityLabel("Daily goal")
                                 .accessibilityValue(Self.spokenSessions(goal))
                         }
@@ -188,7 +188,7 @@ struct StatsView: View {
             // Lists paint their own opaque background by default in iOS 16+;
             // hiding it is what lets the black ZStack background show through.
             .scrollContentBackground(.hidden)
-            .foregroundStyle(viewModel.accentColor.color)
+            .foregroundStyle(viewModel.displayAccent.color)
         }
         .onAppear { reload() }
         .onChange(of: viewModel.historyRevision) { _, _ in reload() }

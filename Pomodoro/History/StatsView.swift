@@ -17,6 +17,18 @@ struct StatsView: View {
         let name: String
     }
 
+    /// Shown only when the history database didn't open normally.
+    private var storageNotice: String? {
+        switch historyStore.health {
+        case .normal:
+            return nil
+        case .recoveredFresh:
+            return "Your session history couldn't be read, so it was reset. A copy of the old data was kept on this iPhone."
+        case .memoryOnly:
+            return "Session history can't be saved right now. Sessions you finish are kept and will appear here after the app is reopened."
+        }
+    }
+
     var body: some View {
         let overall = StatsSnapshot(sessions: sessions)
         let stats = profileFilter.map { id in
@@ -30,6 +42,13 @@ struct StatsView: View {
         ZStack {
             Color.black.ignoresSafeArea()
             List {
+                if let notice = storageNotice {
+                    Section {
+                        Label(notice, systemImage: "exclamationmark.triangle")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
                 if options.count > 1 {
                     Section {
                         Picker("Showing", selection: $profileFilter) {

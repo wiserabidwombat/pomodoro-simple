@@ -328,6 +328,9 @@ final class TimerViewModel: ObservableObject {
         if !Calendar.current.isDate(todayCountDay, inSameDayAs: Date()) {
             refreshTodayCount()
         }
+        // With history in memory only, leave sessions queued in the App
+        // Group so a later launch with a working database imports them.
+        guard historyStore.isPersistent else { return }
         let pending = store.drainPendingCompletedSessions()
         guard !pending.isEmpty else { return }
         historyStore.recordCompletedSessions(pending)

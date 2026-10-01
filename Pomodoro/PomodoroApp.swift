@@ -1,5 +1,6 @@
 import AppIntents
 import SwiftUI
+import UIKit
 import SwiftData
 import UserNotifications
 
@@ -44,10 +45,17 @@ struct PomodoroApp: App {
 /// the historyStore initializer: a ModelContext doesn't keep its
 /// ModelContainer alive, so the container must be owned for as long as its
 /// context is in use.
+///
+/// The container is opened through HistoryContainer, which never crashes: a
+/// store that won't open is moved aside and replaced, or, failing that,
+/// history runs in memory for this launch (see HistoryContainer).
 @MainActor
 private enum AppEnvironment {
-    static let container: ModelContainer = try! ModelContainer(for: CompletedSession.self)
-    static let historyStore = HistoryStore(context: container.mainContext)
+    private static let opened = HistoryContainer.open(
+        protectedDataAvailable: UIApplication.shared.isProtectedDataAvailable
+    )
+    static let container: ModelContainer = opened.container
+    static let historyStore = HistoryStore(context: container.mainContext, health: opened.health)
 }
 
 private struct RootView: View {

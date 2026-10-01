@@ -47,7 +47,7 @@ struct PomodoroIdleProvider: TimelineProvider {
         completion(PomodoroIdleEntry(
             date: Date(),
             state: state,
-            accentColor: store.loadAccentColor(),
+            accentColor: store.loadEffectiveAccentColor(),
             todayCount: store.loadCachedTodayCount(),
             profileLabel: store.loadActiveProfileLabel(),
             sessionsPerCycle: profile.sessionsBeforeLongBreak,
@@ -59,7 +59,7 @@ struct PomodoroIdleProvider: TimelineProvider {
     func getTimeline(in context: Context, completion: @escaping (Timeline<PomodoroIdleEntry>) -> Void) {
         let store = PomodoroStateStore()
         let state = store.loadState()
-        let accentColor = store.loadAccentColor()
+        let accentColor = store.loadEffectiveAccentColor()
         let todayCount = store.loadCachedTodayCount()
         let profileLabel = store.loadActiveProfileLabel()
         let activeProfile = store.loadActiveProfile()

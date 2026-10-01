@@ -87,7 +87,7 @@ private struct RootView: View {
         // The selected tab's icon (and any other control still using the
         // system tint, like Settings' steppers) follows the accent color
         // instead of the default blue.
-        .tint(viewModel.accentColor.color)
+        .tint(viewModel.displayAccent.color)
         // Arriving from the Live Activity or a widget (both open a
         // pomodoro:// URL) or from tapping the phase-end notification always
         // lands on the Timer — otherwise the app reopened on whatever tab

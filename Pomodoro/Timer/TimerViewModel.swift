@@ -8,12 +8,30 @@ private let viewModelLogger = Logger(subsystem: "com.aarontilley.pomodoro", cate
 @MainActor
 final class TimerViewModel: ObservableObject {
     @Published private(set) var state: PomodoroState
+    /// The user's own accent color, as edited in Settings. Draw with
+    /// `displayAccent`, which a holiday theme can override.
     @Published var accentColor: AccentColorOption {
         didSet {
             store.save(accentColor)
             scheduleAppearancePush()
         }
     }
+    /// Settings → Holiday Theme.
+    @Published var themeSetting: ThemeSetting {
+        didSet {
+            store.save(themeSetting: themeSetting)
+            refreshActiveTheme()
+        }
+    }
+    /// The theme showing right now (nil = normal look). Recomputed when the
+    /// setting changes, when the app comes to the foreground, and at midnight.
+    @Published private(set) var activeTheme: HolidayTheme?
+    /// Goes up by one each time a Focus session finishes while the app is
+    /// open and a theme is showing; the Timer screen plays a burst on change.
+    @Published private(set) var celebrationCount = 0
+
+    /// The color everything in the app should draw with.
+    var displayAccent: AccentColorOption { activeTheme?.accent ?? accentColor }
     /// Saved timer setups, in the user's order. Never empty.
     @Published private(set) var profiles: [TimerProfile]
     /// The one new sessions run with. Only switchable while idle.
@@ -106,6 +124,9 @@ final class TimerViewModel: ObservableObject {
         self.todayCount = historyStore.todayCount
         self.soundEnabled = store.loadSoundEnabled()
         self.chime = store.loadChime()
+        let loadedTheme = store.loadThemeSetting()
+        self.themeSetting = loadedTheme
+        self.activeTheme = loadedTheme.activeTheme()
     }
 
     func start() {
@@ -211,6 +232,7 @@ final class TimerViewModel: ObservableObject {
         catchUpIfNeeded()
         guard let completed = engine.finishEarly() else { return }
         recordNaturalCompletion(completed, store: store)
+        celebrateIfThemed(completed)
         importPendingSessions()
         persistAndPush()
     }
@@ -234,6 +256,7 @@ final class TimerViewModel: ObservableObject {
     /// could run out on screen without ever advancing, and a Start from
     /// Siri/Shortcuts while the app was open was never picked up.
     func sceneDidBecomeActive() {
+        refreshActiveTheme()
         refreshFromSharedState()
         startTicker()
     }
@@ -302,6 +325,7 @@ final class TimerViewModel: ObservableObject {
         }
         if let completed {
             recordNaturalCompletion(completed, store: store)
+            celebrateIfThemed(completed)
         }
         importPendingSessions()
         if advanced || forcePush {
@@ -331,6 +355,7 @@ final class TimerViewModel: ObservableObject {
         // Runs every tick, so it's also where "today" rolls over at
         // midnight for an app left open overnight.
         if !Calendar.current.isDate(todayCountDay, inSameDayAs: Date()) {
+            refreshActiveTheme()
             refreshTodayCount()
         }
         // With history in memory only, leave sessions queued in the App
@@ -375,11 +400,27 @@ final class TimerViewModel: ObservableObject {
         state = engine.state
         persistPomodoroState(state, store: store, notifications: notifications)
         if state.sessionActive && liveActivity.needsRestart {
-            liveActivity.start(state: state, accentColor: accentColor)
+            liveActivity.start(state: state, accentColor: displayAccent)
         } else {
-            liveActivity.update(state: state, accentColor: accentColor)
+            liveActivity.update(state: state, accentColor: displayAccent)
         }
         reloadIdlePomodoroWidget()
+    }
+
+    // MARK: - Holiday theme
+
+    /// Picks up a theme change (the setting, or the date crossing into a new
+    /// season) and pushes the new color to the Live Activity and widgets.
+    func refreshActiveTheme(now: Date = Date()) {
+        let theme = themeSetting.activeTheme(on: now)
+        guard theme != activeTheme else { return }
+        activeTheme = theme
+        scheduleAppearancePush()
+    }
+
+    private func celebrateIfThemed(_ completed: CompletedPhase) {
+        guard completed.phase == .work, activeTheme != nil else { return }
+        celebrationCount += 1
     }
 
     /// The Live Activity and idle widget only redraw when told to, so a new
@@ -392,7 +433,7 @@ final class TimerViewModel: ObservableObject {
             try? await Task.sleep(for: .milliseconds(400))
             guard !Task.isCancelled, let self else { return }
             if self.state.sessionActive {
-                self.liveActivity.update(state: self.state, accentColor: self.accentColor)
+                self.liveActivity.update(state: self.state, accentColor: self.displayAccent)
             }
             reloadIdlePomodoroWidget()
         }

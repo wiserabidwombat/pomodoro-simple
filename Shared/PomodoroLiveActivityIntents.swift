@@ -65,7 +65,7 @@ private func performPomodoroAction(_ label: String, _ action: (TimerEngine) -> V
     }
     action(engine)
     logTransition(label, before: beforeState, after: engine.state, caughtUp: completed != nil)
-    await applyAndPush(engine.state, accentColor: store.loadAccentColor(), store: store, notifications: NotificationScheduler())
+    await applyAndPush(engine.state, accentColor: store.loadEffectiveAccentColor(), store: store, notifications: NotificationScheduler())
 }
 
 /// Starts a fresh session with the active profile — shared by the plain
@@ -98,7 +98,7 @@ private func startSessionWithActiveProfile(store: PomodoroStateStore) async -> B
     // staleDate omitted on the initial request — see the matching
     // comment in LiveActivityController.start() for why.
     let content = ActivityContent(
-        state: PomodoroActivityAttributes.ContentState(newState, accentColor: store.loadAccentColor(), profileName: store.loadActiveProfileLabel()),
+        state: PomodoroActivityAttributes.ContentState(newState, accentColor: store.loadEffectiveAccentColor(), profileName: store.loadActiveProfileLabel()),
         staleDate: nil
     )
     do {

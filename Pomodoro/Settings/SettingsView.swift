@@ -8,13 +8,28 @@ struct SettingsView: View {
     @Environment(\.self) private var environment
     @State private var editingProfile: TimerProfile?
 
+    private var themeCaption: String {
+        var parts: [String] = []
+        if viewModel.themeSetting == .automatic {
+            parts.append("Halloween in October, Thanksgiving through Thanksgiving Day, and Christmas through the end of December.")
+        }
+        if let theme = viewModel.activeTheme {
+            parts.append("\(theme.displayName) is showing now, with its own colors. Your accent color comes back when the theme ends.")
+        } else if viewModel.themeSetting == .off {
+            parts.append("Seasonal colors and a little animation on the Timer screen.")
+        } else {
+            parts.append("No holiday right now, so your accent color is showing.")
+        }
+        return parts.joined(separator: " ")
+    }
+
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            ThemedBackground(theme: viewModel.activeTheme)
             ScrollView {
                 VStack(spacing: 16) {
                     Text("Accent Color")
-                        .foregroundStyle(viewModel.accentColor.color)
+                        .foregroundStyle(viewModel.displayAccent.color)
                         .font(.headline)
                         .accessibilityAddTraits(.isHeader)
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 16) {
@@ -60,8 +75,31 @@ struct SettingsView: View {
                             .padding(.horizontal)
                     }
 
+                    Text("Holiday Theme")
+                        .foregroundStyle(viewModel.displayAccent.color)
+                        .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("Theme")
+                                .foregroundStyle(.white)
+                            Spacer()
+                            Picker("Holiday Theme", selection: $viewModel.themeSetting) {
+                                ForEach(ThemeSetting.allCases) { setting in
+                                    Text(setting.displayName).tag(setting)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .tint(viewModel.displayAccent.color)
+                        }
+                        Text(themeCaption)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal)
+
                     Text("Timer Profiles")
-                        .foregroundStyle(viewModel.accentColor.color)
+                        .foregroundStyle(viewModel.displayAccent.color)
                         .font(.headline)
                         .accessibilityAddTraits(.isHeader)
                     VStack(spacing: 12) {
@@ -80,7 +118,7 @@ struct SettingsView: View {
                                     Spacer()
                                     if profile.id == viewModel.activeProfile.id {
                                         Image(systemName: "checkmark")
-                                            .foregroundStyle(viewModel.accentColor.color)
+                                            .foregroundStyle(viewModel.displayAccent.color)
                                     }
                                     Image(systemName: "chevron.right")
                                         .font(.caption)
@@ -107,7 +145,7 @@ struct SettingsView: View {
                             Label("Add Profile", systemImage: "plus")
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .foregroundStyle(viewModel.accentColor.color)
+                        .foregroundStyle(viewModel.displayAccent.color)
                     }
                     .padding(.horizontal)
 
@@ -128,7 +166,7 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
-                    .tint(viewModel.accentColor.color)
+                    .tint(viewModel.displayAccent.color)
                     .padding(.horizontal)
 
                     Stepper(value: $viewModel.dailyGoal, in: PomodoroStateStore.dailyGoalRange) {
@@ -158,7 +196,7 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
-                    .tint(viewModel.accentColor.color)
+                    .tint(viewModel.displayAccent.color)
                     .padding(.horizontal)
 
                     Toggle(isOn: $viewModel.skipCountsPastHalfway) {
@@ -174,14 +212,14 @@ struct SettingsView: View {
                     .padding(.horizontal)
 
                     Text("Sound")
-                        .foregroundStyle(viewModel.accentColor.color)
+                        .foregroundStyle(viewModel.displayAccent.color)
                         .font(.headline)
                         .accessibilityAddTraits(.isHeader)
                     Toggle(isOn: $viewModel.soundEnabled) {
                         Text("Play Sound")
                             .foregroundStyle(.white)
                     }
-                    .tint(viewModel.accentColor.color)
+                    .tint(viewModel.displayAccent.color)
                     .padding(.horizontal)
 
                     VStack(spacing: 8) {
@@ -196,7 +234,7 @@ struct SettingsView: View {
                                     Spacer()
                                     if viewModel.chime == option {
                                         Image(systemName: "checkmark")
-                                            .foregroundStyle(viewModel.accentColor.color)
+                                            .foregroundStyle(viewModel.displayAccent.color)
                                             .accessibilityHidden(true)
                                     }
                                 }
@@ -217,7 +255,7 @@ struct SettingsView: View {
                 profile: profile,
                 isNew: !viewModel.profiles.contains(where: { $0.id == profile.id }),
                 canDelete: viewModel.canDeleteProfile(profile),
-                accentColor: viewModel.accentColor,
+                accentColor: viewModel.displayAccent,
                 onSave: { viewModel.saveProfile($0) },
                 onDelete: { viewModel.deleteProfile(id: profile.id) }
             )

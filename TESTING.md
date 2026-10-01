@@ -20,6 +20,16 @@ but a physical device docked and charging in landscape is the real test):
       deny it there; confirm the app still doesn't crash and runs normally.
 - [ ] Toggle each of the 7 preset accent colors in Settings; confirm the Timer
       screen, idle widget, and Live Activity all pick up the new color.
+- [ ] Settings → Holiday Theme → Halloween: the Timer, Stats and Settings
+      screens get a purple tint at the top and orange accents; bats, ghosts
+      and pumpkins drift up behind the Timer. The Live Activity and widgets
+      turn orange within a few seconds. Finish a Focus session with the app
+      open: a burst of emoji plays. Try Thanksgiving (falling leaves) and
+      Christmas (falling snow). Back to Off: your own accent color returns.
+- [ ] With Reduce Motion on (Settings → Accessibility → Motion), the
+      particles hold still and no burst plays. Same for the drift in Low
+      Power Mode.
+- [ ] Holiday Theme → Automatic in October shows Halloween.
 - [ ] Let a work phase's countdown run out with the app foregrounded; confirm
       it auto-advances to a short break and the Stats screen's "Today" count
       increments by one.

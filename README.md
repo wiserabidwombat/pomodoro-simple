@@ -7,8 +7,13 @@ Dynamic Island too. Built as **Simple: StandBy Timer**.
 I built this app because I wanted a Pomodoro app I could control from the
 StandBy screen, that didn't require a subscription and was simple to use.
 
-> **Availability:** Currently in debugging, with plans to get it into
-> TestFlight by September 27, 2026.
+> **Availability:** In public beta on TestFlight. Join here:
+> **[testflight.apple.com/join/GYzhgfF5](https://testflight.apple.com/join/GYzhgfF5)**
+>
+> You'll need an iPhone on iOS 17 or later and Apple's free
+> [TestFlight app](https://apps.apple.com/app/testflight/id899247664).
+> Feedback is welcome: take a screenshot in the app and TestFlight will offer
+> to send it to me.
 
 ## Features
 
@@ -17,19 +22,37 @@ StandBy screen, that didn't require a subscription and was simple to use.
   app.
 - **Live Activities.** The Lock Screen shows a live countdown with
   Pause/Resume/Skip buttons, in your accent color on black.
-- **Home Screen and Lock Screen widgets.** Widgets show the current phase and
-  countdown, and the Home Screen widgets have Pause/Resume and Skip buttons.
-- **Shared state via App Groups.** The app, widgets and Live Activity all
-  read and write the same timer state through a shared App Group.
+- **Home Screen and Lock Screen widgets.** Home Screen widgets show the
+  current phase and countdown, with a Start button when idle and
+  Pause/Resume and Skip while running. A round Lock Screen widget shows a
+  progress ring that drains as the phase runs.
+- **Timer profiles.** Save different setups, each with its own Focus, Short
+  Break and Long Break lengths and number of sessions before a Long Break.
+  Comes with Classic (25/5/15, Long Break after 4) and Deep Work (50/10/30,
+  Long Break after 2).
+- **Siri, Shortcuts and the Action Button.** "Start Deep Work with Simple
+  Timer" starts that profile, and a Start Timer Profile shortcut can go on
+  the Action Button of newer iPhones.
+- **Finish early.** Done with a Focus session before the timer? Past the
+  halfway mark, "Finish & Count It" records the time you actually focused.
+- **Daily goal.** Set a number of Focus sessions per day and track it on the
+  Timer screen, the medium widget and in Stats.
+- **Stats.** Today's count, all-time total, streaks, total focus time, a
+  last-7-days chart and a per-day history, for all profiles together or one
+  at a time.
+- **Export history.** Share every session (date, profile, length) as a CSV
+  file from Stats.
+- **Keep Screen Awake.** Optionally stops the phone from locking while the
+  Timer screen is open, for when it's propped on a desk without StandBy.
+- **Accent colors.** Choose from 7 preset colors or pick a custom one; the
+  buttons and tab bar follow your color.
+- **Accessibility.** VoiceOver labels throughout and support for the largest
+  text sizes.
 - **Notification permission primer.** On first launch, a screen explains what
   notifications are for before iOS asks for permission.
-- **Focus / Short Break / Long Break cycle.** Defaults are 25/5/15 minutes,
-  with a Long Break after every 4th Focus session. All three durations can be
-  changed in Settings.
-- **Stats.** Today's session count, all-time total, current streak, total
-  focus time, a last-7-days chart and a per-day history.
-- **Accent colors.** Choose from 7 preset colors or pick a custom one with
-  the color picker.
+- **Shared state via App Groups.** The app, widgets and Live Activity all
+  read and write the same timer state through a shared App Group.
+- **No subscription, no account, no tracking.**
 
 ## Screenshots
 
@@ -46,7 +69,7 @@ StandBy screen, that didn't require a subscription and was simple to use.
 Swift · SwiftUI · WidgetKit · ActivityKit · App Intents · SwiftData · Swift
 Charts · UserNotifications · XcodeGen (project generation) · XCTest
 
-## How I build
+## How I built it
 
 Developed with [Claude Code](https://claude.com/claude-code). I gave Claude a
 fairly open prompt describing most of the functionality I wanted, then let it
@@ -95,124 +118,7 @@ the repo. Xcode Cloud also assigns its own build numbers when it archives, so
 the `CFBundleVersion` in the Info.plists only matters for manual uploads from
 Xcode's Organizer.
 
-## Manual testing checklist
-
-Widget/Live Activity/StandBy visuals cannot be unit tested — run through this
-on a real device (a simulator can approximate StandBy and the Dynamic Island,
-but a physical device docked and charging in landscape is the real test):
-
-- [ ] Start a session, background the app, confirm the Live Activity shows on
-      the Lock Screen with a live countdown and the chosen accent color on black.
-- [ ] Simulator: Features menu → StandBy, confirm landscape rendering.
-- [ ] Physical device: dock/charge in landscape, confirm StandBy matches.
-- [ ] Tap Pause, then Resume, then Skip from the Lock Screen/StandBy Live
-      Activity while the app is backgrounded; reopen the app and confirm its
-      UI reflects each change.
-- [ ] On a fresh install, confirm the notification primer screen appears
-      first, before the Help sheet and before the real system permission
-      dialog. Tap "Not Now"; confirm the system dialog never appears and the
-      app still runs a full session with foreground sound/haptic only.
-- [ ] Delete and reinstall fresh again; this time tap "Enable Notifications"
-      on the primer and confirm the real system dialog appears next, then
-      deny it there; confirm the app still doesn't crash and runs normally.
-- [ ] Toggle each of the 7 preset accent colors in Settings; confirm the Timer
-      screen, idle widget, and Live Activity all pick up the new color.
-- [ ] Let a work phase's countdown run out with the app foregrounded; confirm
-      it auto-advances to a short break and the Stats screen's "Today" count
-      increments by one.
-- [ ] Add the small round (circular) widget to the Lock Screen and start a
-      session: the ring drains in real time with the countdown in the middle,
-      with the app closed. Pause: the ring freezes with a pause glyph.
-      Pause/resume a few times; the ring still matches the countdown. When
-      the phase ends, the ring empties and shows a checkmark.
-- [ ] Add the idle widget to the Home Screen and to the Lock Screen; confirm
-      tapping either opens the app.
-- [ ] From the Home Screen widget, tap Pause/Resume and Skip; confirm they
-      respond immediately (no multi-second delay) and the widget updates.
-- [ ] With no session running, tap Start on the small and medium Home Screen
-      widgets (app closed); confirm a session starts with the active profile,
-      the Live Activity appears on the Lock Screen, and opening the app shows
-      it running. Tapping Start again right away must not restart it.
-- [ ] Tap Skip during Focus: a prompt asks first. Before the halfway mark it
-      offers only "Skip Without Counting"; past halfway it also offers
-      "Finish & Count It", which moves to the break, fills a cycle dot, and
-      adds the session to Stats with the minutes actually focused. Skip
-      during a break still skips immediately.
-- [ ] Tap Restart mid-session; confirm the confirmation alert appears
-      (centered, not a bottom sheet) and accepting it resets to a fresh
-      Focus session with the cycle dots back to empty.
-- [ ] Delete the app and reinstall fresh; confirm the Help sheet appears
-      automatically right after the notification primer is dismissed (either
-      choice), and that the "?" icon reopens it afterward without
-      auto-showing again.
-- [ ] Complete 4 Focus sessions in a row (Skip is fine for this); confirm
-      the 4th is followed by a Long Break and the cycle dots reset to empty.
-- [ ] On a fresh install with no sessions yet, open the Stats tab and confirm
-      it loads (zeros, an empty 7-day chart, and the "Completed Focus sessions
-      will show up here" message) without crashing.
-- [ ] With the app open, let a *break* run out; confirm it advances to Focus
-      once, the chime/haptic plays once (no system notification sound on top),
-      and the new Focus countdown actually counts down.
-- [ ] Let a Focus session run out with the phone locked, then tap Continue on
-      the Lock Screen Live Activity (or dismiss the notification); open the
-      app and confirm Stats and the medium widget's "Today" count include it.
-- [ ] Start a session, force-quit the app, reopen it mid-phase; confirm the
-      countdown is right and the phase still advances on its own at zero.
-- [ ] With the Home Screen widget visible, let a phase run out; confirm it
-      switches to "Time's up" with a Continue button, and that Continue
-      advances exactly one phase.
-- [ ] Mid-session, change the accent color (preset and custom picker);
-      confirm the Live Activity and widget pick it up within a second or two.
-- [ ] Turn Settings → Play Sound off mid-phase, lock the phone, and confirm
-      the phase-end notification arrives silently.
-- [ ] Updating from a build without profiles: confirm Settings → Timer
-      Profiles shows "Classic" with the durations you had set before, plus
-      "Deep Work", and that existing Stats history appears under Classic.
-- [ ] Add a profile with 2 sessions per cycle; select it on the Timer screen;
-      confirm 2 cycle dots and a Long Break after the 2nd Focus session.
-- [ ] Start a session and confirm the profile menu can't be changed until
-      it's stopped, and that the profile you're using can't be deleted.
-- [ ] With 2+ profiles, confirm the Live Activity, widget, and phase-end
-      notification read "<Profile> · Focus".
-- [ ] Finish sessions under two profiles; confirm Stats → All Profiles shows
-      the combined totals plus a By Profile breakdown, and tapping a profile
-      (or picking it in "Showing") filters the whole screen to it.
-- [ ] Settings → Daily Goal: set 3. The Timer screen shows "0 of 3 today"
-      with a bar that fills as sessions finish (from any profile), then
-      "Daily goal reached". The medium widget shows "1/3" and "Goal met" once
-      reached. Stats (All Profiles) gets a Daily Goal section and a dashed goal
-      line on the 7-day chart; picking one profile hides them. Set it back to
-      0 and all of it disappears.
-- [ ] Stats → Export History as CSV: share to Files or Mail, open it in
-      Numbers/Excel; confirm one row per session (date, time, profile,
-      minutes), oldest first, including sessions from a deleted profile. The
-      button is hidden when there's no history yet.
-- [ ] Delete a profile that has history; confirm its sessions still count in
-      the overall stats and it's still selectable under "Showing".
-- [ ] Turn on Settings → Keep Screen Awake, start a session, and leave the
-      phone on the Timer screen past its Auto-Lock time; confirm it stays on.
-      Then confirm it does lock normally after switching to another tab, when no
-      session is running, or with the setting off.
-- [ ] Siri: "Start Deep Work with Simple Timer" starts that profile (Siri
-      says "Starting Deep Work."), and the Timer screen shows Deep Work when
-      opened. Add or rename a profile, then confirm Siri recognizes the new
-      name. Asking while a session is running says it's already running and
-      changes nothing.
-- [ ] Action Button (iPhone 15 Pro and later): Settings → Action Button →
-      Shortcut → Simple: StandBy Timer → Start Timer Profile, pick a profile;
-      pressing the button starts it with the Live Activity, app closed.
-- [ ] VoiceOver pass (Settings → Accessibility → VoiceOver, or triple-click
-      the side button if set up): swipe through Timer, Stats, and Settings.
-      Every control should say what it is ("How it works", "Restart session",
-      "Cycle progress, 2 of 4 Focus sessions done", color names), the paused
-      time should read as "Paused, 12 minutes, 34 seconds remaining", and
-      Stats rows should read as one item each ("Today, 3 sessions").
-- [ ] Largest text size (Settings → Accessibility → Display & Text Size →
-      Larger Text, max): Timer, Stats, Settings, and the profile editor stay
-      usable, and "Resume" isn't cut off.
-- [ ] Pick a very dark custom color; confirm Settings shows the
-      hard-to-read warning.
-### Testing
+## Testing
 
 Unit tests live in `PomodoroTests/` and run from the `Pomodoro` scheme. The
 widget, Live Activity and StandBy visuals can't be unit tested; see the

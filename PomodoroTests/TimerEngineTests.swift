@@ -193,6 +193,44 @@ final class TimerEngineTests: XCTestCase {
         XCTAssertEqual(engine.state.phase, .work)
     }
 
+    func testSkipFromOutsideAppPastHalfwayCountsWhenEnabled() {
+        let engine = TimerEngine(state: .idle)
+        engine.start()
+        let twentyMinutesIn = engine.state.startDate.addingTimeInterval(20 * 60)
+
+        let completed = engine.skipFromOutsideApp(countPastHalfway: true, now: twentyMinutesIn)
+
+        XCTAssertEqual(completed?.duration ?? 0, 20 * 60, accuracy: 0.5)
+        XCTAssertEqual(engine.state.phase, .shortBreak)
+        XCTAssertEqual(engine.state.completedWorkCycles, 1)
+    }
+
+    func testSkipFromOutsideAppBeforeHalfwayJustSkips() {
+        let engine = TimerEngine(state: .idle)
+        engine.start()
+        let fiveMinutesIn = engine.state.startDate.addingTimeInterval(5 * 60)
+
+        XCTAssertNil(engine.skipFromOutsideApp(countPastHalfway: true, now: fiveMinutesIn))
+        XCTAssertEqual(engine.state.phase, .shortBreak) // still skipped
+    }
+
+    func testSkipFromOutsideAppWithSettingOffNeverCounts() {
+        let engine = TimerEngine(state: .idle)
+        engine.start()
+        let twentyMinutesIn = engine.state.startDate.addingTimeInterval(20 * 60)
+
+        XCTAssertNil(engine.skipFromOutsideApp(countPastHalfway: false, now: twentyMinutesIn))
+        XCTAssertEqual(engine.state.phase, .shortBreak)
+    }
+
+    func testSkipFromOutsideAppDuringBreakJustSkips() {
+        let engine = TimerEngine(state: .idle)
+        engine.start()
+        engine.skip() // -> shortBreak
+        XCTAssertNil(engine.skipFromOutsideApp(countPastHalfway: true))
+        XCTAssertEqual(engine.state.phase, .work)
+    }
+
     func testFinishEarlyIsOnlyForFocus() {
         let engine = TimerEngine(state: .idle)
         engine.start()

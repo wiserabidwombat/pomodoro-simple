@@ -115,6 +115,20 @@ final class TimerEngine {
         return completed
     }
 
+    /// Skip as tapped outside the app (Lock Screen, StandBy, widgets, Siri),
+    /// where there's no room to ask "Finish & Count It?". With
+    /// `countPastHalfway`, a Focus session past the halfway mark is finished
+    /// and returned for recording, exactly like finishEarly(); anything else
+    /// (a break, Focus before halfway, or the setting off) is a plain skip.
+    @discardableResult
+    func skipFromOutsideApp(countPastHalfway: Bool, now: Date = Date()) -> CompletedPhase? {
+        if countPastHalfway, let completed = finishEarly(now: now) {
+            return completed
+        }
+        skip()
+        return nil
+    }
+
     /// Stops the current session entirely and returns to the initial idle
     /// state — back to Work phase, cycle count reset to 0, not running.
     func reset() {

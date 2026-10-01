@@ -122,6 +122,13 @@ final class PomodoroStateStoreTests: XCTestCase {
         XCTAssertTrue(store.loadKeepScreenAwake())
     }
 
+    func testSkipCountsPastHalfwayDefaultsToTrueAndPersists() {
+        let store = makeIsolatedStore()
+        XCTAssertTrue(store.loadSkipCountsPastHalfway())
+        store.save(skipCountsPastHalfway: false)
+        XCTAssertFalse(store.loadSkipCountsPastHalfway())
+    }
+
     func testLoadSoundEnabledDefaultsToTrue() {
         let store = makeIsolatedStore()
         XCTAssertTrue(store.loadSoundEnabled())

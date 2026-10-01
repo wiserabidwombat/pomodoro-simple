@@ -25,6 +25,7 @@ struct PomodoroStateStore {
     private let silenceDuringFocusKey = "pomodoro.silenceDuringFocus"
     private let soundEnabledKey = "pomodoro.soundEnabled"
     private let keepScreenAwakeKey = "pomodoro.keepScreenAwake"
+    private let skipCountsPastHalfwayKey = "pomodoro.skipCountsPastHalfway"
     private let dailyGoalKey = "pomodoro.dailyGoal"
     private let chimeKey = "pomodoro.chime"
     private let todayCountKey = "pomodoro.todayCount"
@@ -143,6 +144,18 @@ struct PomodoroStateStore {
 
     func save(keepScreenAwake: Bool) {
         defaults.set(keepScreenAwake, forKey: keepScreenAwakeKey)
+    }
+
+    /// Whether Skip from outside the app counts a Focus session that's past
+    /// halfway (see TimerEngine.skipFromOutsideApp). On by default; like
+    /// sound, a missing key has to read as true.
+    func loadSkipCountsPastHalfway() -> Bool {
+        guard defaults.object(forKey: skipCountsPastHalfwayKey) != nil else { return true }
+        return defaults.bool(forKey: skipCountsPastHalfwayKey)
+    }
+
+    func save(skipCountsPastHalfway: Bool) {
+        defaults.set(skipCountsPastHalfway, forKey: skipCountsPastHalfwayKey)
     }
 
     static let dailyGoalRange = 0...16

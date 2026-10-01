@@ -41,3 +41,7 @@ but a physical device docked and charging in landscape is the real test):
       auto-showing again.
 - [ ] Complete 4 Focus sessions in a row (Skip is fine for this); confirm
       the 4th is followed by a Long Break and the cycle dots reset to empty.
+- [ ] Let a phase end with the phone locked, then clear the phase-end
+      notification (once on the phone, once on a paired Apple Watch). Wait a
+      minute, open the app: no TestFlight crash prompt, and the timer has
+      moved on to the next phase.

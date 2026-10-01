@@ -32,7 +32,10 @@ final class PhaseEndNotificationDelegate: NSObject, UNUserNotificationCenterDele
             completionHandler()
             return
         }
-        Task {
+        // Must finish on the main actor: UIKit updates the app snapshot when the
+        // completion handler runs, and asserts on the main thread. Calling it from
+        // the cooperative pool crashed background launches (e.g. dismissing on Watch).
+        Task { @MainActor in
             _ = try? await AdvancePomodoroIntent().perform()
             completionHandler()
         }

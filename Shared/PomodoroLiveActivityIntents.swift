@@ -164,6 +164,7 @@ struct StartProfileIntent: LiveActivityIntent {
 struct PausePomodoroIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Pause"
 
+    @MainActor
     func perform() async throws -> some IntentResult {
         await performPomodoroAction("Pause") { $0.pause() }
         return .result()
@@ -173,6 +174,7 @@ struct PausePomodoroIntent: LiveActivityIntent {
 struct ResumePomodoroIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Resume"
 
+    @MainActor
     func perform() async throws -> some IntentResult {
         await performPomodoroAction("Resume") { $0.resume() }
         return .result()
@@ -182,6 +184,7 @@ struct ResumePomodoroIntent: LiveActivityIntent {
 struct SkipPomodoroIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Skip"
 
+    @MainActor
     func perform() async throws -> some IntentResult {
         await performPomodoroAction("Skip") { $0.skip() }
         return .result()
@@ -200,6 +203,7 @@ struct SkipPomodoroIntent: LiveActivityIntent {
 struct AdvancePomodoroIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Continue"
 
+    @MainActor
     func perform() async throws -> some IntentResult {
         await performPomodoroAction("Advance") { _ in }
         return .result()

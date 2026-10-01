@@ -15,6 +15,9 @@ StandBy screen, that didn't require a subscription and was simple to use.
 > Feedback is welcome: take a screenshot in the app and TestFlight will offer
 > to send it to me.
 
+More screenshots and the story behind the app: [aarontilley.me/projects/pomodoro-simple](https://aarontilley.me/projects/pomodoro-simple).
+Privacy policy: [everything stays on your phone](https://aarontilley.me/projects/pomodoro-simple/privacy).
+
 ## Features
 
 - **StandBy and Dynamic Island.** A running session shows in StandBy and the

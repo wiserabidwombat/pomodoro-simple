@@ -58,6 +58,15 @@ private enum AppEnvironment {
     static let historyStore = HistoryStore(context: container.mainContext, health: opened.health)
 }
 
+/// Wording that differs between iPhone and iPad: iPad has no StandBy,
+/// Dynamic Island, Live Activities, or Action Button.
+@MainActor
+enum DeviceCopy {
+    static var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
+    /// For sentences like "while your phone is locked".
+    static var device: String { isPad ? "iPad" : "phone" }
+}
+
 private struct RootView: View {
     @StateObject private var viewModel = TimerViewModel(
         historyStore: AppEnvironment.historyStore,
@@ -101,6 +110,7 @@ private struct RootView: View {
                 tabLayout
             }
         }
+        .background(tabShortcuts)
         .preferredColorScheme(.dark)
         // The selected tab's icon (and any other control still using the
         // system tint, like Settings' steppers) follows the accent color
@@ -154,13 +164,34 @@ private struct RootView: View {
             }
             .navigationTitle("Simple Timer")
         } detail: {
-            // Capped and centered so the timer and lists don't stretch
-            // edge to edge on a 13-inch screen.
-            screen(for: selectedTab)
-                .frame(maxWidth: 640)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.black.ignoresSafeArea())
+            ZStack {
+                // Full width behind everything, so a holiday theme's tint
+                // reaches the edges instead of stopping at the column.
+                ThemedBackground(theme: viewModel.activeTheme)
+                // Stats and Settings are capped and centered so their lists
+                // don't stretch edge to edge on a 13-inch screen. The Timer
+                // isn't: its content is already centered, and that way its
+                // drifting theme particles use the whole screen.
+                screen(for: selectedTab)
+                    .frame(maxWidth: selectedTab == .timer ? .infinity : 640)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
         }
+    }
+
+    /// ⌘1–⌘3 switch between Timer, Stats, and Settings with a keyboard
+    /// (iPad lists them when you hold ⌘). Invisible buttons, since keyboard
+    /// shortcuts need a control to hang on; opacity 0 keeps them working.
+    private var tabShortcuts: some View {
+        ZStack {
+            ForEach(Array(AppTab.allCases.enumerated()), id: \.element) { index, tab in
+                Button(tab.title) { selectedTab = tab }
+                    .keyboardShortcut(KeyEquivalent(Character("\(index + 1)")), modifiers: .command)
+            }
+        }
+        .opacity(0)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     @ViewBuilder

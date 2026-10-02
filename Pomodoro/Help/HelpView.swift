@@ -33,14 +33,29 @@ struct HelpView: View {
                         title: "Controls",
                         body: "Pause and Resume freeze and continue the current phase's countdown. Skip jumps straight to the next phase without waiting it out. During Focus, Skip first asks: once you're at least halfway through, you can Finish & Count It to record the session in Stats (with the time you actually focused); otherwise it moves on without counting."
                     )
-                    helpSection(
-                        title: "Siri, Shortcuts & the Action Button",
-                        body: "Say \"Start Deep Work with Simple Timer\" (use any of your profile names), or just \"Start Simple Timer\" for the current profile. To start a profile with one press, go to Settings → Action Button → Shortcut and choose Start Timer Profile; the same action works in any Shortcut."
-                    )
-                    helpSection(
-                        title: "Lock Screen & StandBy",
-                        body: "While a session is running, a Live Activity shows the countdown on your Lock Screen, in the Dynamic Island, and on StandBy — with the same Pause/Resume/Skip controls, so you don't need to open the app. When a phase ends while your phone is locked, tap Continue (or just dismiss the notification) to start the next one."
-                    )
+                    if DeviceCopy.isPad {
+                        helpSection(
+                            title: "Siri & Shortcuts",
+                            body: "Say \"Start Deep Work with Simple Timer\" (use any of your profile names), or just \"Start Simple Timer\" for the current profile. The Start Timer Profile action works in any Shortcut, too."
+                        )
+                        helpSection(
+                            title: "Widgets & notifications",
+                            body: "Add the Simple Timer widget to your Home Screen or Lock Screen to start, pause, and skip without opening the app. When a phase ends while your iPad is locked, a notification lets you know; dismiss it to start the next one."
+                        )
+                        helpSection(
+                            title: "Keyboard",
+                            body: "With a keyboard attached: Space starts, pauses, and resumes; S skips; ⌘R restarts; and ⌘1, ⌘2, and ⌘3 switch between Timer, Stats, and Settings."
+                        )
+                    } else {
+                        helpSection(
+                            title: "Siri, Shortcuts & the Action Button",
+                            body: "Say \"Start Deep Work with Simple Timer\" (use any of your profile names), or just \"Start Simple Timer\" for the current profile. To start a profile with one press, go to Settings → Action Button → Shortcut and choose Start Timer Profile; the same action works in any Shortcut."
+                        )
+                        helpSection(
+                            title: "Lock Screen & StandBy",
+                            body: "While a session is running, a Live Activity shows the countdown on your Lock Screen, in the Dynamic Island, and on StandBy — with the same Pause/Resume/Skip controls, so you don't need to open the app. When a phase ends while your phone is locked, tap Continue (or just dismiss the notification) to start the next one."
+                        )
+                    }
                     helpSection(
                         title: "Restart",
                         body: "The circular-arrow button stops the current session entirely and resets back to the start of a fresh Focus session, cycle count included."

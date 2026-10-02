@@ -140,3 +140,20 @@ but a physical device docked and charging in landscape is the real test):
       session shows in Stats with the minutes focused. Before halfway it
       skips without counting. Turn off Settings → Lock Screen Skip Counts
       Focus and confirm Skip past halfway no longer counts.
+- [ ] iPad (Simulator or device): full screen and wide Split View show a
+      sidebar (Timer / Stats / Settings); Stats and Settings are capped and
+      centered, the Timer uses the full width. Narrow Split View / Slide Over
+      falls back to the tab bar. Rotate to landscape. Tapping the widget or
+      notification still lands on Timer. Help and the notification primer
+      stay a readable width.
+- [ ] iPad with a keyboard: Space starts/pauses/resumes, S skips (Focus
+      still asks first), ⌘R restarts, ⌘1/⌘2/⌘3 switch screens. Holding ⌘
+      lists the shortcuts.
+- [ ] iPad wording: Help shows "Widgets & notifications" and "Keyboard"
+      (no Dynamic Island, StandBy, or Action Button); the primer and Keep
+      Screen Awake say "iPad"; Settings shows "Widget Skip Counts Focus".
+- [ ] iPad with a holiday theme: the tint reaches both edges in the sidebar
+      layout, and particles drift across the whole Timer screen.
+- [ ] iPad: starting a session doesn't error or hang without Live
+      Activities; widgets, notifications, Siri, and Stats all work.
+

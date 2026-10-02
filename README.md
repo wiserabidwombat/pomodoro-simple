@@ -10,7 +10,7 @@ StandBy screen, that didn't require a subscription and was simple to use.
 > **Availability:** In public beta on TestFlight. Join here:
 > **[testflight.apple.com/join/GYzhgfF5](https://testflight.apple.com/join/GYzhgfF5)**
 >
-> You'll need an iPhone on iOS 17 or later and Apple's free
+> You'll need an iPhone or iPad on iOS 17 or later and Apple's free
 > [TestFlight app](https://apps.apple.com/app/testflight/id899247664).
 > Feedback is welcome: take a screenshot in the app and TestFlight will offer
 > to send it to me.
@@ -29,6 +29,10 @@ Privacy policy: [everything stays on your phone](https://aarontilley.me/projects
   current phase and countdown, with a Start button when idle and
   Pause/Resume and Skip while running. A round Lock Screen widget shows a
   progress ring that drains as the phase runs.
+- **iPad.** A sidebar layout on the big screen (the tab bar in narrow Split
+  View and Slide Over), every orientation, and keyboard shortcuts: Space to
+  start, pause, and resume, S to skip, ⌘R to restart, and ⌘1–⌘3 to switch
+  screens. Live Activities and StandBy are iPhone-only.
 - **Timer profiles.** Save different setups, each with its own Focus, Short
   Break and Long Break lengths and number of sessions before a Long Break.
   Comes with Classic (25/5/15, Long Break after 4) and Deep Work (50/10/30,

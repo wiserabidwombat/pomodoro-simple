@@ -2,7 +2,7 @@
 
 A Pomodoro timer for iOS designed to sit on your desk or nightstand in
 StandBy mode, with the countdown and controls on your Lock Screen and in the
-Dynamic Island too. Built as **Simple: StandBy Timer**.
+Dynamic Island too. Built as **Steady: Focus Timer**.
 
 I built this app because I wanted a Pomodoro app I could control from the
 StandBy screen, that didn't require a subscription and was simple to use.
@@ -11,7 +11,9 @@ StandBy screen, that didn't require a subscription and was simple to use.
 > **[testflight.apple.com/join/GYzhgfF5](https://testflight.apple.com/join/GYzhgfF5)**
 >
 > You'll need an iPhone or iPad on iOS 17 or later and Apple's free
-> [TestFlight app](https://apps.apple.com/app/testflight/id899247664).
+> [TestFlight app](https://apps.apple.com/app/testflight/id899247664). The
+> Apple Watch app is optional and needs watchOS 10 or later; it's offered on
+> your paired watch once the iPhone app is installed.
 > Feedback is welcome: take a screenshot in the app and TestFlight will offer
 > to send it to me.
 
@@ -45,8 +47,7 @@ Privacy policy: [everything stays on your devices](https://aarontilley.me/projec
   Break and Long Break lengths and number of sessions before a Long Break.
   Comes with Classic (25/5/15, Long Break after 4) and Deep Work (50/10/30,
   Long Break after 2).
-- **Siri, Shortcuts and the Action Button.** "Start Deep Work with Simple
-  Timer" starts that profile, and a Start Timer Profile shortcut can go on
+- **Siri, Shortcuts and the Action Button.** "Start Deep Work with Steady" starts that profile, and a Start Timer Profile shortcut can go on
   the Action Button of newer iPhones.
 - **Finish early.** Done with a Focus session before the timer? Past the
   halfway mark, "Finish & Count It" records the time you actually focused.

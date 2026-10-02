@@ -12,7 +12,7 @@ struct PomodoroAppShortcuts: AppShortcutsProvider {
             shortTitle: "Start Focus",
             systemImageName: "play.fill"
         )
-        // "Start Deep Work with Simple Timer." Siri fills \.$profile from
+        // "Start Deep Work with Steady." Siri fills \.$profile from
         // the user's own profile names (TimerProfileQuery); the app calls
         // updateAppShortcutParameters() whenever profiles change so new or
         // renamed ones are recognized. Also the action to pick for the

@@ -36,11 +36,11 @@ struct HelpView: View {
                     if DeviceCopy.isPad {
                         helpSection(
                             title: "Siri & Shortcuts",
-                            body: "Say \"Start Deep Work with Simple Timer\" (use any of your profile names), or just \"Start Simple Timer\" for the current profile. The Start Timer Profile action works in any Shortcut, too."
+                            body: "Say \"Start Deep Work with Steady\" (use any of your profile names), or just \"Start Steady\" for the current profile. The Start Timer Profile action works in any Shortcut, too."
                         )
                         helpSection(
                             title: "Widgets & notifications",
-                            body: "Add the Simple Timer widget to your Home Screen or Lock Screen to start, pause, and skip without opening the app. When a phase ends while your iPad is locked, a notification lets you know; dismiss it to start the next one."
+                            body: "Add the Steady widget to your Home Screen or Lock Screen to start, pause, and skip without opening the app. When a phase ends while your iPad is locked, a notification lets you know; dismiss it to start the next one."
                         )
                         helpSection(
                             title: "Desk Mode",
@@ -57,7 +57,7 @@ struct HelpView: View {
                     } else {
                         helpSection(
                             title: "Siri, Shortcuts & the Action Button",
-                            body: "Say \"Start Deep Work with Simple Timer\" (use any of your profile names), or just \"Start Simple Timer\" for the current profile. To start a profile with one press, go to Settings → Action Button → Shortcut and choose Start Timer Profile; the same action works in any Shortcut."
+                            body: "Say \"Start Deep Work with Steady\" (use any of your profile names), or just \"Start Steady\" for the current profile. To start a profile with one press, go to Settings → Action Button → Shortcut and choose Start Timer Profile; the same action works in any Shortcut."
                         )
                         helpSection(
                             title: "Lock Screen & StandBy",

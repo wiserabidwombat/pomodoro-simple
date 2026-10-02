@@ -1,9 +1,9 @@
 ---
-title: Simple: StandBy Timer
+title: "Steady: Focus Timer"
 permalink: /
 ---
 
-# Simple: StandBy Timer
+# Steady: Focus Timer
 
 A Pomodoro focus timer for iPhone, iPad, and Apple Watch, with Lock Screen,
 StandBy, and Dynamic Island support on iPhone, a big-screen layout with Desk

@@ -106,13 +106,13 @@ but a physical device docked and charging in landscape is the real test):
       phone on the Timer screen past its Auto-Lock time; confirm it stays on.
       Then confirm it does lock normally after switching to another tab, when no
       session is running, or with the setting off.
-- [ ] Siri: "Start Deep Work with Simple Timer" starts that profile (Siri
+- [ ] Siri: "Start Deep Work with Steady" starts that profile (Siri
       says "Starting Deep Work."), and the Timer screen shows Deep Work when
       opened. Add or rename a profile, then confirm Siri recognizes the new
       name. Asking while a session is running says it's already running and
       changes nothing.
 - [ ] Action Button (iPhone 15 Pro and later): Settings → Action Button →
-      Shortcut → Simple: StandBy Timer → Start Timer Profile, pick a profile;
+      Shortcut → Steady → Start Timer Profile, pick a profile;
       pressing the button starts it with the Live Activity, app closed.
 - [ ] VoiceOver pass (Settings → Accessibility → VoiceOver, or triple-click
       the side button if set up): swipe through Timer, Stats, and Settings.
@@ -203,7 +203,7 @@ but a physical device docked and charging in landscape is the real test):
       counts the session. Close it from its own button or the app's. Music
       playing in another app keeps playing throughout.
 - [ ] Apple Watch Smart Stack (iPhone on iOS 18+, watch on watchOS 11+,
-      with or without the Simple Timer watch app): start a session on the
+      with or without the Steady watch app): start a session on the
       phone and raise your wrist. The Live Activity card shows the phase, a
       live countdown (not 0:00), and Pause and Skip icon buttons in the
       accent color. Pause from the watch: the phone and the card both show

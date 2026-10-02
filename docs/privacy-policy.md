@@ -3,11 +3,11 @@ title: Privacy Policy
 permalink: /privacy-policy/
 ---
 
-# Privacy Policy for Simple: StandBy Timer
+# Privacy Policy for Steady: Focus Timer
 
 **Last updated:** October 2, 2026
 
-Simple: StandBy Timer does not collect, store, transmit, or share any personal
+Steady: Focus Timer does not collect, store, transmit, or share any personal
 data. Everything the app keeps stays on your own devices: your iPhone, your
 iPad, and your Apple Watch. I never receive any of it.
 
@@ -48,7 +48,7 @@ Apple Watch sync.
   complete") with Apple's on-device notification system. They're created and
   delivered entirely on your device.
 - **Siri and Shortcuts.** So you can say things like "Start Deep Work with
-  Simple Timer," your timer profile names are made available to Siri and the
+  Steady," your timer profile names are made available to Siri and the
   Shortcuts app on your device. Requests you make to Siri are handled by
   Apple under [Apple's Privacy Policy](https://www.apple.com/legal/privacy/).
 - **Focus status.** If you turn on "Silence Alerts During Focus," the app

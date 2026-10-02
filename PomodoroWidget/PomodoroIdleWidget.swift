@@ -522,7 +522,7 @@ struct PomodoroIdleWidget: Widget {
             PomodoroIdleWidgetView(entry: entry)
                 .widgetURL(PomodoroDeepLink.timerURL)
         }
-        .configurationDisplayName("Simple: StandBy Timer")
+        .configurationDisplayName("Steady")
         .description("Shows your current Pomodoro phase and countdown.")
         // systemExtraLarge only appears on iPad.
         .supportedFamilies([.accessoryRectangular, .accessoryCircular, .systemSmall, .systemMedium, .systemLarge, .systemExtraLarge])

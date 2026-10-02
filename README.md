@@ -16,7 +16,7 @@ StandBy screen, that didn't require a subscription and was simple to use.
 > to send it to me.
 
 More screenshots and the story behind the app: [aarontilley.me/projects/pomodoro-simple](https://aarontilley.me/projects/pomodoro-simple).
-Privacy policy: [everything stays on your phone](https://aarontilley.me/projects/pomodoro-simple/privacy).
+Privacy policy: [everything stays on your devices](https://aarontilley.me/projects/pomodoro-simple/privacy).
 
 ## Features
 

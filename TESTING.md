@@ -140,6 +140,28 @@ but a physical device docked and charging in landscape is the real test):
       session shows in Stats with the minutes focused. Before halfway it
       skips without counting. Turn off Settings → Lock Screen Skip Counts
       Focus and confirm Skip past halfway no longer counts.
+- [ ] Apple Watch (paired, with the watch app installed from the iPhone's
+      Watch app if it doesn't install automatically): start on the phone and
+      the watch shows the same phase, countdown, profile, and color within a
+      few seconds; pause/resume/skip on the watch and the phone, Live
+      Activity, and widget follow. Let a Focus session end while only the
+      watch app is open; it taps your wrist and the session appears once in
+      the phone's Stats (and "Today" goes up by one, not two). Skip during
+      Focus on the watch offers Finish & Count It past halfway.
+- [ ] Watch out of range (turn on Airplane Mode on the phone): pause on the
+      watch, wait a minute, turn Airplane Mode off. Both end up paused at
+      the same time left, not swapped. Then the reverse: pause on the phone
+      while the watch is away (Airplane Mode on the watch), reconnect, and
+      the watch catches up to the phone.
+- [ ] Watch shows "2 of 4 today" with a daily goal set on the phone (and
+      "Goal met" once reached), or "2 today" without one; changing the goal
+      on the phone updates the watch within a few seconds.
+- [ ] With a holiday theme on (e.g. Halloween), the watch uses the theme's
+      color; turning the theme off brings back your accent color.
+- [ ] Install the watch app after the phone app is already running a
+      session: the watch shows that session as soon as it opens.
+- [ ] Open the watch app long after a phase ended: it shows the right phase,
+      with no late wrist tap.
 - [ ] iPad layout (Simulator or device), full screen: a tab bar (floating at
       the top on iPadOS 18), not a sidebar. Landscape: the ring and big
       buttons on the left, Today / Up next / This week / Profile cards on

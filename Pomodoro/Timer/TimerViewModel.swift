@@ -53,6 +53,7 @@ final class TimerViewModel: ObservableObject {
         didSet {
             store.save(dailyGoal: dailyGoal)
             reloadIdlePomodoroWidget()
+            WatchSyncHook.settingsDidChange?()
         }
     }
     /// Completed Focus sessions today, for the daily-goal progress. Kept
@@ -144,6 +145,7 @@ final class TimerViewModel: ObservableObject {
         store.saveActiveProfileID(profile.id)
         engine.updateProfile(profile)
         reloadIdlePomodoroWidget()
+        WatchSyncHook.settingsDidChange?()
     }
 
     /// Adds a new profile, or saves edits to an existing one. Editing the
@@ -163,6 +165,7 @@ final class TimerViewModel: ObservableObject {
             engine.updateProfile(profile)
         }
         reloadIdlePomodoroWidget()
+        WatchSyncHook.settingsDidChange?()
         // So Siri recognizes new and renamed profiles in "Start … with …".
         PomodoroAppShortcuts.updateAppShortcutParameters()
     }
@@ -187,6 +190,7 @@ final class TimerViewModel: ObservableObject {
             engine.updateProfile(next)
         }
         reloadIdlePomodoroWidget()
+        WatchSyncHook.settingsDidChange?()
         PomodoroAppShortcuts.updateAppShortcutParameters()
     }
 
@@ -407,9 +411,16 @@ final class TimerViewModel: ObservableObject {
         todayCountDay = Date()
         saveWeekForWidgets()
         let count = historyStore.todayCount
+        // Keep the widget's quick counter honest with the real history —
+        // unless history is in memory only this launch, where it would
+        // wipe out a count the widget got right.
+        if historyStore.isPersistent {
+            store.saveCachedTodayCount(count)
+        }
         // Only publish a real change (see catchUpIfNeeded's note on why).
         if count != todayCount {
             todayCount = count
+            WatchSyncHook.settingsDidChange?()
         }
     }
 
@@ -471,6 +482,7 @@ final class TimerViewModel: ObservableObject {
                 self.liveActivity.update(state: self.state, accentColor: self.displayAccent)
             }
             reloadIdlePomodoroWidget()
+            WatchSyncHook.settingsDidChange?()
         }
     }
 

@@ -220,6 +220,51 @@ final class PomodoroStateStoreTests: XCTestCase {
         XCTAssertEqual(store.loadDailyGoal(), 0)
     }
 
+    func testSaveCachedTodayCountOverwritesDrift() {
+        let store = makeIsolatedStore()
+        store.incrementCachedTodayCount()
+        store.incrementCachedTodayCount() // e.g. counted by both phone and watch
+        store.saveCachedTodayCount(1)
+        XCTAssertEqual(store.loadCachedTodayCount(), 1)
+    }
+
+    func testWatchSyncPayloadRoundTrips() throws {
+        let now = Date(timeIntervalSince1970: 1_790_000_000)
+        let state = PomodoroState(phase: .work, startDate: now, endDate: now.addingTimeInterval(1500), pausedAt: nil, completedWorkCycles: 1, sessionActive: true)
+        let fromPhone = WatchSyncPayload(
+            state: state, stateChangedAt: now, accentColor: .cyan, profile: .deepWork,
+            profileLabel: "Deep Work", todayCount: 3, dailyGoal: 4
+        )
+        let fromWatch = WatchSyncPayload(state: state, stateChangedAt: now.addingTimeInterval(5))
+
+        for payload in [fromPhone, fromWatch] {
+            let data = try JSONEncoder().encode(payload)
+            XCTAssertEqual(try JSONDecoder().decode(WatchSyncPayload.self, from: data), payload)
+        }
+        XCTAssertNil(fromWatch.profile) // the watch never overrides the phone's profile/color
+        XCTAssertNil(fromWatch.todayCount)
+    }
+
+    func testStateChangedAtDefaultsToDistantPastAndPersists() {
+        let store = makeIsolatedStore()
+        XCTAssertEqual(store.loadStateChangedAt(), .distantPast)
+        let stamp = Date(timeIntervalSince1970: 1_790_000_000)
+        store.save(stateChangedAt: stamp)
+        XCTAssertEqual(store.loadStateChangedAt(), stamp)
+    }
+
+    func testTheSameFocusSessionReportedTwiceCountsTowardTodayOnce() {
+        // The iPhone and the Watch can both report the same session end.
+        let store = makeIsolatedStore()
+        let endedAt = Date()
+        countTowardToday(endedAt, store: store)
+        countTowardToday(endedAt.addingTimeInterval(0.4), store: store)
+        XCTAssertEqual(store.loadCachedTodayCount(), 1)
+
+        countTowardToday(endedAt.addingTimeInterval(1500), store: store) // the next session
+        XCTAssertEqual(store.loadCachedTodayCount(), 2)
+    }
+
     // MARK: - Week cache (large widgets)
 
     func testRecentDailyCountsRoundTripAndKeepTodayCurrent() {

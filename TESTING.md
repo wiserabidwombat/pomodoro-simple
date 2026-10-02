@@ -140,3 +140,11 @@ but a physical device docked and charging in landscape is the real test):
       session shows in Stats with the minutes focused. Before halfway it
       skips without counting. Turn off Settings → Lock Screen Skip Counts
       Focus and confirm Skip past halfway no longer counts.
+- [ ] Apple Watch Smart Stack (iPhone on iOS 18+, watch on watchOS 11+,
+      with or without the Simple Timer watch app): start a session on the
+      phone and raise your wrist. The Live Activity card shows the phase, a
+      live countdown (not 0:00), and Pause and Skip icon buttons in the
+      accent color. Pause from the watch: the phone and the card both show
+      paused with the time frozen; Resume and Skip work too. Let a phase run
+      out: the card shows "Time's up" with a Continue arrow.
+

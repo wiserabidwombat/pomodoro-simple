@@ -172,4 +172,12 @@ but a physical device docked and charging in landscape is the real test):
       goal today", and 7 bars for the week with day letters; days that met
       the goal are brighter. Finish a session from the Lock Screen: today's
       bar and count go up without opening the app.
+- [ ] iPad floating timer (Picture in Picture button at top right, or ⇧⌘P):
+      a small window with the phase, countdown, and a progress bar appears
+      and stays over other apps (try Safari). It ticks every second; its
+      play/pause button pauses and resumes the timer (and the app agrees
+      when reopened). Let a phase end while it's showing with the app in the
+      background: it moves to the next phase, the alert plays, and Stats
+      counts the session. Close it from its own button or the app's. Music
+      playing in another app keeps playing throughout.
 

@@ -32,10 +32,11 @@ Privacy policy: [everything stays on your phone](https://aarontilley.me/projects
 - **iPad.** A big timer with a progress ring, plus cards for today's
   progress, what's up next, this week, and your profile, beside it in
   landscape and below it in portrait. Desk Mode shows just the ring, the
-  countdown, and the time of day, full screen. Every orientation, Split
+  countdown, and the time of day, full screen, and a floating Picture in
+  Picture countdown stays on screen over other apps. Every orientation, Split
   View and Slide Over, and keyboard shortcuts: Space to start, pause, and
-  resume, S to skip, ⌘R to restart, ⌘D for Desk Mode, and ⌘1–⌘3 to switch
-  screens. Live Activities and StandBy are iPhone-only.
+  resume, S to skip, ⌘R to restart, ⌘D for Desk Mode, ⇧⌘P for the floating
+  timer, and ⌘1–⌘3 to switch screens. Live Activities and StandBy are iPhone-only.
 - **Timer profiles.** Save different setups, each with its own Focus, Short
   Break and Long Break lengths and number of sessions before a Long Break.
   Comes with Classic (25/5/15, Long Break after 4) and Deep Work (50/10/30,

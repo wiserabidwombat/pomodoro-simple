@@ -30,6 +30,8 @@ struct TimerView: View {
     /// The iPad side panel's Today and This week data, refreshed when
     /// history changes rather than on every tick.
     @State private var recentActivity = TimerViewModel.RecentActivity()
+    /// iPad's Picture in Picture countdown (see FloatingTimerController).
+    @StateObject private var floatingTimer = FloatingTimerController()
 
     var body: some View {
         ZStack {
@@ -122,6 +124,21 @@ struct TimerView: View {
                             .foregroundStyle(viewModel.displayAccent.color.opacity(0.7))
                             .padding(.vertical)
                             .padding(.leading)
+
+                            if FloatingTimerController.isSupported {
+                                Button {
+                                    floatingTimer.toggle()
+                                } label: {
+                                    Image(systemName: floatingTimer.isActive ? "pip.exit" : "pip.enter")
+                                        .font(.title3)
+                                }
+                                .accessibilityLabel(floatingTimer.isActive ? "Close floating timer" : "Floating timer")
+                                .accessibilityHint("Shows the countdown in a small window that stays on screen over other apps.")
+                                .keyboardShortcut("p", modifiers: [.command, .shift])
+                                .foregroundStyle(viewModel.displayAccent.color.opacity(0.7))
+                                .padding(.vertical)
+                                .padding(.leading)
+                            }
                         }
 
                         if viewModel.state.sessionActive {
@@ -147,8 +164,20 @@ struct TimerView: View {
                 CelebrationBurstView(theme: theme, trigger: viewModel.celebrationCount)
             }
         }
+        // Picture in Picture needs its video layer in the window; tiny, black,
+        // and behind everything, so it's never seen.
+        .background(alignment: .bottomLeading) {
+            if usesWideLayout && FloatingTimerController.isSupported {
+                FloatingTimerLayerHost(displayLayer: floatingTimer.displayLayer)
+                    .frame(width: 2, height: 2)
+                    .accessibilityHidden(true)
+            }
+        }
         .onAppear {
             isVisible = true
+            if floatingTimer.viewModel == nil {
+                floatingTimer.viewModel = viewModel
+            }
             updateIdleTimer()
             if !hasSeenNotificationPrimer {
                 showingNotificationPrimer = true

@@ -47,8 +47,12 @@ struct HelpView: View {
                             body: "The expand button at the top of the Timer shows just the ring, the countdown, and the time of day, as large as your iPad allows, and keeps the screen on. Tap anywhere to bring the controls back."
                         )
                         helpSection(
+                            title: "Floating timer",
+                            body: "The Picture in Picture button at the top of the Timer puts the countdown in a small window that stays on screen while you use other apps. Its play/pause button pauses and resumes the timer, and phases keep moving on while it's showing."
+                        )
+                        helpSection(
                             title: "Keyboard",
-                            body: "With a keyboard attached: Space starts, pauses, and resumes; S skips; ⌘R restarts; ⌘D opens Desk Mode and Escape leaves it; and ⌘1, ⌘2, and ⌘3 switch between Timer, Stats, and Settings."
+                            body: "With a keyboard attached: Space starts, pauses, and resumes; S skips; ⌘R restarts; ⌘D opens Desk Mode and Escape leaves it; ⇧⌘P opens the floating timer; and ⌘1, ⌘2, and ⌘3 switch between Timer, Stats, and Settings."
                         )
                     } else {
                         helpSection(

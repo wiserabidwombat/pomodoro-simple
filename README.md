@@ -11,7 +11,9 @@ StandBy screen, that didn't require a subscription and was simple to use.
 > **[testflight.apple.com/join/GYzhgfF5](https://testflight.apple.com/join/GYzhgfF5)**
 >
 > You'll need an iPhone or iPad on iOS 17 or later and Apple's free
-> [TestFlight app](https://apps.apple.com/app/testflight/id899247664).
+> [TestFlight app](https://apps.apple.com/app/testflight/id899247664). The
+> Apple Watch app is optional and needs watchOS 10 or later; it's offered on
+> your paired watch once the iPhone app is installed.
 > Feedback is welcome: take a screenshot in the app and TestFlight will offer
 > to send it to me.
 

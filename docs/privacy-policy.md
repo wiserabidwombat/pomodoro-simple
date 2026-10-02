@@ -20,6 +20,9 @@ The app keeps the following on your device, and nowhere else:
   which timer profile it used), which powers Stats.
 - Your settings: timer profiles (including the names you give them), your
   accent color, holiday theme, daily goal, sounds, and similar preferences.
+- Only finished Focus sessions are recorded; breaks and skipped sessions
+  aren't. If you delete a timer profile, its sessions keep the profile's name
+  so Stats can still label them.
 
 On iPhone and iPad, this is shared privately between the app and its own
 widgets and Live Activity through an iOS App Group, which only this app can
@@ -34,6 +37,10 @@ directly between your own two devices using Apple's built-in Watch
 Connectivity service. Apple may carry it over Bluetooth, Wi-Fi, or its own
 network when the devices aren't nearby; either way, it goes only between
 your iPhone and your watch, and I can't see it.
+
+Nothing syncs through iCloud. Your iPhone and iPad don't sync with each
+other; each keeps its own history and settings. Only an iPhone and its paired
+Apple Watch sync.
 
 ## Notifications, Siri, and Focus
 
@@ -77,6 +84,10 @@ Apple. You can turn sharing off at any time in Settings.
 Deleting the app from your iPhone, iPad, and Apple Watch deletes everything
 it has stored. Like other app data, it's included in your device backups
 (for example, iCloud Backup), which Apple manages for you.
+
+## Changes
+
+If this policy changes, I'll update this page and the date at the top.
 
 ## Data collection summary
 

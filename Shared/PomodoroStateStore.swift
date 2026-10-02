@@ -31,6 +31,8 @@ struct PomodoroStateStore {
     private let chimeKey = "pomodoro.chime"
     private let todayCountKey = "pomodoro.todayCount"
     private let todayCountDateKey = "pomodoro.todayCountDate"
+    private let recentDailyCountsKey = "pomodoro.recentDailyCounts"
+    private let recentDailyCountsDayKey = "pomodoro.recentDailyCountsDay"
     private let hasRequestedReviewKey = "pomodoro.hasRequestedReview"
     private let pendingSessionsKey = "pomodoro.pendingCompletedSessions"
     /// Intents run in the app's own process (LiveActivityIntent), possibly
@@ -222,6 +224,36 @@ struct PomodoroStateStore {
     /// container), so this is the channel it reads "today's count" from
     /// instead. Day-tagged so a stale cache from a previous day reads back
     /// as 0 rather than showing yesterday's number after midnight.
+    /// Focus sessions per day for the last 7 days (oldest first, today
+    /// last), saved by the app from its history so the large widgets can
+    /// draw the week without reading SwiftData.
+    func save(recentDailyCounts counts: [Int], calendar: Calendar = .current, now: Date = Date()) {
+        defaults.set(Array(counts.suffix(7)), forKey: recentDailyCountsKey)
+        defaults.set(calendar.startOfDay(for: now), forKey: recentDailyCountsDayKey)
+    }
+
+    /// The saved week, shifted forward if days have passed since it was
+    /// saved (missing days count as 0), with today never below the quick
+    /// "today" counter, which Lock Screen and widget completions keep
+    /// current even while the app is closed. Always 7 values.
+    func loadRecentDailyCounts(calendar: Calendar = .current, now: Date = Date()) -> [Int] {
+        var counts = (defaults.array(forKey: recentDailyCountsKey) as? [Int]) ?? []
+        counts = Array(repeating: 0, count: max(0, 7 - counts.count)) + counts.suffix(7)
+        let today = calendar.startOfDay(for: now)
+        if let savedDay = defaults.object(forKey: recentDailyCountsDayKey) as? Date {
+            let elapsed = calendar.dateComponents([.day], from: calendar.startOfDay(for: savedDay), to: today).day ?? 7
+            if elapsed >= 7 || elapsed < 0 {
+                counts = Array(repeating: 0, count: 7)
+            } else if elapsed > 0 {
+                counts = Array(counts.dropFirst(elapsed)) + Array(repeating: 0, count: elapsed)
+            }
+        } else {
+            counts = Array(repeating: 0, count: 7)
+        }
+        counts[6] = max(counts[6], loadCachedTodayCount(calendar: calendar, now: now))
+        return counts
+    }
+
     func incrementCachedTodayCount(calendar: Calendar = .current, now: Date = Date()) {
         let today = calendar.startOfDay(for: now)
         let count = loadCachedTodayCount(calendar: calendar, now: now)

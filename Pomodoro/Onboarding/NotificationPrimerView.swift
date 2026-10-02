@@ -21,7 +21,7 @@ struct NotificationPrimerView: View {
                 Text("Stay on Track")
                     .font(.title2.bold())
                     .accessibilityAddTraits(.isHeader)
-                Text("Simple: StandBy Timer can let you know the moment a Focus session or break ends — even if the app is closed or your phone is locked. That's the only thing it sends; no ads, no other reminders.")
+                Text("Simple: StandBy Timer can let you know the moment a Focus session or break ends — even if the app is closed or your \(DeviceCopy.device) is locked. That's the only thing it sends; no ads, no other reminders.")
                     .font(.body)
                     .multilineTextAlignment(.center)
                     .opacity(0.85)
@@ -33,6 +33,7 @@ struct NotificationPrimerView: View {
                     .opacity(0.6)
                     .padding(.bottom, 24)
             }
+            .frame(maxWidth: 500) // readable width on iPad
         }
         .foregroundStyle(accentColor.color)
     }

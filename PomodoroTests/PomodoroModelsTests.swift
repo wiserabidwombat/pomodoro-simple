@@ -133,4 +133,29 @@ final class PomodoroModelsTests: XCTestCase {
         XCTAssertEqual(entity.id, TimerProfile.deepWorkID)
         XCTAssertEqual(entity.name, "Deep Work")
     }
+
+    // MARK: - Up next (iPad panel)
+
+    func testUpcomingPhasesFromIdleStartWithFocus() {
+        XCTAssertEqual(TimerProfile.classic.upcomingPhases(after: .idle, count: 2), [.work, .shortBreak])
+    }
+
+    func testUpcomingPhasesReachTheLongBreakAtTheEndOfTheCycle() {
+        let now = Date()
+        // Classic: 4 per cycle. Third Focus session running (2 done).
+        var state = PomodoroState(phase: .work, startDate: now, endDate: now.addingTimeInterval(1500), pausedAt: nil, completedWorkCycles: 2, sessionActive: true)
+        XCTAssertEqual(TimerProfile.classic.upcomingPhases(after: state, count: 3), [.shortBreak, .work, .longBreak])
+
+        state.completedWorkCycles = 3 // the cycle's last Focus session
+        XCTAssertEqual(TimerProfile.classic.upcomingPhases(after: state, count: 2), [.longBreak, .work])
+    }
+
+    func testUpcomingPhasesAfterABreak() {
+        let now = Date()
+        let shortBreak = PomodoroState(phase: .shortBreak, startDate: now, endDate: now.addingTimeInterval(300), pausedAt: nil, completedWorkCycles: 1, sessionActive: true)
+        XCTAssertEqual(TimerProfile.classic.upcomingPhases(after: shortBreak, count: 2), [.work, .shortBreak])
+
+        let longBreak = PomodoroState(phase: .longBreak, startDate: now, endDate: now.addingTimeInterval(900), pausedAt: nil, completedWorkCycles: 4, sessionActive: true)
+        XCTAssertEqual(TimerProfile.classic.upcomingPhases(after: longBreak, count: 2), [.work, .shortBreak])
+    }
 }

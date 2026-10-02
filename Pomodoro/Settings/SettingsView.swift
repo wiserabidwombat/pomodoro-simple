@@ -191,7 +191,7 @@ struct SettingsView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Keep Screen Awake")
                                 .foregroundStyle(.white)
-                            Text("Stops the phone from locking while a session is running and the Timer screen is open — handy with the phone propped on a desk. Uses more battery, so it's best while charging.")
+                            Text("Stops your \(DeviceCopy.device) from locking while a session is running and the Timer screen is open — handy with it propped on a desk. Uses more battery, so it's best while charging.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -201,9 +201,11 @@ struct SettingsView: View {
 
                     Toggle(isOn: $viewModel.skipCountsPastHalfway) {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Lock Screen Skip Counts Focus")
+                            Text(DeviceCopy.isPad ? "Widget Skip Counts Focus" : "Lock Screen Skip Counts Focus")
                                 .foregroundStyle(.white)
-                            Text("Skipping a Focus session from the Lock Screen, StandBy, a widget, or Siri after the halfway mark counts it in Stats, like Finish & Count It. Before halfway, it skips without counting.")
+                            Text(DeviceCopy.isPad
+                                ? "Skipping a Focus session from a widget or Siri after the halfway mark counts it in Stats, like Finish & Count It. Before halfway, it skips without counting."
+                                : "Skipping a Focus session from the Lock Screen, StandBy, a widget, or Siri after the halfway mark counts it in Stats, like Finish & Count It. Before halfway, it skips without counting.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }

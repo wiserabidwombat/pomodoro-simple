@@ -258,7 +258,38 @@ final class TimerViewModel: ObservableObject {
     func sceneDidBecomeActive() {
         refreshActiveTheme()
         refreshFromSharedState()
+        saveWeekForWidgets()
         startTicker()
+    }
+
+    // MARK: - Recent activity (iPad panel, large widgets)
+
+    /// What the iPad's side panel shows next to the timer.
+    struct RecentActivity: Equatable {
+        var lastSevenDays: [DailyCount] = []
+        var todayFocusSeconds: TimeInterval = 0
+    }
+
+    /// Read from history on demand — the panel calls this when it appears
+    /// and whenever `historyRevision` changes, never from a ticking body.
+    func recentActivity(calendar: Calendar = .current, now: Date = Date()) -> RecentActivity {
+        let sessions = historyStore.sessions()
+        let lastSevenDays = StatsSnapshot.lastSevenDays(
+            StatsSnapshot.countByDay(sessions.map(\.date), calendar: calendar),
+            calendar: calendar,
+            now: now
+        )
+        let todayFocus = sessions
+            .filter { calendar.isDate($0.date, inSameDayAs: now) }
+            .reduce(0) { $0 + $1.durationSeconds }
+        return RecentActivity(lastSevenDays: lastSevenDays, todayFocusSeconds: todayFocus)
+    }
+
+    /// Copies the last 7 days' counts into the App Group for the large
+    /// widgets, which can't read SwiftData themselves.
+    private func saveWeekForWidgets() {
+        guard historyStore.isPersistent else { return }
+        store.save(recentDailyCounts: historyStore.lastSevenDaysCounts().map(\.count))
     }
 
     /// No point waking every second while backgrounded; the next
@@ -357,6 +388,9 @@ final class TimerViewModel: ObservableObject {
         if !Calendar.current.isDate(todayCountDay, inSameDayAs: Date()) {
             refreshActiveTheme()
             refreshTodayCount()
+            // A new day: views that read history (the iPad's Today and
+            // This week cards) reload too.
+            historyRevision += 1
         }
         // With history in memory only, leave sessions queued in the App
         // Group so a later launch with a working database imports them.
@@ -371,6 +405,7 @@ final class TimerViewModel: ObservableObject {
 
     private func refreshTodayCount() {
         todayCountDay = Date()
+        saveWeekForWidgets()
         let count = historyStore.todayCount
         // Only publish a real change (see catchUpIfNeeded's note on why).
         if count != todayCount {

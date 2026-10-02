@@ -3,10 +3,23 @@ import WidgetKit
 import SwiftUI
 import ActivityKit
 
-/// iOS 17: the Lock Screen, StandBy, and Dynamic Island.
+/// The Lock Screen, StandBy, and Dynamic Island, plus on iOS 18 and later
+/// a layout made for the Apple Watch Smart Stack (the `.small` family).
+/// Without it, watchOS built its own card from the Dynamic Island's tiny
+/// views, which showed a stuck "0:00" and nothing else.
 struct PomodoroLiveActivityWidget: Widget {
     var body: some WidgetConfiguration {
-        Self.configuration()
+        // Explicit returns rather than result-builder syntax: Swift lets an
+        // opaque `some` type differ between the branches of a top-level
+        // `if #available` (SE-0360), and that's the only way to add an
+        // iOS 18 modifier while still supporting iOS 17. WidgetBundleBuilder
+        // has no `if` support at all, so this can't live in the bundle.
+        if #available(iOS 18.0, *) {
+            return Self.configuration()
+                .supplementalActivityFamilies([.small])
+        } else {
+            return Self.configuration()
+        }
     }
 
     static func configuration() -> ActivityConfiguration<PomodoroActivityAttributes> {
@@ -41,19 +54,6 @@ struct PomodoroLiveActivityWidget: Widget {
             }
             .widgetURL(PomodoroDeepLink.timerURL)
         }
-    }
-}
-
-/// iOS 18 and later: the same Live Activity, plus a layout made for the
-/// Apple Watch Smart Stack (the `.small` family). Without it, watchOS built
-/// its own card from the Dynamic Island's tiny views, which showed a stuck
-/// "0:00" and nothing else. The bundle picks this widget or the one above
-/// depending on the iOS version (see PomodoroWidgetBundle).
-@available(iOS 18.0, *)
-struct PomodoroLiveActivityWidgetWithWatch: Widget {
-    var body: some WidgetConfiguration {
-        PomodoroLiveActivityWidget.configuration()
-            .supplementalActivityFamilies([.small])
     }
 }
 

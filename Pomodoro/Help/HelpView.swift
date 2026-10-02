@@ -43,8 +43,12 @@ struct HelpView: View {
                             body: "Add the Simple Timer widget to your Home Screen or Lock Screen to start, pause, and skip without opening the app. When a phase ends while your iPad is locked, a notification lets you know; dismiss it to start the next one."
                         )
                         helpSection(
+                            title: "Desk Mode",
+                            body: "The expand button at the top of the Timer shows just the ring, the countdown, and the time of day, as large as your iPad allows, and keeps the screen on. Tap anywhere to bring the controls back."
+                        )
+                        helpSection(
                             title: "Keyboard",
-                            body: "With a keyboard attached: Space starts, pauses, and resumes; S skips; ⌘R restarts; and ⌘1, ⌘2, and ⌘3 switch between Timer, Stats, and Settings."
+                            body: "With a keyboard attached: Space starts, pauses, and resumes; S skips; ⌘R restarts; ⌘D opens Desk Mode and Escape leaves it; and ⌘1, ⌘2, and ⌘3 switch between Timer, Stats, and Settings."
                         )
                     } else {
                         helpSection(

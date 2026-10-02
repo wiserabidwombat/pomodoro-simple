@@ -29,9 +29,12 @@ Privacy policy: [everything stays on your phone](https://aarontilley.me/projects
   current phase and countdown, with a Start button when idle and
   Pause/Resume and Skip while running. A round Lock Screen widget shows a
   progress ring that drains as the phase runs.
-- **iPad.** A sidebar layout on the big screen (the tab bar in narrow Split
-  View and Slide Over), every orientation, and keyboard shortcuts: Space to
-  start, pause, and resume, S to skip, ⌘R to restart, and ⌘1–⌘3 to switch
+- **iPad.** A big timer with a progress ring, plus cards for today's
+  progress, what's up next, this week, and your profile, beside it in
+  landscape and below it in portrait. Desk Mode shows just the ring, the
+  countdown, and the time of day, full screen. Every orientation, Split
+  View and Slide Over, and keyboard shortcuts: Space to start, pause, and
+  resume, S to skip, ⌘R to restart, ⌘D for Desk Mode, and ⌘1–⌘3 to switch
   screens. Live Activities and StandBy are iPhone-only.
 - **Timer profiles.** Save different setups, each with its own Focus, Short
   Break and Long Break lengths and number of sessions before a Long Break.

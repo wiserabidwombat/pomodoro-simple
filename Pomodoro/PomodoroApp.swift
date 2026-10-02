@@ -98,16 +98,15 @@ private struct RootView: View {
     }
 
     var body: some View {
-        // Adaptive layout: the tab bar on iPhone (and iPad in narrow Split
-        // View / Slide Over), a sidebar on iPad's wider layouts.
-        // horizontalSizeClass already accounts for multitasking width, not
-        // just the device. Both share selectedTab, so deep links and the
-        // notification tap land on the Timer either way.
-        Group {
-            if horizontalSizeClass == .regular {
-                sidebarLayout
-            } else {
-                tabLayout
+        // A tab bar everywhere. On iPadOS 18 it's the compact floating bar at
+        // the top; a sidebar for three screens just wasted a third of the
+        // iPad's width. The iPad's extra room goes to the Timer screen's
+        // own wide layout instead (see TimerView).
+        TabView(selection: $selectedTab) {
+            ForEach(AppTab.allCases, id: \.self) { tab in
+                tabContent(for: tab)
+                    .tabItem { Label(tab.title, systemImage: tab.systemImage) }
+                    .tag(tab)
             }
         }
         .background(tabShortcuts)
@@ -144,38 +143,19 @@ private struct RootView: View {
         }
     }
 
-    private var tabLayout: some View {
-        TabView(selection: $selectedTab) {
-            ForEach(AppTab.allCases, id: \.self) { tab in
-                screen(for: tab)
-                    .tabItem { Label(tab.title, systemImage: tab.systemImage) }
-                    .tag(tab)
-            }
-        }
-    }
-
-    private var sidebarLayout: some View {
-        NavigationSplitView {
-            List(AppTab.allCases, id: \.self, selection: Binding<AppTab?>(
-                get: { selectedTab },
-                set: { if let tab = $0 { selectedTab = tab } }
-            )) { tab in
-                Label(tab.title, systemImage: tab.systemImage)
-            }
-            .navigationTitle("Simple Timer")
-        } detail: {
+    /// On iPad, Stats and Settings are capped and centered so their lists
+    /// don't stretch edge to edge on a 13-inch screen, with the (theme)
+    /// background still filling the width. The Timer lays itself out.
+    @ViewBuilder
+    private func tabContent(for tab: AppTab) -> some View {
+        if horizontalSizeClass == .regular && tab != .timer {
             ZStack {
-                // Full width behind everything, so a holiday theme's tint
-                // reaches the edges instead of stopping at the column.
                 ThemedBackground(theme: viewModel.activeTheme)
-                // Stats and Settings are capped and centered so their lists
-                // don't stretch edge to edge on a 13-inch screen. The Timer
-                // isn't: its content is already centered, and that way its
-                // drifting theme particles use the whole screen.
-                screen(for: selectedTab)
-                    .frame(maxWidth: selectedTab == .timer ? .infinity : 640)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                screen(for: tab)
+                    .frame(maxWidth: 680)
             }
+        } else {
+            screen(for: tab)
         }
     }
 

@@ -140,20 +140,31 @@ but a physical device docked and charging in landscape is the real test):
       session shows in Stats with the minutes focused. Before halfway it
       skips without counting. Turn off Settings → Lock Screen Skip Counts
       Focus and confirm Skip past halfway no longer counts.
-- [ ] iPad (Simulator or device): full screen and wide Split View show a
-      sidebar (Timer / Stats / Settings); Stats and Settings are capped and
-      centered, the Timer uses the full width. Narrow Split View / Slide Over
-      falls back to the tab bar. Rotate to landscape. Tapping the widget or
-      notification still lands on Timer. Help and the notification primer
-      stay a readable width.
+- [ ] iPad layout (Simulator or device), full screen: a tab bar (floating at
+      the top on iPadOS 18), not a sidebar. Landscape: the ring and big
+      buttons on the left, Today / Up next / This week / Profile cards on
+      the right. Portrait: the ring on top, the cards in a 2×2 grid below.
+      The ring drains as the phase runs and freezes when paused; idle, it's
+      full and shows the Focus length. Stats and Settings are centered and
+      capped in width. Narrow Split View / Slide Over shows the iPhone layout.
+      Tapping the widget or notification still lands on Timer.
+- [ ] iPad cards: Today shows the count (and "of N" with a goal) and minutes
+      focused; Up next names the next two phases with lengths (Long Break
+      after the cycle's last Focus); This week matches Stats' chart; the
+      Profile card switches profiles only while idle.
+- [ ] Desk Mode (expand button at top right, or ⌘D): only the ring,
+      countdown, and time of day, with no tab bar or status bar; the screen
+      stays on. Tap anywhere or press Escape to leave. Rotating keeps it
+      centered; going to narrow Split View leaves it.
 - [ ] iPad with a keyboard: Space starts/pauses/resumes, S skips (Focus
-      still asks first), ⌘R restarts, ⌘1/⌘2/⌘3 switch screens. Holding ⌘
-      lists the shortcuts.
+      still asks first), ⌘R restarts, ⌘D opens Desk Mode and Escape leaves
+      it, ⌘1/⌘2/⌘3 switch screens. Holding ⌘ lists the shortcuts.
 - [ ] iPad wording: Help shows "Widgets & notifications" and "Keyboard"
-      (no Dynamic Island, StandBy, or Action Button); the primer and Keep
+      plus Desk Mode (no Dynamic Island, StandBy, or Action Button); the
+      primer and Keep
       Screen Awake say "iPad"; Settings shows "Widget Skip Counts Focus".
-- [ ] iPad with a holiday theme: the tint reaches both edges in the sidebar
-      layout, and particles drift across the whole Timer screen.
+- [ ] iPad with a holiday theme: the tint reaches both edges on every tab,
+      and particles drift across the whole Timer screen.
 - [ ] iPad: starting a session doesn't error or hang without Live
       Activities; widgets, notifications, Siri, and Stats all work.
 

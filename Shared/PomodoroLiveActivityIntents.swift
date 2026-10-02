@@ -69,7 +69,7 @@ private func performPomodoroAction(_ label: String, _ action: (TimerEngine) -> V
 }
 
 /// Starts a fresh session with the active profile — shared by the plain
-/// Start intent (widget button, "Start Simple Timer") and the per-profile
+/// Start intent (widget button, "Start Steady") and the per-profile
 /// one. Returns false, changing nothing, if a session is already running:
 /// the Home Screen widget can still show Start for a moment after a session
 /// began somewhere else (its refresh lags), and Siri can be asked to start
@@ -121,7 +121,7 @@ struct StartPomodoroIntent: LiveActivityIntent {
     }
 }
 
-/// "Start Deep Work with Simple Timer" — and the action to put on the
+/// "Start Deep Work with Steady" — and the action to put on the
 /// Action Button, or in any Shortcut, to start a particular profile in one
 /// press. Makes the chosen profile the active one (just as picking it on
 /// the Timer screen would), then starts. A LiveActivityIntent, so it runs

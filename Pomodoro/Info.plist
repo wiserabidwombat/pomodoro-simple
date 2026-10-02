@@ -11,7 +11,7 @@
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Simple: StandBy Timer</string>
+	<string>Steady</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -33,11 +33,11 @@
 	<array>
 		<dict>
 			<key>INAlternativeAppName</key>
-			<string>Simple Timer</string>
+			<string>Steady Timer</string>
 		</dict>
 		<dict>
 			<key>INAlternativeAppName</key>
-			<string>StandBy Timer</string>
+			<string>Steady Focus</string>
 		</dict>
 	</array>
 	<key>NSFocusStatusUsageDescription</key>

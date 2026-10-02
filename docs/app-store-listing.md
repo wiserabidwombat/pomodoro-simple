@@ -1,19 +1,19 @@
-# App Store Connect listing — Simple: StandBy Timer
+# App Store Connect listing — Steady: Focus Timer
 
 Paste these into the corresponding App Store Connect fields when you create
 the app record. Character limits are Apple's current hard limits.
 
 ## Name (30 char limit)
-Simple: StandBy Timer
+Steady: Focus Timer
 
 ## Subtitle (30 char limit)
-Focus timer for every screen
+Pomodoro on every screen
 
 ## Promotional text (170 char limit, editable any time without a new build)
 New: a native iPad app with Desk Mode and a floating timer, and an Apple Watch app. Start a Focus session and control it from your Lock Screen, StandBy, or wrist.
 
 ## Description (4,000 char limit)
-Simple: StandBy Timer is a focus timer built around the classic Pomodoro
+Steady is a focus timer built around the classic Pomodoro
 Technique: 25 minutes of focused work, then a short break, repeating in a cycle
 with a longer break every 4th round. Or save your own timer profiles, like Deep
 Work or Study, each with its own lengths and cycle.
@@ -27,7 +27,7 @@ ON IPHONE
 - Dock your phone in StandBy and read the timer from across the room
 - Home Screen and Lock Screen widgets, including a progress ring and a large
   widget with your week at a glance
-- Start any profile with Siri ("Start Deep Work with Simple Timer"), a
+- Start any profile with Siri ("Start Deep Work with Steady"), a
   Shortcut, or the Action Button
 
 ON IPAD
@@ -57,7 +57,7 @@ No accounts. No ads. No tracking. No subscription. Everything stays on your
 own devices.
 
 ## Keywords (100 char limit, comma-separated, no spaces needed)
-pomodoro,focus timer,productivity,study timer,standby,live activity,widget,ipad,apple watch,break
+productivity,study,work,deep work,standby,live activity,widget,ipad,apple watch,break,concentration
 
 ## Support URL
 https://github.com/wiserabidwombat/pomodoro-simple/issues

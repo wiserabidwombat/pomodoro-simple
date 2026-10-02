@@ -94,3 +94,13 @@ schemes:
         - PomodoroTests
     run:
       config: Debug
+  # Run this one with your Apple Watch as the destination to install and
+  # test the watch app directly (it also builds the iPhone app it needs).
+  PomodoroWatch:
+    build:
+      targets:
+        PomodoroWatch: all
+        Pomodoro: [run]
+    run:
+      config: Debug
+      executable: PomodoroWatch

@@ -10,7 +10,7 @@ StandBy screen, that didn't require a subscription and was simple to use.
 > **Availability:** In public beta on TestFlight. Join here:
 > **[testflight.apple.com/join/GYzhgfF5](https://testflight.apple.com/join/GYzhgfF5)**
 >
-> You'll need an iPhone on iOS 17 or later and Apple's free
+> You'll need an iPhone or iPad on iOS 17 or later and Apple's free
 > [TestFlight app](https://apps.apple.com/app/testflight/id899247664).
 > Feedback is welcome: take a screenshot in the app and TestFlight will offer
 > to send it to me.
@@ -33,6 +33,14 @@ Privacy policy: [everything stays on your phone](https://aarontilley.me/projects
   wrist, with today's progress toward your goal. It stays in sync with the
   phone, keeps working when the phone is out of range, and Focus sessions
   finished on the watch show up in Stats.
+- **iPad.** A big timer with a progress ring, plus cards for today's
+  progress, what's up next, this week, and your profile, beside it in
+  landscape and below it in portrait. Desk Mode shows just the ring, the
+  countdown, and the time of day, full screen, and a floating Picture in
+  Picture countdown stays on screen over other apps. Every orientation, Split
+  View and Slide Over, and keyboard shortcuts: Space to start, pause, and
+  resume, S to skip, ⌘R to restart, ⌘D for Desk Mode, ⇧⌘P for the floating
+  timer, and ⌘1–⌘3 to switch screens. Live Activities and StandBy are iPhone-only.
 - **Timer profiles.** Save different setups, each with its own Focus, Short
   Break and Long Break lengths and number of sessions before a Long Break.
   Comes with Classic (25/5/15, Long Break after 4) and Deep Work (50/10/30,

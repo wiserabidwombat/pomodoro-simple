@@ -264,4 +264,38 @@ final class PomodoroStateStoreTests: XCTestCase {
         countTowardToday(endedAt.addingTimeInterval(1500), store: store) // the next session
         XCTAssertEqual(store.loadCachedTodayCount(), 2)
     }
+
+    // MARK: - Week cache (large widgets)
+
+    func testRecentDailyCountsRoundTripAndKeepTodayCurrent() {
+        let store = makeIsolatedStore()
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        let day = calendar.date(from: DateComponents(year: 2026, month: 10, day: 2, hour: 12))!
+        XCTAssertEqual(store.loadRecentDailyCounts(calendar: calendar, now: day), [0, 0, 0, 0, 0, 0, 0])
+
+        store.save(recentDailyCounts: [1, 2, 3, 4, 5, 6, 2], calendar: calendar, now: day)
+        XCTAssertEqual(store.loadRecentDailyCounts(calendar: calendar, now: day), [1, 2, 3, 4, 5, 6, 2])
+
+        // A session finished from the Lock Screen bumps the quick counter;
+        // today's bar follows it without waiting for the app.
+        store.incrementCachedTodayCount(calendar: calendar, now: day)
+        store.incrementCachedTodayCount(calendar: calendar, now: day)
+        store.incrementCachedTodayCount(calendar: calendar, now: day)
+        XCTAssertEqual(store.loadRecentDailyCounts(calendar: calendar, now: day).last, 3)
+    }
+
+    func testRecentDailyCountsShiftAsDaysPass() {
+        let store = makeIsolatedStore()
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        let day = calendar.date(from: DateComponents(year: 2026, month: 10, day: 2, hour: 12))!
+        store.save(recentDailyCounts: [1, 2, 3, 4, 5, 6, 7], calendar: calendar, now: day)
+
+        let twoDaysLater = calendar.date(byAdding: .day, value: 2, to: day)!
+        XCTAssertEqual(store.loadRecentDailyCounts(calendar: calendar, now: twoDaysLater), [3, 4, 5, 6, 7, 0, 0])
+
+        let weekLater = calendar.date(byAdding: .day, value: 8, to: day)!
+        XCTAssertEqual(store.loadRecentDailyCounts(calendar: calendar, now: weekLater), [0, 0, 0, 0, 0, 0, 0])
+    }
 }

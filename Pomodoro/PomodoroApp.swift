@@ -159,6 +159,15 @@ private enum AppEnvironment {
     static let historyStore = HistoryStore(context: container.mainContext, health: opened.health)
 }
 
+/// Wording that differs between iPhone and iPad: iPad has no StandBy,
+/// Dynamic Island, Live Activities, or Action Button.
+@MainActor
+enum DeviceCopy {
+    static var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
+    /// For sentences like "while your phone is locked".
+    static var device: String { isPad ? "iPad" : "phone" }
+}
+
 private struct RootView: View {
     @StateObject private var viewModel = TimerViewModel(
         historyStore: AppEnvironment.historyStore,
@@ -166,24 +175,42 @@ private struct RootView: View {
         alerting: SystemPhaseChangeAlert()
     )
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var selectedTab = AppTab.timer
 
-    private enum AppTab: Hashable {
+    private enum AppTab: Hashable, CaseIterable {
         case timer, stats, settings
+
+        var title: String {
+            switch self {
+            case .timer: return "Timer"
+            case .stats: return "Stats"
+            case .settings: return "Settings"
+            }
+        }
+
+        var systemImage: String {
+            switch self {
+            case .timer: return "timer"
+            case .stats: return "chart.bar"
+            case .settings: return "gear"
+            }
+        }
     }
 
     var body: some View {
+        // A tab bar everywhere. On iPadOS 18 it's the compact floating bar at
+        // the top; a sidebar for three screens just wasted a third of the
+        // iPad's width. The iPad's extra room goes to the Timer screen's
+        // own wide layout instead (see TimerView).
         TabView(selection: $selectedTab) {
-            TimerView(viewModel: viewModel)
-                .tabItem { Label("Timer", systemImage: "timer") }
-                .tag(AppTab.timer)
-            StatsView(viewModel: viewModel, historyStore: AppEnvironment.historyStore)
-                .tabItem { Label("Stats", systemImage: "chart.bar") }
-                .tag(AppTab.stats)
-            SettingsView(viewModel: viewModel)
-                .tabItem { Label("Settings", systemImage: "gear") }
-                .tag(AppTab.settings)
+            ForEach(AppTab.allCases, id: \.self) { tab in
+                tabContent(for: tab)
+                    .tabItem { Label(tab.title, systemImage: tab.systemImage) }
+                    .tag(tab)
+            }
         }
+        .background(tabShortcuts)
         .preferredColorScheme(.dark)
         // The selected tab's icon (and any other control still using the
         // system tint, like Settings' steppers) follows the accent color
@@ -215,6 +242,49 @@ private struct RootView: View {
             default:
                 break
             }
+        }
+    }
+
+    /// On iPad, Stats and Settings are capped and centered so their lists
+    /// don't stretch edge to edge on a 13-inch screen, with the (theme)
+    /// background still filling the width. The Timer lays itself out.
+    @ViewBuilder
+    private func tabContent(for tab: AppTab) -> some View {
+        if horizontalSizeClass == .regular && tab != .timer {
+            ZStack {
+                ThemedBackground(theme: viewModel.activeTheme)
+                screen(for: tab)
+                    .frame(maxWidth: 680)
+            }
+        } else {
+            screen(for: tab)
+        }
+    }
+
+    /// ⌘1–⌘3 switch between Timer, Stats, and Settings with a keyboard
+    /// (iPad lists them when you hold ⌘). Invisible buttons, since keyboard
+    /// shortcuts need a control to hang on; opacity 0 keeps them working.
+    private var tabShortcuts: some View {
+        ZStack {
+            ForEach(Array(AppTab.allCases.enumerated()), id: \.element) { index, tab in
+                Button(tab.title) { selectedTab = tab }
+                    .keyboardShortcut(KeyEquivalent(Character("\(index + 1)")), modifiers: .command)
+            }
+        }
+        .opacity(0)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private func screen(for tab: AppTab) -> some View {
+        switch tab {
+        case .timer:
+            TimerView(viewModel: viewModel)
+        case .stats:
+            StatsView(viewModel: viewModel, historyStore: AppEnvironment.historyStore)
+        case .settings:
+            SettingsView(viewModel: viewModel)
         }
     }
 }

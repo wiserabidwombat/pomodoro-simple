@@ -162,3 +162,51 @@ but a physical device docked and charging in landscape is the real test):
       session: the watch shows that session as soon as it opens.
 - [ ] Open the watch app long after a phase ended: it shows the right phase,
       with no late wrist tap.
+- [ ] iPad layout (Simulator or device), full screen: a tab bar (floating at
+      the top on iPadOS 18), not a sidebar. Landscape: the ring and big
+      buttons on the left, Today / Up next / This week / Profile cards on
+      the right. Portrait: the ring on top, the cards in a 2×2 grid below.
+      The ring drains as the phase runs and freezes when paused; idle, it's
+      full and shows the Focus length. Stats and Settings are centered and
+      capped in width. Narrow Split View / Slide Over shows the iPhone layout.
+      Tapping the widget or notification still lands on Timer.
+- [ ] iPad cards: Today shows the count (and "of N" with a goal) and minutes
+      focused; Up next names the next two phases with lengths (Long Break
+      after the cycle's last Focus); This week matches Stats' chart; the
+      Profile card switches profiles only while idle.
+- [ ] Desk Mode (expand button at top right, or ⌘D): only the ring,
+      countdown, and time of day, with no tab bar or status bar; the screen
+      stays on. Tap anywhere or press Escape to leave. Rotating keeps it
+      centered; going to narrow Split View leaves it.
+- [ ] iPad with a keyboard: Space starts/pauses/resumes, S skips (Focus
+      still asks first), ⌘R restarts, ⌘D opens Desk Mode and Escape leaves
+      it, ⌘1/⌘2/⌘3 switch screens. Holding ⌘ lists the shortcuts.
+- [ ] iPad wording: Help shows "Widgets & notifications" and "Keyboard"
+      plus Desk Mode (no Dynamic Island, StandBy, or Action Button); the
+      primer and Keep Screen Awake say "iPad"; Settings shows "Widget Skip
+      Counts Focus".
+- [ ] iPad with a holiday theme: the tint reaches both edges on every tab,
+      and particles drift across the whole Timer screen.
+- [ ] iPad: starting a session doesn't error or hang without Live
+      Activities; widgets, notifications, Siri, and Stats all work.
+- [ ] Large widget (iPhone or iPad) and Extra Large (iPad): the countdown
+      with Pause/Resume and Skip (or Start when idle), cycle dots, "N of
+      goal today", and 7 bars for the week with day letters; days that met
+      the goal are brighter. Finish a session from the Lock Screen: today's
+      bar and count go up without opening the app.
+- [ ] iPad floating timer (Picture in Picture button at top right, or ⇧⌘P):
+      a small window with the phase, countdown, and a progress bar appears
+      and stays over other apps (try Safari). It ticks every second; its
+      play/pause button pauses and resumes the timer (and the app agrees
+      when reopened). Let a phase end while it's showing with the app in the
+      background: it moves to the next phase, the alert plays, and Stats
+      counts the session. Close it from its own button or the app's. Music
+      playing in another app keeps playing throughout.
+- [ ] Apple Watch Smart Stack (iPhone on iOS 18+, watch on watchOS 11+,
+      with or without the Simple Timer watch app): start a session on the
+      phone and raise your wrist. The Live Activity card shows the phase, a
+      live countdown (not 0:00), and Pause and Skip icon buttons in the
+      accent color. Pause from the watch: the phone and the card both show
+      paused with the time frozen; Resume and Skip work too. Let a phase run
+      out: the card shows "Time's up" with a Continue arrow.
+

@@ -49,6 +49,38 @@ extension TimerProfile {
         "\(durations.workMinutes) / \(durations.shortBreakMinutes) / \(durations.longBreakMinutes) min · \(sessionsBeforeLongBreak) per cycle"
     }
 
+    /// The next `count` phases after the current one, following the same
+    /// rules as TimerEngine (a Long Break after the cycle's last Focus
+    /// session). With no session running, starts from the Focus session
+    /// that Start would begin. For the iPad's "Up next" card.
+    func upcomingPhases(after state: PomodoroState, count: Int = 2) -> [PomodoroPhase] {
+        var phase: PomodoroPhase
+        var cycles = state.completedWorkCycles
+        var result: [PomodoroPhase] = []
+        if state.sessionActive {
+            phase = state.phase
+        } else {
+            // Start begins a fresh cycle with Focus; that's what's next.
+            phase = .work
+            cycles = 0
+            result.append(.work)
+        }
+        while result.count < count {
+            switch phase {
+            case .work:
+                cycles += 1
+                phase = cycles >= sessionsBeforeLongBreak ? .longBreak : .shortBreak
+            case .shortBreak:
+                phase = .work
+            case .longBreak:
+                cycles = 0
+                phase = .work
+            }
+            result.append(phase)
+        }
+        return result
+    }
+
     /// The same, as VoiceOver should read it — "25 / 5 / 15 min" is read
     /// out as "25 slash 5 slash 15 min".
     var spokenSummary: String {

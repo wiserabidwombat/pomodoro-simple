@@ -15,6 +15,12 @@ struct PomodoroIdleEntry: TimelineEntry {
     var phaseLength: TimeInterval = 0
     /// Settings → Daily Goal (0 = off); the medium widget shows "3/6".
     var dailyGoal: Int = 0
+    /// Focus sessions per day, last 7 days, oldest first (large sizes).
+    var weekCounts: [Int] = Array(repeating: 0, count: 7)
+    /// The day weekCounts ends on (its last bar). Not derived from `date`:
+    /// a later entry in the same timeline (a phase ending after midnight)
+    /// reuses the same counts, and its labels must not shift a day.
+    var weekEndDay: Date = Calendar.current.startOfDay(for: Date())
 }
 
 struct PomodoroIdleProvider: TimelineProvider {
@@ -38,7 +44,11 @@ struct PomodoroIdleProvider: TimelineProvider {
                 completedWorkCycles: 1,
                 sessionActive: true
             )
-            completion(PomodoroIdleEntry(date: now, state: example, accentColor: .white, todayCount: 3, sessionsPerCycle: 4, phaseLength: 25 * 60))
+            completion(PomodoroIdleEntry(
+                date: now, state: example, accentColor: .white, todayCount: 3,
+                sessionsPerCycle: 4, phaseLength: 25 * 60, dailyGoal: 4,
+                weekCounts: [2, 4, 3, 5, 1, 4, 3]
+            ))
             return
         }
         let store = PomodoroStateStore()
@@ -52,7 +62,9 @@ struct PomodoroIdleProvider: TimelineProvider {
             profileLabel: store.loadActiveProfileLabel(),
             sessionsPerCycle: profile.sessionsBeforeLongBreak,
             phaseLength: profile.durations.duration(for: state.phase),
-            dailyGoal: store.loadDailyGoal()
+            dailyGoal: store.loadDailyGoal(),
+            weekCounts: store.loadRecentDailyCounts(),
+            weekEndDay: Calendar.current.startOfDay(for: Date())
         ))
     }
 
@@ -66,6 +78,7 @@ struct PomodoroIdleProvider: TimelineProvider {
         let sessionsPerCycle = activeProfile.sessionsBeforeLongBreak
         let phaseLength = activeProfile.durations.duration(for: state.phase)
         let dailyGoal = store.loadDailyGoal()
+        let weekCounts = store.loadRecentDailyCounts()
         let now = Date()
         func entry(at date: Date) -> PomodoroIdleEntry {
             PomodoroIdleEntry(
@@ -76,7 +89,9 @@ struct PomodoroIdleProvider: TimelineProvider {
                 profileLabel: profileLabel,
                 sessionsPerCycle: sessionsPerCycle,
                 phaseLength: phaseLength,
-                dailyGoal: dailyGoal
+                dailyGoal: dailyGoal,
+                weekCounts: weekCounts,
+                weekEndDay: Calendar.current.startOfDay(for: now)
             )
         }
 
@@ -132,6 +147,10 @@ struct PomodoroIdleWidgetView: View {
                 rectangularContent
             case .systemMedium:
                 mediumContent
+            case .systemLarge:
+                largeContent
+            case .systemExtraLarge:
+                extraLargeContent
             default:
                 homeScreenContent
             }
@@ -299,6 +318,119 @@ struct PomodoroIdleWidgetView: View {
         }
     }
 
+    // MARK: - Large sizes
+
+    /// Large (iPhone and iPad): the countdown and controls on top, the week
+    /// underneath.
+    private var largeContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            timerBlock(countdownSize: 52)
+            Spacer(minLength: 0)
+            todaySummary
+            weekBars
+                .frame(height: 80)
+        }
+    }
+
+    /// Extra large (iPad only): the timer on the left, today and the week
+    /// on the right.
+    private var extraLargeContent: some View {
+        HStack(alignment: .top, spacing: 24) {
+            VStack(alignment: .leading, spacing: 12) {
+                timerBlock(countdownSize: 72)
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 12) {
+                todaySummary
+                Spacer(minLength: 0)
+                weekBars
+                    .frame(height: 140)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func timerBlock(countdownSize: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(title)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .font(.headline)
+                Spacer()
+                cycleDots
+            }
+            if entry.state.sessionActive {
+                countdownText
+                    .font(.system(size: countdownSize, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                controls
+            } else {
+                Text("Ready")
+                    .font(.system(size: countdownSize * 0.6, weight: .bold, design: .rounded))
+                startButton
+            }
+        }
+    }
+
+    /// "3 of 4 today · Goal met" / "3 today".
+    private var todaySummary: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text("\(entry.todayCount)")
+                .font(.title.bold())
+                .monospacedDigit()
+            Text(entry.dailyGoal > 0 ? "of \(entry.dailyGoal) today" : "today")
+                .font(.subheadline)
+                .opacity(0.7)
+            if entry.dailyGoal > 0 && entry.todayCount >= entry.dailyGoal {
+                Text("· Goal met")
+                    .font(.subheadline.weight(.semibold))
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Today")
+        .accessibilityValue(entry.dailyGoal > 0
+            ? "\(entry.todayCount) of \(entry.dailyGoal) Focus sessions"
+            : "\(entry.todayCount) Focus sessions")
+    }
+
+    /// The last 7 days as simple bars (widgets keep it light: no Charts),
+    /// with days that met the daily goal drawn at full strength.
+    private var weekBars: some View {
+        let counts = entry.weekCounts.count == 7 ? entry.weekCounts : Array(repeating: 0, count: 7)
+        let top = Double(max(4, entry.dailyGoal, counts.max() ?? 0))
+        let calendar = Calendar.current
+        let today = entry.weekEndDay
+        return HStack(alignment: .bottom, spacing: 8) {
+            ForEach(0..<7, id: \.self) { index in
+                let count = counts[index]
+                let day = calendar.date(byAdding: .day, value: index - 6, to: today) ?? today
+                let metGoal = entry.dailyGoal > 0 && count >= entry.dailyGoal
+                VStack(spacing: 4) {
+                    GeometryReader { geometry in
+                        VStack {
+                            Spacer(minLength: 0)
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(entry.accentColor.color.opacity(metGoal || entry.dailyGoal == 0 ? 1 : 0.5))
+                                .frame(height: max(3, geometry.size.height * Double(count) / top))
+                        }
+                    }
+                    Text(day, format: .dateTime.weekday(.narrow))
+                        .font(.caption2)
+                        .opacity(index == 6 ? 1 : 0.6)
+                }
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Last 7 days")
+        .accessibilityValue(counts.map(String.init).joined(separator: ", ") + " Focus sessions, oldest first")
+    }
+
     private var cycleDots: some View {
         HStack(spacing: 8) {
             ForEach(0..<entry.sessionsPerCycle, id: \.self) { index in
@@ -392,6 +524,7 @@ struct PomodoroIdleWidget: Widget {
         }
         .configurationDisplayName("Simple: StandBy Timer")
         .description("Shows your current Pomodoro phase and countdown.")
-        .supportedFamilies([.accessoryRectangular, .accessoryCircular, .systemSmall, .systemMedium])
+        // systemExtraLarge only appears on iPad.
+        .supportedFamilies([.accessoryRectangular, .accessoryCircular, .systemSmall, .systemMedium, .systemLarge, .systemExtraLarge])
     }
 }

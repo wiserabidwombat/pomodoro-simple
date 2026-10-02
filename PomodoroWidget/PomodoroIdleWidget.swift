@@ -17,6 +17,10 @@ struct PomodoroIdleEntry: TimelineEntry {
     var dailyGoal: Int = 0
     /// Focus sessions per day, last 7 days, oldest first (large sizes).
     var weekCounts: [Int] = Array(repeating: 0, count: 7)
+    /// The day weekCounts ends on (its last bar). Not derived from `date`:
+    /// a later entry in the same timeline (a phase ending after midnight)
+    /// reuses the same counts, and its labels must not shift a day.
+    var weekEndDay: Date = Calendar.current.startOfDay(for: Date())
 }
 
 struct PomodoroIdleProvider: TimelineProvider {
@@ -59,7 +63,8 @@ struct PomodoroIdleProvider: TimelineProvider {
             sessionsPerCycle: profile.sessionsBeforeLongBreak,
             phaseLength: profile.durations.duration(for: state.phase),
             dailyGoal: store.loadDailyGoal(),
-            weekCounts: store.loadRecentDailyCounts()
+            weekCounts: store.loadRecentDailyCounts(),
+            weekEndDay: Calendar.current.startOfDay(for: Date())
         ))
     }
 
@@ -85,7 +90,8 @@ struct PomodoroIdleProvider: TimelineProvider {
                 sessionsPerCycle: sessionsPerCycle,
                 phaseLength: phaseLength,
                 dailyGoal: dailyGoal,
-                weekCounts: weekCounts
+                weekCounts: weekCounts,
+                weekEndDay: Calendar.current.startOfDay(for: now)
             )
         }
 
@@ -399,7 +405,7 @@ struct PomodoroIdleWidgetView: View {
         let counts = entry.weekCounts.count == 7 ? entry.weekCounts : Array(repeating: 0, count: 7)
         let top = Double(max(4, entry.dailyGoal, counts.max() ?? 0))
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: entry.date)
+        let today = entry.weekEndDay
         return HStack(alignment: .bottom, spacing: 8) {
             ForEach(0..<7, id: \.self) { index in
                 let count = counts[index]

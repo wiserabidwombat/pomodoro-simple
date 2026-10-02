@@ -388,6 +388,9 @@ final class TimerViewModel: ObservableObject {
         if !Calendar.current.isDate(todayCountDay, inSameDayAs: Date()) {
             refreshActiveTheme()
             refreshTodayCount()
+            // A new day: views that read history (the iPad's Today and
+            // This week cards) reload too.
+            historyRevision += 1
         }
         // With history in memory only, leave sessions queued in the App
         // Group so a later launch with a working database imports them.

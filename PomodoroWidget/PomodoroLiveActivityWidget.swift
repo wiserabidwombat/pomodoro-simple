@@ -3,10 +3,15 @@ import WidgetKit
 import SwiftUI
 import ActivityKit
 
+/// iOS 17: the Lock Screen, StandBy, and Dynamic Island.
 struct PomodoroLiveActivityWidget: Widget {
     var body: some WidgetConfiguration {
+        Self.configuration()
+    }
+
+    static func configuration() -> ActivityConfiguration<PomodoroActivityAttributes> {
         ActivityConfiguration(for: PomodoroActivityAttributes.self) { context in
-            PomodoroLiveActivityView(state: context.state, isStale: context.isStale)
+            PomodoroLiveActivityContent(state: context.state, isStale: context.isStale)
                 // Tapping the Lock Screen/StandBy banner (anywhere but a
                 // button) opens the app straight to the Timer tab.
                 .widgetURL(PomodoroDeepLink.timerURL)
@@ -35,6 +40,133 @@ struct PomodoroLiveActivityWidget: Widget {
                     .accessibilityLabel(context.state.title)
             }
             .widgetURL(PomodoroDeepLink.timerURL)
+        }
+    }
+}
+
+/// iOS 18 and later: the same Live Activity, plus a layout made for the
+/// Apple Watch Smart Stack (the `.small` family). Without it, watchOS built
+/// its own card from the Dynamic Island's tiny views, which showed a stuck
+/// "0:00" and nothing else. The bundle picks this widget or the one above
+/// depending on the iOS version (see PomodoroWidgetBundle).
+@available(iOS 18.0, *)
+struct PomodoroLiveActivityWidgetWithWatch: Widget {
+    var body: some WidgetConfiguration {
+        PomodoroLiveActivityWidget.configuration()
+            .supplementalActivityFamilies([.small])
+    }
+}
+
+/// Chooses the layout for where the Live Activity is showing: the small
+/// watch card, or the usual Lock Screen / StandBy banner.
+struct PomodoroLiveActivityContent: View {
+    let state: PomodoroActivityAttributes.ContentState
+    let isStale: Bool
+
+    var body: some View {
+        if #available(iOS 18.0, *) {
+            FamilyAwareLiveActivityContent(state: state, isStale: isStale)
+        } else {
+            PomodoroLiveActivityView(state: state, isStale: isStale)
+        }
+    }
+}
+
+@available(iOS 18.0, *)
+private struct FamilyAwareLiveActivityContent: View {
+    let state: PomodoroActivityAttributes.ContentState
+    let isStale: Bool
+    @Environment(\.activityFamily) private var activityFamily
+
+    var body: some View {
+        switch activityFamily {
+        case .small:
+            PomodoroWatchActivityView(state: state, isStale: isStale)
+        default:
+            PomodoroLiveActivityView(state: state, isStale: isStale)
+        }
+    }
+}
+
+/// The Apple Watch Smart Stack card: the phase, a live countdown big
+/// enough to read at a glance, and icon buttons for Pause/Resume and Skip
+/// (or Continue once the phase has run out). The buttons run the same
+/// intents as the Lock Screen, on the iPhone.
+struct PomodoroWatchActivityView: View {
+    let state: PomodoroActivityAttributes.ContentState
+    let isStale: Bool
+
+    private var isExpired: Bool { isStale && state.pausedAt == nil }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 8) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(state.title)
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .opacity(0.85)
+                countdown
+                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            controls
+        }
+        .foregroundStyle(state.accentColor.color)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .activityBackgroundTint(.black)
+    }
+
+    @ViewBuilder
+    private var countdown: some View {
+        if isExpired {
+            Text("Time's up")
+        } else if state.pausedAt != nil {
+            Text(state.formattedRemainingWhilePaused)
+                .accessibilityLabel(SpokenDuration.pausedLabel(endDate: state.endDate, pausedAt: state.pausedAt))
+        } else {
+            // Left-aligned here (the card reads left to right), with the
+            // reserved width kept from pushing the buttons around.
+            Text(timerInterval: state.startDate...state.endDate, countsDown: true)
+                .multilineTextAlignment(.leading)
+        }
+    }
+
+    @ViewBuilder
+    private var controls: some View {
+        if isExpired {
+            Button(intent: AdvancePomodoroIntent()) {
+                Image(systemName: "arrow.right")
+                    .foregroundStyle(state.accentColor.contrastingTextColor)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(state.accentColor.color)
+            .accessibilityLabel("Continue")
+        } else {
+            VStack(spacing: 6) {
+                if state.pausedAt == nil {
+                    Button(intent: PausePomodoroIntent()) {
+                        Image(systemName: "pause.fill")
+                    }
+                    .accessibilityLabel("Pause")
+                } else {
+                    Button(intent: ResumePomodoroIntent()) {
+                        Image(systemName: "play.fill")
+                    }
+                    .accessibilityLabel("Resume")
+                }
+                Button(intent: SkipPomodoroIntent()) {
+                    Image(systemName: "forward.fill")
+                }
+                .accessibilityLabel("Skip")
+            }
+            .buttonStyle(.bordered)
+            .tint(state.accentColor.color)
+            .font(.caption)
         }
     }
 }

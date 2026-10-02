@@ -161,10 +161,15 @@ but a physical device docked and charging in landscape is the real test):
       it, ⌘1/⌘2/⌘3 switch screens. Holding ⌘ lists the shortcuts.
 - [ ] iPad wording: Help shows "Widgets & notifications" and "Keyboard"
       plus Desk Mode (no Dynamic Island, StandBy, or Action Button); the
-      primer and Keep
-      Screen Awake say "iPad"; Settings shows "Widget Skip Counts Focus".
+      primer and Keep Screen Awake say "iPad"; Settings shows "Widget Skip
+      Counts Focus".
 - [ ] iPad with a holiday theme: the tint reaches both edges on every tab,
       and particles drift across the whole Timer screen.
 - [ ] iPad: starting a session doesn't error or hang without Live
       Activities; widgets, notifications, Siri, and Stats all work.
+- [ ] Large widget (iPhone or iPad) and Extra Large (iPad): the countdown
+      with Pause/Resume and Skip (or Start when idle), cycle dots, "N of
+      goal today", and 7 bars for the week with day letters; days that met
+      the goal are brighter. Finish a session from the Lock Screen: today's
+      bar and count go up without opening the app.
 
